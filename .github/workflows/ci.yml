@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Repository structure check
+        run: |
+          test -f README.md
+          test -f TEAM.md
+          test -f AI_USAGE.md
+          test -f Makefile
+          test -d docs
+          test -d src
+          test -d tests
+          test -d deployment
