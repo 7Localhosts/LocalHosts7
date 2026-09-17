@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Kay's Haven</title>
+    <link rel="stylesheet" href="product.css">
+</head>
+
+<body>
+
+    <main class="product-page">
+
+        <section class="product-details">
+
+            <div class="product-image">
+                <img id="product-image" src="" alt="Product image">
+            </div>
+
+            <div class="product-info">
+                <h1 id="product-name">Product Name</h1>
+
+                <p id="product-price">GH₵0.00</p>
+
+                <p id="product-description">
+                    Product description goes here.
+                </p>
+
+                <div class="product-variant">
+                    <label for="product-size">Size:</label>
+                    <select id="product-size">
+                        <option value="S">Small</option>
+                        <option value="M">Medium</option>
+                        <option value="L">Large</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+
+                <div class="quantity">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" value="1" min="1">
+                </div>
+
+                <button id="add-to-cart" onclick="alert('BUTTON WORKS')">Add to Cart</button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="product.js?v=2"></script>
+
+</body>
+</html>
