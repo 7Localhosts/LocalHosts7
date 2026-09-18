@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kay's Haven | Quality Products from Crib to Campus</title>
+  <meta name="description" content="Kay's Haven — quality products from crib to campus.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="announcement">
+    Nationwide delivery · Visit us in <strong>Dzorwulu & Achimota</strong>
+  </div>
+
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="#" class="logo">Kay's <span>Haven</span></a>
+
+      <nav class="desktop-nav">
+        <a href="#shop">Shop</a>
+        <a href="#categories">Categories</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" id="searchBtn" aria-label="Search">⌕</button>
+        <button class="cart-btn" id="cartBtn">Cart <span id="cartCount">0</span></button>
+        <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobileNav">
+      <a href="#shop">Shop</a>
+      <a href="#categories">Categories</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </header>
+
+  <div class="search-panel" id="searchPanel">
+    <div class="container search-inner">
+      <input id="searchInput" type="search" placeholder="Search products..." autocomplete="off">
+      <button id="closeSearch">Close</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">KAY'S HAVEN</p>
+          <h1>Quality products<br><em>from crib to campus.</em></h1>
+          <p class="hero-text">
+            From baby essentials to school supplies, toys, books and more —
+            everything your little ones need as they grow.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#shop">Shop now</a>
+            <a class="btn btn-ghost" href="#categories">Browse categories</a>
+          </div>
+
+          <div class="trust-row">
+            <span>✓ Nationwide delivery</span>
+            <span>✓ Cash & MoMo</span>
+            <span>✓ Visa & bank transfer</span>
+          </div>
+        </div>
+
+        <div class="hero-art">
+          <div class="blob blob-one"></div>
+          <div class="blob blob-two"></div>
+
+          <div class="hero-card">
+            <span class="hero-badge">KAY'S HAVEN</span>
+            <div class="hero-placeholder">ADD<br>HERO IMAGE</div>
+
+            <div class="hero-card-copy">
+              <strong>Crib to campus essentials</strong>
+              <span>Shop all</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="category-strip" id="categories">
+      <div class="container">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">SHOP BY CATEGORY</p>
+            <h2>Find their next favourite</h2>
+          </div>
+        </div>
+
+        <div class="category-grid">
+          <button class="category-card" data-category="Baby">
+            <span class="category-icon">♡</span>
+            <strong>Baby</strong>
+            <small>0–1 years</small>
+          </button>
+
+          <button class="category-card" data-category="Toddler">
+            <span class="category-icon">✦</span>
+            <strong>Toddler</strong>
+            <small>1–3 years</small>
+          </button>
+
+          <button class="category-card" data-category="Kids">
+            <span class="category-icon">★</span>
+            <strong>Kids</strong>
+            <small>3–12 years</small>
+          </button>
+
+          <button class="category-card" data-category="Teens">
+            <span class="category-icon">◆</span>
+            <strong>Teens</strong>
+            <small>13–18 years</small>
+          </button>
+
+          <button class="category-card" data-category="Toys">
+            <span class="category-icon">◉</span>
+            <strong>Toys</strong>
+            <small>Fun for every age</small>
+          </button>
+
+          <button class="category-card" data-category="Accessories">
+            <span class="category-icon">✧</span>
+            <strong>Accessories</strong>
+            <small>Little extras</small>
+          </button>
+
+          <button class="category-card" data-category="Back to School">
+            <span class="category-icon">✎</span>
+            <strong>Back to School</strong>
+            <small>School essentials</small>
+          </button>
+
+          <button class="category-card sale-card" data-category="Clearance">
+            <span class="category-icon">%</span>
+            <strong>Clearance</strong>
+            <small>Last-chance deals</small>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="products-section" id="shop">
+      <div class="container">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">THE HAVEN SHOP</p>
+            <h2>Featured products</h2>
+          </div>
+
+          <div class="filter-wrap">
+            <button class="filter active" data-filter="All">All</button>
+            <button class="filter" data-filter="Baby">Baby</button>
+            <button class="filter" data-filter="Toddler">Toddler</button>
+            <button class="filter" data-filter="Kids">Kids</button>
+            <button class="filter" data-filter="Teens">Teens</button>
+            <button class="filter" data-filter="Toys">Toys</button>
+            <button class="filter" data-filter="Accessories">Accessories</button>
+            <button class="filter" data-filter="Back to School">School</button>
+            <button class="filter" data-filter="Clearance">Clearance</button>
+          </div>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+        <p class="empty-state" id="emptyState">No products found. Try another search.</p>
+      </div>
+    </section>
+
+    <section class="feature-band" id="about">
+      <div class="container feature-grid">
+        <div>
+          <p class="eyebrow">WHY KAY'S HAVEN?</p>
+          <h2>Growing with them, every step of the way.</h2>
+          <p class="feature-intro">
+            From the first tiny outfit to school-day essentials, Kay's Haven
+            brings everyday products for children and teens together in one place.
+          </p>
+        </div>
+
+        <div class="feature-items">
+          <div>
+            <span>01</span>
+            <div>
+              <strong>Crib to campus</strong>
+              <p>Shop by age and stage, from preemie essentials to teen needs.</p>
+            </div>
+          </div>
+
+          <div>
+            <span>02</span>
+            <div>
+              <strong>Easy shopping</strong>
+              <p>Browse, add to cart and check out without creating an account.</p>
+            </div>
+          </div>
+
+          <div>
+            <span>03</span>
+            <div>
+              <strong>Nationwide delivery</strong>
+              <p>Have your order delivered anywhere in Ghana.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="newsletter">
+      <div class="container newsletter-box">
+        <div>
+          <p class="eyebrow">STAY CONNECTED</p>
+          <h2>New arrivals, school season & special offers.</h2>
+          <p>Subscribe for updates from Kay's Haven.</p>
+        </div>
+
+        <form id="newsletterForm">
+          <input type="email" placeholder="Your email address" required>
+          <button class="btn btn-primary">Subscribe</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer id="contact">
+    <div class="container footer-grid">
+      <div>
+        <a href="#" class="logo">Kay's <span>Haven</span></a>
+        <p class="footer-note">Quality Products from Crib to Campus.</p>
+
+        <div class="social-links">
+          <a href="https://www.instagram.com/kayshaven.mothercare/" target="_blank" rel="noopener">Instagram</a>
+          <a href="https://www.facebook.com/profile.php?id=100051290409328" target="_blank" rel="noopener">Facebook</a>
+        </div>
+      </div>
+
+      <div>
+        <h4>Shop</h4>
+        <a href="#shop">All products</a>
+        <a href="#categories">Categories</a>
+        <a href="#shop">Back to School</a>
+        <a href="#shop">Clearance</a>
+      </div>
+
+      <div>
+        <h4>Help</h4>
+        <a href="#">Delivery information</a>
+        <a href="#">Returns</a>
+        <a href="#">FAQs</a>
+        <a href="#">Reviews</a>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <a href="https://wa.me/233595237037" target="_blank" rel="noopener">WhatsApp: 059 523 7037</a>
+        <a href="tel:+233540987398">Phone: 054 098 7398</a>
+        <a href="mailto:Kayshaven.gh@gmail.com">Kayshaven.gh@gmail.com</a>
+        <p>Dzorwulu & Achimota</p>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <span>© 2026 Kay's Haven. All rights reserved.</span>
+      <span>Privacy · Terms</span>
+    </div>
+  </footer>
+
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="drawer-head">
+      <h2>Your cart</h2>
+      <button id="closeCart">×</button>
+    </div>
+
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-footer">
+      <div class="total-row">
+        <span>Subtotal</span>
+        <strong id="cartTotal">GHS 0.00</strong>
+      </div>
+
+      <button class="btn btn-primary full" id="checkoutBtn">Proceed to checkout</button>
+      <p class="small-note">Delivery fee is calculated at checkout.</p>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="modal" id="checkoutModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeCheckout">×</button>
+
+      <p class="eyebrow">GUEST CHECKOUT</p>
+      <h2>Where should we deliver?</h2>
+
+      <form id="checkoutForm">
+        <div class="form-grid">
+          <label>
+            Full name
+            <input name="name" required placeholder="Your full name">
+          </label>
+
+          <label>
+            Phone / WhatsApp
+            <input name="phone" required placeholder="059 523 7037">
+          </label>
+
+          <label class="wide">
+            Email
+            <input type="email" name="email" placeholder="you@example.com">
+          </label>
+
+          <label class="wide">
+            Delivery address
+            <textarea name="address" required placeholder="House number, street, area..."></textarea>
+          </label>
+
+          <label>
+            City / Area
+            <input name="city" required placeholder="Accra">
+          </label>
+
+          <label>
+            Delivery method
+            <select name="delivery">
+              <option>Home delivery</option>
+              <option>Pickup — Dzorwulu</option>
+              <option>Pickup — Achimota</option>
+            </select>
+          </label>
+
+          <label class="wide">
+            Payment method
+            <select name="payment">
+              <option>Mobile Money</option>
+              <option>Visa Card</option>
+              <option>Bank Transfer</option>
+              <option>Cash</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="checkout-summary">
+          <span>Order total</span>
+          <strong id="checkoutTotal">GHS 0.00</strong>
+        </div>
+
+        <button class="btn btn-primary full" type="submit">Place order</button>
+        <p class="small-note">Payment processing and order submission connect to your backend.</p>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
