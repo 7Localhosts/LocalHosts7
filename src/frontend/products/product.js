@@ -15,19 +15,29 @@ document.getElementById("product-image").alt = product.name;
 
 document.getElementById("add-to-cart").addEventListener("click", () => {
 
-    console.log("BUTTON CLICKED");
-
     const quantity = parseInt(document.getElementById("quantity").value);
     const size = document.getElementById("product-size").value;
 
-    const cartItem = {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        size: size,
-        quantity: quantity
-    };
+    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    localStorage.setItem("cart", JSON.stringify([cartItem]));
+    const existingItem = existingCart.find(
+        item => item.id === product.id && item.size === size
+    );
+
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        existingCart.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            size: size,
+            quantity: quantity
+        });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(existingCart));
+
+
 });

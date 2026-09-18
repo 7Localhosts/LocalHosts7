@@ -1,0 +1,135 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+.cart-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.cart-page h1 {
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+#cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cart-item {
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.cart-item h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.cart-item p {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.quantity-controls button {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 5px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.quantity-controls button:hover {
+    background: #eee;
+}
+
+.quantity-controls span {
+    font-weight: bold;
+    min-width: 25px;
+    text-align: center;
+}
+
+.remove {
+    margin-top: 10px;
+    padding: 8px 14px;
+    border: none;
+    background: #222;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.remove:hover {
+    opacity: 0.8;
+}
+
+.cart-summary {
+    background: #fff;
+    margin-top: 30px;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    text-align: right;
+}
+
+.cart-summary h2 {
+    margin-bottom: 20px;
+}
+
+#checkout {
+    padding: 14px 25px;
+    border: none;
+    border-radius: 6px;
+    background: #111;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#checkout:hover {
+    opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+    .cart-page {
+        padding: 25px 15px;
+    }
+
+    .cart-page h1 {
+        font-size: 26px;
+    }
+
+    .cart-item {
+        padding: 20px;
+    }
+
+    .cart-summary {
+        text-align: left;
+    }
+
+    #checkout {
+        width: 100%;
+    }
+}
