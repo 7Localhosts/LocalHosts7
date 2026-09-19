@@ -33,22 +33,28 @@ function renderProducts(){
 
   grid.innerHTML = matches.map(product => `
     <article class="product-card">
-      <div class="product-image">
-        ${product.badge ? `<span class="product-badge">${product.badge}</span>` : ""}
-        <div class="placeholder">ADD<br>PRODUCT IMAGE</div>
-        <button
-          class="add-btn"
-          onclick="addToCart(${product.id})"
-          aria-label="Add ${product.name} to cart"
-        >+</button>
-      </div>
+  <a
+    href="products/product.html?id=${product.id}"
+    class="product-link"
+  >
+    <div class="product-image">
+      ${product.badge ? `<span class="product-badge">${product.badge}</span>` : ""}
+      <div class="placeholder">ADD<br>PRODUCT IMAGE</div>
+    </div>
 
-      <div class="product-info">
-        <small>${product.category}</small>
-        <h3>${product.name}</h3>
-        <strong>${money(product.price)}</strong>
-      </div>
-    </article>
+    <div class="product-info">
+      <small>${product.category}</small>
+      <h3>${product.name}</h3>
+      <strong>${money(product.price)}</strong>
+    </div>
+  </a>
+
+  <button
+    class="add-btn"
+    onclick="addToCart(${product.id})"
+    aria-label="Add ${product.name} to cart"
+  >+</button>
+</article>
   `).join("");
 
   $("emptyState").style.display = matches.length ? "none" : "block";
