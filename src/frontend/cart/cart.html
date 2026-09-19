@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - Kay's Haven</title>
+
+    <title>Your Cart - Kay's Haven</title>
+
     <link rel="stylesheet" href="cart.css">
 </head>
 
@@ -11,17 +14,108 @@
 
     <main class="cart-page">
 
-        <h1>Shopping Cart</h1>
+        <header class="cart-header">
 
-        <div id="cart-items"></div>
-<div class="cart-summary">
-            <h2>Total: <span id="cart-total">GH₵0.00</span></h2>
-            <button id="checkout">Proceed to Checkout</button>
-        </div>
+            <a href="../index.html" class="back-link">
+                ← Continue Shopping
+            </a>
+
+            <div class="cart-title">
+
+                <p class="eyebrow">
+                    KAY'S HAVEN
+                </p>
+
+                <h1>
+                    Your Cart
+                </h1>
+
+                <p>
+                    Review your items before checkout.
+                </p>
+
+            </div>
+
+        </header>
+
+
+        <section class="cart-layout">
+
+            <div class="cart-section">
+
+                <div class="section-heading">
+                    <h2>Your Items</h2>
+                </div>
+
+                <div id="cart-items"></div>
+
+            </div>
+
+
+            <aside class="cart-summary">
+
+                <div class="summary-card">
+
+                    <h2>
+                        Order Summary
+                    </h2>
+
+                    <div class="summary-row">
+
+                        <span>
+                            Subtotal
+                        </span>
+
+                        <span id="cart-total">
+                            GH₵0.00
+                        </span>
+
+                    </div>
+
+                    <div class="summary-row">
+
+                        <span>
+                            Delivery
+                        </span>
+
+                        <span>
+                            Calculated at checkout
+                        </span>
+
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="summary-total">
+
+                        <span>
+                            Total
+                        </span>
+
+                        <span id="summary-total">
+                            GH₵0.00
+                        </span>
+
+                    </div>
+
+                    <button
+                        class="checkout-button"
+                        id="checkout-button"
+                    >
+                        Proceed to Checkout
+                    </button>
+
+                </div>
+
+            </aside>
+
+        </section>
 
     </main>
+
 
     <script src="cart.js"></script>
 
 </body>
+
 </html>

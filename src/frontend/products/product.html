@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Product Details - Kay's Haven</title>
+
     <link rel="stylesheet" href="product.css">
 </head>
 
@@ -11,37 +14,124 @@
 
     <main class="product-page">
 
+        <!-- BACK TO SHOP -->
+
+        <a href="../index.html" class="back-link">
+            ← Back to shop
+        </a>
+
+        <!-- PRODUCT DETAILS -->
+
         <section class="product-details">
 
+            <!-- PRODUCT IMAGE -->
+
             <div class="product-image">
-                <img id="product-image" src="" alt="Product image">
+
+                <img
+                    id="product-image"
+                    src=""
+                    alt="Product image"
+                >
+
             </div>
 
-            <div class="product-info">
-                <h1 id="product-name">Product Name</h1>
+            <!-- PRODUCT INFORMATION -->
 
-                <p id="product-price">GH₵0.00</p>
+            <div class="product-info">
+
+                <p class="product-category">
+                    KAY'S HAVEN
+                </p>
+
+                <h1 id="product-name">
+                    Product Name
+                </h1>
+
+                <p id="product-price">
+                    GH₵0.00
+                </p>
 
                 <p id="product-description">
                     Product description goes here.
                 </p>
 
+                <!-- SIZE -->
+
                 <div class="product-variant">
-                    <label for="product-size">Size:</label>
+
+                    <label for="product-size">
+                        Size
+                    </label>
+
                     <select id="product-size">
-                        <option value="S">Small</option>
-                        <option value="M">Medium</option>
-                        <option value="L">Large</option>
-                        <option value="XL">XL</option>
+
+                        <option value="S">
+                            Small
+                        </option>
+
+                        <option value="M">
+                            Medium
+                        </option>
+
+                        <option value="L">
+                            Large
+                        </option>
+
+                        <option value="XL">
+                            XL
+                        </option>
+
                     </select>
+
                 </div>
+
+                <!-- QUANTITY -->
 
                 <div class="quantity">
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" id="quantity" value="1" min="1">
+
+                    <label>
+                        Quantity
+                    </label>
+
+                    <div class="quantity-control">
+
+                        <button
+                            type="button"
+                            id="decrease-quantity"
+                            aria-label="Decrease quantity"
+                        >
+                            −
+                        </button>
+
+                        <input
+                            type="number"
+                            id="quantity"
+                            value="1"
+                            min="1"
+                            aria-label="Quantity"
+                        >
+
+                        <button
+                            type="button"
+                            id="increase-quantity"
+                            aria-label="Increase quantity"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <button id="add-to-cart">Add to Cart</button>
+                <!-- ADD TO CART -->
+
+                <button
+                    type="button"
+                    id="add-to-cart"
+                >
+                    Add to Cart
+                </button>
 
             </div>
 
@@ -49,7 +139,11 @@
 
     </main>
 
+    <!-- JAVASCRIPT -->
+
+    <script src="products.js"></script>
     <script src="product.js"></script>
 
 </body>
+
 </html>
