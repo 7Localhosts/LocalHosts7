@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkout | Mothercare</title>
+<link rel="stylesheet" href="checkout.css" />
+</head>
+<body>
+
+<div class="page-title">
+  <h1>Checkout</h1>
+  <p>Review your order and enter your details to complete your purchase.</p>
+</div>
+
+<div id="checkout-view" class="checkout-grid">
+  <!-- LEFT: Customer + Delivery + Payment -->
+  <div>
+    <form id="checkout-form" novalidate>
+      <div class="panel">
+        <h2><span class="step-num">1</span> Customer information</h2>
+        <div class="field-row">
+          <div>
+            <label for="fullName">Full name</label>
+            <input type="text" id="fullName" name="fullName" required />
+            <div class="error-text" data-error-for="fullName">Please enter your full name.</div>
+          </div>
+          <div>
+            <label for="phone">Phone number</label>
+            <input type="tel" id="phone" name="phone" placeholder="e.g. 024 123 4567" required />
+            <div class="error-text" data-error-for="phone">Please enter a valid phone number.</div>
+          </div>
+        </div>
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" required />
+        <div class="error-text" data-error-for="email">Please enter a valid email address.</div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="step-num">2</span> Delivery address</h2>
+        <label for="address">Street address</label>
+        <input type="text" id="address" name="address" required />
+        <div class="error-text" data-error-for="address">Please enter your delivery address.</div>
+
+        <div class="field-row">
+          <div>
+            <label for="city">City / Town</label>
+            <input type="text" id="city" name="city" required />
+            <div class="error-text" data-error-for="city">Please enter your city or town.</div>
+          </div>
+          <div>
+            <label for="region">Region</label>
+            <input type="text" id="region" name="region" required />
+            <div class="error-text" data-error-for="region">Please enter your region.</div>
+          </div>
+        </div>
+
+        <label for="notes">Delivery notes (optional)</label>
+        <textarea id="notes" name="notes" rows="2" placeholder="e.g. landmark, preferred delivery time"></textarea>
+      </div>
+
+      <div class="panel">
+        <h2><span class="step-num">3</span> Payment method</h2>
+        <div class="payment-options">
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="mobile_money" required />
+            <div>
+              <div class="label">Mobile Money</div>
+              <div class="sub">Pay with MTN, Telecel or AirtelTigo Money</div>
+            </div>
+          </label>
+          <div class="momo-fields" data-fields-for="mobile_money">
+            <label for="momoNumber">Mobile Money number</label>
+            <input type="tel" id="momoNumber" name="momoNumber" placeholder="e.g. 024 123 4567" />
+          </div>
+
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="bank_transfer" required />
+            <div>
+              <div class="label">Bank Transfer</div>
+              <div class="sub">You'll receive account details after placing the order</div>
+            </div>
+          </label>
+
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="card" required />
+            <div>
+              <div class="label">Debit / Credit Card</div>
+              <div class="sub">Visa, Mastercard</div>
+            </div>
+          </label>
+          <div class="card-fields" data-fields-for="card">
+            <label for="cardNumber">Card number</label>
+            <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" />
+            <div class="field-row">
+              <div>
+                <label for="cardExpiry">Expiry date</label>
+                <input type="text" id="cardExpiry" name="cardExpiry" placeholder="MM/YY" />
+              </div>
+              <div>
+                <label for="cardCvc">CVC</label>
+                <input type="text" id="cardCvc" name="cardCvc" placeholder="123" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="error-text" data-error-for="paymentMethod">Please choose a payment method.</div>
+      </div>
+    </form>
+  </div>
+
+  <!-- RIGHT: Order summary -->
+  <div class="sticky-summary">
+    <div class="panel">
+      <h2>Order summary</h2>
+      <div class="order-items" id="order-items"><!-- populated by JS --></div>
+      <div class="summary-line"><span>Subtotal</span><span id="summary-subtotal">GH₵0.00</span></div>
+      <div class="summary-line"><span>Delivery</span><span id="summary-delivery">GH₵0.00</span></div>
+      <div class="summary-line total"><span>Total</span><span id="summary-total">GH₵0.00</span></div>
+      <button type="submit" form="checkout-form" class="place-order-btn" id="place-order-btn">Place order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order confirmation -->
+<div id="confirmation-view">
+  <div class="check-badge">✓</div>
+  <h2>Order confirmed</h2>
+  <p>Thank you, <span id="conf-name"></span>. We've received your order.</p>
+  <p>A confirmation has been sent to <span id="conf-email"></span>.</p>
+  <div class="order-id" id="conf-order-id"></div>
+</div>
+<script src="checkout.js"></script>
+</body>
+</html>
