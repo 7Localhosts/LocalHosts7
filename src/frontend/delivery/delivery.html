@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delivery Information | Kay's Haven</title>
+  <meta name="description" content="Kay's Haven delivery zones, fees, estimated times, and pickup locations across Accra and Ghana." />
+  <link rel="stylesheet" href="delivery.css" />
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────── -->
+<header class="top-bar">
+  <a href="../index.html" class="logo">Kay's <span>Haven</span></a>
+  <a href="../index.html" class="back-link">← Back to shop</a>
+</header>
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<section class="delivery-hero">
+  <p class="eyebrow">FAST &amp; RELIABLE</p>
+  <h1>Delivery Information</h1>
+  <p class="sub">We deliver across Ghana. Find your zone, check the fee, and track your order.</p>
+</section>
+
+<!-- ── Content ──────────────────────────────────────── -->
+<main class="delivery-content" id="delivery-content">
+
+  <p class="loading" id="loading-msg">Loading delivery information…</p>
+
+  <!-- Delivery zones -->
+  <section class="panel">
+    <h2>📦 Delivery zones &amp; fees</h2>
+    <div id="zones-grid"></div>
+  </section>
+
+  <!-- Free pickup -->
+  <section class="panel">
+    <h2>🏪 Free pickup locations</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">
+      Collect your order for free at any of our branches. Orders are usually ready within 2–4 hours.
+    </p>
+    <div id="pickups-grid"></div>
+    <div class="cta-row" style="margin-top:20px;">
+      <a href="https://wa.me/233595237037?text=Hi%20Kay%27s%20Haven%2C%20I%20want%20to%20arrange%20a%20pickup."
+         target="_blank" rel="noopener" class="cta-wa">
+        💬 Arrange pickup on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- Notes -->
+  <section class="panel">
+    <h2>ℹ️ Good to know</h2>
+    <ul class="notes-list" id="notes-list"></ul>
+  </section>
+
+</main>
+
+<script src="delivery.js"></script>
+</body>
+</html>

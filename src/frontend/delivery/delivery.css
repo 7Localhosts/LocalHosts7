@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════
+   delivery.css — Kay's Haven Delivery Information Page
+═══════════════════════════════════════════════════════ */
+
+:root {
+  --bg:     #f8f6fb;
+  --panel:  #ffffff;
+  --soft:   #efe9f7;
+  --pink:   #ded0f0;
+  --rose:   #7e57a3;
+  --peach:  #9b6bc4;
+  --sage:   #e6def4;
+  --text:   #241b30;
+  --muted:  #6c5f7c;
+  --line:   #ddd0ee;
+  --shadow: 0 20px 45px rgba(60, 30, 90, 0.12);
+  --radius: 26px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ── Top bar ─────────────────────────────────────────── */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 32px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.logo {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text); text-decoration: none;
+}
+.logo span { color: var(--rose); }
+.back-link  { font-size: 13px; color: var(--rose); text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+
+/* ── Hero ────────────────────────────────────────────── */
+.delivery-hero {
+  background: linear-gradient(135deg, #5b3a80 0%, var(--peach) 100%);
+  color: #fff;
+  padding: 56px 24px;
+  text-align: center;
+}
+.delivery-hero p.eyebrow {
+  font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; opacity: 0.8; margin-bottom: 10px;
+}
+.delivery-hero h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 40px; font-weight: 700; margin-bottom: 10px;
+}
+.delivery-hero p.sub {
+  font-size: 14px; opacity: 0.85;
+  max-width: 440px; margin: 0 auto; line-height: 1.6;
+}
+
+/* ── Content ─────────────────────────────────────────── */
+.delivery-content {
+  max-width: 900px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+}
+
+/* ── Panel ───────────────────────────────────────────── */
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+/* ── Zone cards ──────────────────────────────────────── */
+#zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.zone-card {
+  background: var(--soft);
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+}
+.zone-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+.zone-fee {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--rose);
+  margin-bottom: 4px;
+}
+.zone-eta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.zone-areas {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── Pickup locations ────────────────────────────────── */
+#pickups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.pickup-card {
+  background: var(--soft);
+  border-radius: 16px;
+  padding: 20px;
+}
+.pickup-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.pickup-card p  { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+.pickup-card a  { font-size: 12px; color: var(--rose); text-decoration: none; }
+.pickup-card a:hover { text-decoration: underline; }
+
+/* ── Notes list ──────────────────────────────────────── */
+.notes-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.notes-list li {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 14px; color: var(--muted); line-height: 1.6;
+}
+.notes-list li::before {
+  content: "✓";
+  color: var(--rose);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── CTA ─────────────────────────────────────────────── */
+.cta-row {
+  text-align: center;
+  margin-top: 10px;
+}
+.cta-wa {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 14px;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+.cta-wa:hover { filter: brightness(1.1); }
+
+/* ── Loading ─────────────────────────────────────────── */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
