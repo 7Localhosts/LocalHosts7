@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us | Kay's Haven</title>
+  <meta name="description" content="Get in touch with Kay's Haven. Message us on WhatsApp, call us, or send an email. We're here to help!" />
+  <link rel="stylesheet" href="contact.css" />
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────── -->
+<header class="top-bar">
+  <a href="../index.html" class="logo">Kay's <span>Haven</span></a>
+  <a href="../index.html" class="back-link">← Back to shop</a>
+</header>
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<section class="contact-hero">
+  <p class="eyebrow">WE'D LOVE TO HEAR FROM YOU</p>
+  <h1>Contact Us</h1>
+  <p class="sub">Have a question about an order, product, or delivery? Reach out — we typically reply within a few hours.</p>
+</section>
+
+<!-- ── Main content ─────────────────────────────────── -->
+<main class="contact-wrap">
+
+  <!-- Left: Quick contact options -->
+  <aside>
+    <div class="panel">
+      <h2>Quick contact</h2>
+      <div class="contact-cards">
+
+        <a id="wa-link"
+           href="https://wa.me/233595237037"
+           target="_blank" rel="noopener noreferrer"
+           class="contact-card"
+           aria-label="Chat on WhatsApp">
+          <div class="contact-card-icon icon-wa">💬</div>
+          <div class="contact-card-text">
+            <div class="label">WhatsApp</div>
+            <div class="value">+233 595 237 037 — tap to chat</div>
+          </div>
+        </a>
+
+        <a id="phone-link"
+           href="tel:+233540987398"
+           class="contact-card"
+           aria-label="Call us">
+          <div class="contact-card-icon icon-phone">📞</div>
+          <div class="contact-card-text">
+            <div class="label">Phone</div>
+            <div class="value">+233 540 987 398 — tap to call</div>
+          </div>
+        </a>
+
+        <a id="email-link"
+           href="mailto:Kayshaven.gh@gmail.com"
+           class="contact-card"
+           aria-label="Send us an email">
+          <div class="contact-card-icon icon-email">✉️</div>
+          <div class="contact-card-text">
+            <div class="label">Email</div>
+            <div class="value">Kayshaven.gh@gmail.com</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hours-card">
+        <h3>🕐 Business hours</h3>
+        <p>
+          Monday – Saturday: 9 AM – 6 PM<br>
+          Sunday: WhatsApp / urgent enquiries only<br>
+          Public Holidays: Limited availability
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hours-card">
+        <h3>📍 Our locations</h3>
+        <p>
+          Dzorwulu, Accra<br>
+          Achimota, Accra<br>
+          <br>
+          Nationwide delivery available.
+        </p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right: Contact form -->
+  <section>
+    <div class="panel">
+      <h2>Send us a message</h2>
+
+      <form id="contact-form" novalidate>
+
+        <div class="field-row">
+          <label class="field" for="name">
+            <span>Full name *</span>
+            <input type="text" id="name" name="name" placeholder="Your name" required />
+          </label>
+          <label class="field" for="phone">
+            <span>Phone (optional)</span>
+            <input type="tel" id="phone" name="phone" placeholder="024 123 4567" />
+          </label>
+        </div>
+        <div id="err-name" class="error-text">Please enter your name.</div>
+
+        <label class="field" for="email">
+          <span>Email address *</span>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required />
+        </label>
+        <div id="err-email" class="error-text">Please enter a valid email address.</div>
+
+        <label class="field" for="subject">
+          <span>Subject</span>
+          <select id="subject" name="subject">
+            <option value="Order enquiry">Order enquiry</option>
+            <option value="Delivery question">Delivery question</option>
+            <option value="Product question">Product question</option>
+            <option value="Returns & refunds">Returns &amp; refunds</option>
+            <option value="General feedback">General feedback</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+
+        <label class="field" for="message">
+          <span>Message *</span>
+          <textarea id="message" name="message" placeholder="Tell us how we can help…" required></textarea>
+        </label>
+        <div id="err-message"      class="error-text">Please enter your message.</div>
+        <div id="err-message-long" class="error-text">Message must be 2000 characters or fewer.</div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Send message</button>
+
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Toast ─────────────────────────────────────────── -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<script src="contact.js"></script>
+</body>
+</html>
