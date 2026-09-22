@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reviews | Kay's Haven</title>
+  <meta name="description" content="Read and share reviews for Kay's Haven products. Honest ratings from our community of parents." />
+  <link rel="stylesheet" href="reviews.css" />
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────── -->
+<header class="top-bar">
+  <a href="../index.html" class="logo">Kay's <span>Haven</span></a>
+  <a href="../index.html" class="back-link">← Back to shop</a>
+</header>
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<section class="reviews-hero">
+  <p class="eyebrow">COMMUNITY FEEDBACK</p>
+  <h1>Customer Reviews</h1>
+  <p class="sub">Honest reviews from parents just like you. Share your experience to help the Kay's Haven community.</p>
+</section>
+
+<!-- ── Main content ─────────────────────────────────── -->
+<main class="reviews-wrap">
+
+  <!-- Left: average + submit form -->
+  <aside>
+
+    <!-- Average rating summary -->
+    <div class="panel">
+      <h2>Overall rating</h2>
+      <div class="avg-block">
+        <div class="avg-number" id="avg-number">—</div>
+        <div class="avg-stars"  id="avg-stars">☆☆☆☆☆</div>
+        <div class="avg-count"  id="avg-count">0 reviews</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;"
+         id="product-label"></p>
+    </div>
+
+    <!-- Submit a review -->
+    <div class="panel">
+      <h2>Write a review</h2>
+
+      <form id="review-form" novalidate>
+
+        <label class="field" for="reviewer-name">
+          <span>Your name *</span>
+          <input type="text" id="reviewer-name" name="name" placeholder="e.g. Ama K." required />
+        </label>
+        <div id="err-name" class="error-text">Please enter your name.</div>
+
+        <!-- Interactive star rating -->
+        <label class="field">
+          <span>Rating *</span>
+          <!-- Reverse order trick: CSS selectors highlight hovered star and all to its left -->
+          <div class="star-input" id="star-input" role="radiogroup" aria-label="Star rating">
+            <input type="radio" id="s5" name="rating" value="5" /><label for="s5" title="5 stars">★</label>
+            <input type="radio" id="s4" name="rating" value="4" /><label for="s4" title="4 stars">★</label>
+            <input type="radio" id="s3" name="rating" value="3" /><label for="s3" title="3 stars">★</label>
+            <input type="radio" id="s2" name="rating" value="2" /><label for="s2" title="2 stars">★</label>
+            <input type="radio" id="s1" name="rating" value="1" /><label for="s1" title="1 star">★</label>
+          </div>
+        </label>
+        <div id="err-rating" class="error-text">Please choose a star rating.</div>
+
+        <label class="field" for="review-comment">
+          <span>Review *</span>
+          <textarea id="review-comment" name="comment"
+                    placeholder="Tell others what you think about this product…"
+                    maxlength="1000" required></textarea>
+        </label>
+        <div class="char-count" id="char-count">0 / 1000</div>
+        <div id="err-comment"      class="error-text">Please write a review.</div>
+        <div id="err-comment-long" class="error-text">Review must be 1000 characters or fewer.</div>
+
+        <button type="submit" class="submit-btn" id="review-submit-btn">Post review</button>
+
+      </form>
+    </div>
+
+  </aside>
+
+  <!-- Right: reviews list -->
+  <section>
+    <div class="panel">
+      <h2>All reviews</h2>
+      <div id="reviews-list">
+        <div class="empty-state">Loading reviews…</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Toast ─────────────────────────────────────────── -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<script src="reviews.js"></script>
+</body>
+</html>
