@@ -34,13 +34,17 @@
       subtotal += lineTotal;
       const row = document.createElement('div');
       row.className = 'order-item';
-      row.innerHTML = `
-        <div>
-          <div class="name">${item.name}</div>
-          <div class="qty">Qty: ${item.quantity}</div>
-        </div>
-        <div>${money(lineTotal)}</div>
-      `;
+      const details = document.createElement('div');
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = item.name;
+      const qty = document.createElement('div');
+      qty.className = 'qty';
+      qty.textContent = `Qty: ${item.quantity}`;
+      details.append(name, qty);
+      const amount = document.createElement('div');
+      amount.textContent = money(lineTotal);
+      row.append(details, amount);
       container.appendChild(row);
     });
 
