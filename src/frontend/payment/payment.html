@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment | Kay's Haven</title>
+  <meta name="description" content="Complete your Kay's Haven order securely with Paystack — Mobile Money, Visa, Mastercard and more." />
+  <link rel="stylesheet" href="payment.css" />
+  <!-- Paystack inline JS — loads the PaystackPop global -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+
+<!-- ── Top bar ─────────────────────────────────────── -->
+<header class="top-bar">
+  <a href="../index.html" class="logo">Kay's <span>Haven</span></a>
+  <span class="secure-badge">
+    <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+    </svg>
+    Secured by Paystack
+  </span>
+</header>
+
+<!-- ── Page title ──────────────────────────────────── -->
+<div class="page-title">
+  <h1>Complete your payment</h1>
+  <p>Review your order, then click "Pay now" to open the secure Paystack payment window.</p>
+</div>
+
+<!-- ── Checkout view (order summary + pay button) ──── -->
+<div id="checkout-view" class="payment-grid">
+
+  <!-- Left: customer info reminder -->
+  <div>
+    <div class="panel">
+      <h2>👤 Paying as</h2>
+      <p id="customer-name" style="font-size:15px;font-weight:600;"></p>
+    </div>
+
+    <div class="panel">
+      <h2>💳 Payment methods</h2>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;">
+        Paystack securely handles your payment. Available channels:
+      </p>
+      <ul style="font-size:13px;color:var(--muted);line-height:2;margin:12px 0 0 16px;">
+        <li>📱 MTN Mobile Money, Telecel Cash, AirtelTigo Money</li>
+        <li>💳 Visa / Mastercard</li>
+        <li>🏦 Bank Transfer</li>
+        <li>📟 USSD</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right: order summary -->
+  <div class="panel" style="position:sticky;top:80px;">
+    <h2>🛍 Order summary</h2>
+    <div id="order-items"></div>
+
+    <div class="summary-line">
+      <span>Subtotal</span>
+      <span id="summary-subtotal">GH₵0.00</span>
+    </div>
+    <div class="summary-line">
+      <span>Delivery</span>
+      <span id="summary-delivery">GH₵15.00</span>
+    </div>
+    <div class="summary-line total">
+      <span>Total</span>
+      <span id="summary-total">GH₵0.00</span>
+    </div>
+
+    <button class="pay-btn" id="pay-btn">Pay now with Paystack</button>
+    <p class="paystack-note">
+      You will be redirected to a secure Paystack popup to complete payment.
+    </p>
+  </div>
+
+</div>
+
+<!-- ── Status screen (shown after payment attempt) ── -->
+<div id="status-screen"></div>
+
+<!-- ── Toast ────────────────────────────────────────── -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<script src="payment.js"></script>
+</body>
+</html>
