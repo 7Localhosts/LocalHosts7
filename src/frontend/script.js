@@ -1,17 +1,23 @@
-const products = [
-  {id:1,name:"Baby Cotton Bodysuit",category:"Baby",price:85,badge:"NEW"},
-  {id:2,name:"Newborn Essentials Set",category:"Baby",price:180,badge:"POPULAR"},
-  {id:3,name:"Toddler Outfit Set",category:"Toddler",price:145,badge:""},
-  {id:4,name:"Kids Casual Dress",category:"Kids",price:160,badge:""},
-  {id:5,name:"Kids Sneakers",category:"Kids",price:220,badge:"BESTSELLER"},
-  {id:6,name:"Teen Backpack",category:"Teens",price:250,badge:""},
-  {id:7,name:"Plush Teddy Bear",category:"Toys",price:95,badge:""},
-  {id:8,name:"Hair Accessories Set",category:"Accessories",price:55,badge:""},
-  {id:9,name:"School Backpack",category:"Back to School",price:220,badge:"BACK TO SCHOOL"},
-  {id:10,name:"Lunch Bag",category:"Back to School",price:90,badge:""},
-  {id:11,name:"Stationery Set",category:"Back to School",price:75,badge:""},
-  {id:12,name:"Clearance Kids Top",category:"Clearance",price:45,badge:"SALE"}
-];
+let products = [];
+
+async function loadProducts() {
+  try {
+    const response = await fetch("http://localhost:8000/api/products");
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    products = data.products || [];
+
+    renderProducts();
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    toast("Could not load products");
+  }
+}
 
 let cart = JSON.parse(localStorage.getItem("kayshaven-cart") || "[]");
 let currentFilter = "All";
@@ -298,5 +304,5 @@ $("newsletterForm").onsubmit = event => {
    START PAGE
 ========================= */
 
-renderProducts();
+loadProducts();
 renderCart();
