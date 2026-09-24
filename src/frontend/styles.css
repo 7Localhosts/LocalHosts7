@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap");
 
 :root {
-  --ink: #27282a;
+  --ink: #000000;
   --muted: #b078d3;
   --cream: #ffffff;
   --paper: #ffffff;
@@ -10,7 +10,7 @@
   --sage-dark: #7a13aa;
   --rose: #b078d3;
   --sale: #7a13aa;
-  --shadow: 0 20px 60px rgba(39, 40, 42, 0.10);
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.10);
 }
 
 * {
@@ -49,14 +49,22 @@ a {
   margin: auto;
 }
 
+/* =========================
+   ANNOUNCEMENT
+========================= */
+
 .announcement {
   padding: 9px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
   font-size: 12px;
   text-align: center;
   letter-spacing: 0.04em;
 }
+
+/* =========================
+   HEADER
+========================= */
 
 .site-header {
   position: sticky;
@@ -120,7 +128,7 @@ a {
   border: 0;
   border-radius: 30px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
   font-size: 13px;
 }
 
@@ -131,7 +139,7 @@ a {
   height: 19px;
   margin-left: 5px;
   border-radius: 50%;
-  color: var(--ink);
+  color: #000000;
   background: #ffffff;
   font-size: 11px;
 }
@@ -153,6 +161,10 @@ a {
 .mobile-nav a:hover {
   color: var(--sage-dark);
 }
+
+/* =========================
+   SEARCH
+========================= */
 
 .search-panel {
   display: none;
@@ -179,8 +191,12 @@ a {
   border: 0;
   border-radius: 8px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
 }
+
+/* =========================
+   HERO
+========================= */
 
 .hero {
   overflow: hidden;
@@ -241,7 +257,7 @@ a {
 
 .btn-primary {
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
 }
 
 .btn-primary:hover {
@@ -249,7 +265,7 @@ a {
 }
 
 .btn-ghost {
-  border: 1px solid var(--ink);
+  border: 1px solid #000000;
   background: transparent;
 }
 
@@ -260,6 +276,10 @@ a {
   color: var(--muted);
   font-size: 11px;
 }
+
+/* =========================
+   HERO ART
+========================= */
 
 .hero-art {
   position: relative;
@@ -304,7 +324,7 @@ a {
   z-index: 2;
   padding: 7px 10px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
   font-size: 9px;
   letter-spacing: 0.12em;
 }
@@ -313,7 +333,7 @@ a {
   display: grid;
   place-items: center;
   height: 330px;
-  color: var(--ink);
+  color: #000000;
   background: linear-gradient(135deg, #ffffff, #b078d3);
   font-size: 12px;
   font-weight: 700;
@@ -331,6 +351,10 @@ a {
 .hero-card-copy span {
   color: var(--sage-dark);
 }
+
+/* =========================
+   CATEGORIES
+========================= */
 
 .category-strip {
   padding: 80px 0;
@@ -409,6 +433,10 @@ a {
   color: var(--sale);
 }
 
+/* =========================
+   PRODUCTS
+========================= */
+
 .products-section {
   padding: 90px 0;
 }
@@ -430,9 +458,9 @@ a {
 
 .filter.active,
 .filter:hover {
-  border-color: var(--ink);
+  border-color: #000000;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
 }
 
 .product-grid {
@@ -458,7 +486,7 @@ a {
   place-items: center;
   height: 100%;
   padding: 30px;
-  color: var(--ink);
+  color: #000000;
   background: linear-gradient(145deg, #ffffff, #b078d3);
   font-size: 11px;
   font-weight: 700;
@@ -485,7 +513,7 @@ a {
   border: 0;
   border-radius: 50%;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
   font-size: 21px;
 }
 
@@ -514,9 +542,14 @@ a {
   text-align: center;
 }
 
+/* =========================
+   WHY CHOOSE KAY'S HAVEN
+========================= */
+
 .feature-band {
   padding: 90px 0;
-  background: var(--sage);
+  background: #7a13aa;
+  color: #ffffff;
 }
 
 .feature-grid {
@@ -525,14 +558,23 @@ a {
   gap: 80px;
 }
 
-.feature-grid h2 {
-  max-width: 520px;
-  font-size: 52px;
+/* EVERYTHING INSIDE THIS PURPLE SECTION IS WHITE */
+
+.feature-band,
+.feature-band *,
+.feature-band h2,
+.feature-band .feature-intro,
+.feature-band .feature-items,
+.feature-band .feature-items span,
+.feature-band .feature-items strong,
+.feature-band .feature-items p,
+.feature-band .feature-items small,
+.feature-band .feature-items a {
+  color: #ffffff !important;
 }
 
 .feature-intro {
   max-width: 500px;
-  color: var(--ink);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -547,7 +589,7 @@ a {
   grid-template-columns: 50px 1fr;
   gap: 15px;
   padding: 22px 0;
-  border-bottom: 1px solid rgba(39, 40, 42, 0.16);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .feature-items span {
@@ -561,10 +603,13 @@ a {
 
 .feature-items p {
   margin: 6px 0 0;
-  color: var(--ink);
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* =========================
+   NEWSLETTER
+========================= */
 
 .newsletter {
   padding: 90px 0;
@@ -603,10 +648,14 @@ a {
   outline: none;
 }
 
+/* =========================
+   FOOTER
+========================= */
+
 footer {
   padding: 70px 0 25px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
 }
 
 .footer-grid {
@@ -667,6 +716,10 @@ footer {
   font-size: 10px;
 }
 
+/* =========================
+   CART DRAWER
+========================= */
+
 .cart-drawer {
   position: fixed;
   top: 0;
@@ -677,7 +730,7 @@ footer {
   width: min(420px, 100%);
   height: 100vh;
   background: #ffffff;
-  box-shadow: -20px 0 50px rgba(39, 40, 42, 0.14);
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.14);
   transition: 0.3s;
 }
 
@@ -725,7 +778,7 @@ footer {
   place-items: center;
   width: 70px;
   height: 75px;
-  color: var(--ink);
+  color: #000000;
   background: linear-gradient(145deg, #ffffff, #b078d3);
   font-size: 8px;
   text-align: center;
@@ -791,12 +844,16 @@ footer {
   text-align: center;
 }
 
+/* =========================
+   OVERLAY / MODAL
+========================= */
+
 .overlay {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(39, 40, 42, 0.42);
+  background: rgba(0, 0, 0, 0.42);
 }
 
 .overlay.show {
@@ -810,7 +867,7 @@ footer {
   z-index: 70;
   place-items: center;
   padding: 20px;
-  background: rgba(39, 40, 42, 0.5);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .modal.show {
@@ -837,6 +894,10 @@ footer {
   font-family: "Playfair Display";
   font-size: 36px;
 }
+
+/* =========================
+   FORM
+========================= */
 
 .form-grid {
   display: grid;
@@ -880,6 +941,10 @@ footer {
   border-bottom: 1px solid var(--line);
 }
 
+/* =========================
+   TOAST
+========================= */
+
 .toast {
   position: fixed;
   left: 50%;
@@ -888,7 +953,7 @@ footer {
   padding: 12px 18px;
   border-radius: 6px;
   color: #ffffff;
-  background: var(--ink);
+  background: #000000;
   font-size: 12px;
   opacity: 0;
   pointer-events: none;
@@ -900,6 +965,10 @@ footer {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* =========================
+   TABLET
+========================= */
 
 @media (max-width: 1050px) {
   .category-grid {
@@ -914,6 +983,10 @@ footer {
     max-width: 600px;
   }
 }
+
+/* =========================
+   MOBILE / TABLET
+========================= */
 
 @media (max-width: 900px) {
   .desktop-nav {
@@ -952,6 +1025,10 @@ footer {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* =========================
+   SMALL MOBILE
+========================= */
 
 @media (max-width: 600px) {
   .container {
