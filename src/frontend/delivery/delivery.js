@@ -3,13 +3,15 @@
  *
  * Fetches delivery config from GET /api/delivery and renders:
  *   - Delivery zones with fees and estimated times
- *   - Pickup locations with hours and contact
+ *   - Pickup arrangement link for WhatsApp
  *   - General delivery notes
  */
 
 'use strict';
 
-const API_BASE = 'http://localhost:3000'; // update for production
+// Auto-switches: set window.KH_API_BASE before this script (e.g. in a <script> tag)
+// or it falls back to localhost for local dev.
+const API_BASE = window.KH_API_BASE || 'http://localhost:3000';
 
 // ─── Render helpers ───────────────────────────────────────────────────────────
 function renderZones(zones) {
@@ -58,10 +60,9 @@ async function loadDeliveryInfo() {
 
     if (!res.ok) throw new Error(json.error || 'Failed to load delivery info.');
 
-    const { zones, pickupLocations, notes } = json.data;
+    const { zones, notes } = json.data;
 
     renderZones(zones);
-    renderPickups(pickupLocations);
     renderNotes(notes);
 
     // Hide loading indicator

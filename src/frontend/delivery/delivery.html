@@ -6,6 +6,8 @@
   <title>Delivery Information | Kay's Haven</title>
   <meta name="description" content="Kay's Haven delivery zones, fees, estimated times, and pickup locations across Accra and Ghana." />
   <link rel="stylesheet" href="delivery.css" />
+  <!-- API config: change KH_API_BASE to your Railway URL for production -->
+  <script>window.KH_API_BASE = '';</script>
 </head>
 <body>
 
@@ -35,12 +37,8 @@
 
   <!-- Free pickup -->
   <section class="panel">
-    <h2>🏪 Free pickup locations</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">
-      Collect your order for free at any of our branches. Orders are usually ready within 2–4 hours.
-    </p>
-    <div id="pickups-grid"></div>
-    <div class="cta-row" style="margin-top:20px;">
+    <h2>🏪 Arrange a pickup</h2>
+    <div class="cta-row">
       <a href="https://wa.me/233595237037?text=Hi%20Kay%27s%20Haven%2C%20I%20want%20to%20arrange%20a%20pickup."
          target="_blank" rel="noopener" class="cta-wa">
         💬 Arrange pickup on WhatsApp

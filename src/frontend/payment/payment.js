@@ -20,8 +20,9 @@
 'use strict';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-// Update this URL when deploying to production
-const API_BASE = 'http://localhost:3000';
+// Auto-switches: set window.KH_API_BASE before this script (e.g. in a <script> tag)
+// or it falls back to localhost for local dev.
+const API_BASE = window.KH_API_BASE || 'http://localhost:3000';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let pendingOrder = null;

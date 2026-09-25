@@ -12,21 +12,26 @@
  *   - name      : required, non-empty after trimming
  *   - rating    : required integer 1–5
  *   - comment   : required, non-empty, max 1000 characters
+ *
+ * Storage:
+ *   When MongoDB is connected (MONGODB_URI set), reviews are persisted in the
+ *   Review collection. Otherwise falls back to an in-memory array.
  */
 
-const express = require('express');
-const router  = express.Router();
+const express        = require('express');
+const { isConnected } = require('../db');
+const Review          = require('../models/Review');
 
-// ─── In-memory reviews store ──────────────────────────────────────────────────
-// TODO: replace with DB queries (e.g. MongoDB/Mongoose, Sequelize, Prisma)
-//       once the backend-database teammate lands their DB layer.
-const reviews = [];
+const router = express.Router();
+
+// ─── In-memory fallback store ─────────────────────────────────────────────────
+const _memReviews = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/reviews
 // Body: { productId, name, rating (1–5), comment }
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { productId, name, rating, comment } = req.body;
   const errors = [];
 
@@ -51,46 +56,94 @@ router.post('/', (req, res) => {
     return res.status(422).json({ error: 'Validation failed.', details: errors });
   }
 
-  // ── Persist ───────────────────────────────────────────────────────────────
-  const review = {
-    id:        Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    productId: String(productId).trim(),
-    name:      String(name).trim(),
-    rating:    ratingNum,
-    comment:   String(comment).trim(),
-    createdAt: new Date().toISOString(),
-  };
+  try {
+    let review;
 
-  reviews.push(review);
+    if (isConnected()) {
+      // ── Persist to MongoDB ───────────────────────────────────────────────
+      const doc = await Review.create({
+        productId: String(productId).trim(),
+        name:      String(name).trim(),
+        rating:    ratingNum,
+        comment:   String(comment).trim(),
+      });
+      review = {
+        id:        doc._id.toString(),
+        productId: doc.productId,
+        name:      doc.name,
+        rating:    doc.rating,
+        comment:   doc.comment,
+        createdAt: doc.createdAt.toISOString(),
+      };
+    } else {
+      // ── Fallback: in-memory ──────────────────────────────────────────────
+      review = {
+        id:        Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        productId: String(productId).trim(),
+        name:      String(name).trim(),
+        rating:    ratingNum,
+        comment:   String(comment).trim(),
+        createdAt: new Date().toISOString(),
+      };
+      _memReviews.push(review);
+    }
 
-  return res.status(201).json({ status: 'success', data: review });
+    return res.status(201).json({ status: 'success', data: review });
+  } catch (err) {
+    console.error('[Reviews POST]', err);
+    return res.status(500).json({ error: 'Could not save review. Please try again.' });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/reviews/:productId
 // Returns all reviews for the given product + computed average rating.
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/:productId', (req, res) => {
+router.get('/:productId', async (req, res) => {
   const { productId } = req.params;
 
-  const productReviews = reviews
-    .filter(r => r.productId === String(productId).trim())
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // newest first
+  try {
+    let productReviews;
 
-  const count   = productReviews.length;
-  const average = count
-    ? Math.round((productReviews.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10
-    : 0;
+    if (isConnected()) {
+      // ── Query MongoDB ────────────────────────────────────────────────────
+      const docs = await Review.find({ productId: String(productId).trim() })
+        .sort({ createdAt: -1 })  // newest first
+        .lean();
 
-  return res.json({
-    status: 'success',
-    data: {
-      productId,
-      count,
-      average,   // e.g. 4.3
-      reviews: productReviews,
-    },
-  });
+      productReviews = docs.map(d => ({
+        id:        d._id.toString(),
+        productId: d.productId,
+        name:      d.name,
+        rating:    d.rating,
+        comment:   d.comment,
+        createdAt: d.createdAt.toISOString(),
+      }));
+    } else {
+      // ── Fallback: in-memory ──────────────────────────────────────────────
+      productReviews = _memReviews
+        .filter(r => r.productId === String(productId).trim())
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    const count   = productReviews.length;
+    const average = count
+      ? Math.round((productReviews.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10
+      : 0;
+
+    return res.json({
+      status: 'success',
+      data: {
+        productId,
+        count,
+        average,   // e.g. 4.3
+        reviews: productReviews,
+      },
+    });
+  } catch (err) {
+    console.error('[Reviews GET]', err);
+    return res.status(500).json({ error: 'Could not load reviews. Please try again.' });
+  }
 });
 
 module.exports = router;

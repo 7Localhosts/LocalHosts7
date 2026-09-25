@@ -14,8 +14,8 @@
   --muted:  #6c5f7c;
   --line:   #ddd0ee;
   --error:  #c0392b;
-  --shadow: 0 20px 45px rgba(60, 30, 90, 0.12);
-  --radius: 26px;
+  --shadow: 0 16px 38px rgba(60, 30, 90, 0.14);
+  --radius: 18px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +23,10 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(222, 208, 240, 0.55), transparent 30%),
+    radial-gradient(circle at 90% 14%, rgba(230, 222, 244, 0.65), transparent 26%),
+    var(--bg);
   color: var(--text);
   min-height: 100vh;
   padding-bottom: 80px;
@@ -97,6 +100,7 @@ body {
   background: var(--panel);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  border: 1px solid rgba(221, 208, 238, 0.72);
   padding: 32px;
   margin-bottom: 20px;
 }
@@ -118,13 +122,14 @@ body {
   border-radius: 16px;
   text-decoration: none;
   color: var(--text);
-  transition: background 0.15s, transform 0.15s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
   border: 1px solid transparent;
 }
 .contact-card:hover {
   background: var(--pink);
   border-color: var(--line);
   transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(60, 30, 90, 0.1);
 }
 
 .contact-card-icon {
@@ -175,11 +180,12 @@ textarea {
   font-family: inherit;
   color: var(--text);
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--rose);
   background: #fff;
+  box-shadow: 0 0 0 4px rgba(126, 87, 163, 0.1);
 }
 textarea { resize: vertical; min-height: 120px; }
 
@@ -210,9 +216,13 @@ textarea { resize: vertical; min-height: 120px; }
   font-weight: 700;
   cursor: pointer;
   margin-top: 6px;
-  transition: filter 0.15s;
+  transition: filter 0.2s, transform 0.2s, box-shadow 0.2s;
 }
-.submit-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(91, 58, 128, 0.24);
+}
 .submit-btn:disabled             { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Toast ───────────────────────────────────────────── */

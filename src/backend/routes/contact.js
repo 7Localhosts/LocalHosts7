@@ -8,12 +8,15 @@
  *   Body: { name, email, phone?, subject?, message }
  *
  * On success the message is:
- *   1. Logged to the console (always — useful as a fallback)
- *   2. Emailed to CONTACT_EMAIL via Nodemailer (when SMTP vars are set)
+ *   1. Persisted to MongoDB (when connected) as an audit log
+ *   2. Logged to the console (always — useful as a fallback)
+ *   3. Emailed to CONTACT_EMAIL via Nodemailer (when SMTP vars are set)
  */
 
-const express    = require('express');
-const nodemailer = require('nodemailer');
+const express        = require('express');
+const nodemailer     = require('nodemailer');
+const { isConnected } = require('../db');
+const ContactSubmission = require('../models/ContactSubmission');
 
 const router = express.Router();
 
@@ -63,16 +66,25 @@ router.post('/', async (req, res) => {
   }
 
   const submission = {
-    name:      String(name).trim(),
-    email:     String(email).trim(),
-    phone:     String(phone).trim(),
-    subject:   String(subject).trim(),
-    message:   String(message).trim(),
-    createdAt: new Date().toISOString(),
+    name:    String(name).trim(),
+    email:   String(email).trim(),
+    phone:   String(phone).trim(),
+    subject: String(subject).trim(),
+    message: String(message).trim(),
   };
 
+  // ── Persist to MongoDB (audit log) ───────────────────────────────────────
+  if (isConnected()) {
+    try {
+      await ContactSubmission.create(submission);
+    } catch (dbErr) {
+      // Non-fatal — still process the submission
+      console.error('[Contact] DB save failed:', dbErr.message);
+    }
+  }
+
   // ── Log submission (always) ───────────────────────────────────────────────
-  console.log('[Contact form submission]', submission);
+  console.log('[Contact form submission]', { ...submission, createdAt: new Date().toISOString() });
 
   // ── Attempt email delivery ────────────────────────────────────────────────
   const transport = getMailer();
@@ -91,11 +103,11 @@ router.post('/', async (req, res) => {
           `Message:`,
           submission.message,
           ``,
-          `Received: ${submission.createdAt}`,
+          `Received: ${new Date().toISOString()}`,
         ].join('\n'),
       });
     } catch (mailErr) {
-      // Email failure is non-fatal — the message is already logged
+      // Email failure is non-fatal — the message is already logged and saved
       console.error('[Contact] Email delivery failed:', mailErr.message);
     }
   } else {

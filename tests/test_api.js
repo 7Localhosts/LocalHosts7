@@ -69,16 +69,17 @@ async function run() {
 
   // ── Reviews — empty state ──────────────────────────
   console.log('\n▸ Reviews — GET (empty)');
-  const emptyReviews = await req('GET', '/api/reviews/99');
-  assert('GET /api/reviews/99 → 200',   emptyReviews.status === 200);
-  assert('count is 0',                  emptyReviews.body.data?.count === 0);
-  assert('average is 0',                emptyReviews.body.data?.average === 0);
-  assert('reviews is empty array',      Array.isArray(emptyReviews.body.data?.reviews) && emptyReviews.body.data.reviews.length === 0);
+  const testPid = 'smoke_test_' + Date.now();
+  const emptyReviews = await req('GET', `/api/reviews/${testPid}`);
+  assert(`GET /api/reviews/${testPid} → 200`, emptyReviews.status === 200);
+  assert('count is 0',                        emptyReviews.body.data?.count === 0);
+  assert('average is 0',                      emptyReviews.body.data?.average === 0);
+  assert('reviews is empty array',            Array.isArray(emptyReviews.body.data?.reviews) && emptyReviews.body.data.reviews.length === 0);
 
   // ── Reviews — valid submit ─────────────────────────
   console.log('\n▸ Reviews — POST valid');
   const r1 = await req('POST', '/api/reviews', {
-    productId: '1', name: 'Ama K.', rating: 5, comment: 'Beautiful baby wrap! Great quality.'
+    productId: testPid, name: 'Ama K.', rating: 5, comment: 'Beautiful baby wrap! Great quality.'
   });
   assert('POST /api/reviews (rating 5) → 201',  r1.status === 201);
   assert('returned review has correct rating',   r1.body.data?.rating === 5);
@@ -86,13 +87,13 @@ async function run() {
   assert('review has an id',                     !!r1.body.data?.id);
 
   const r2 = await req('POST', '/api/reviews', {
-    productId: '1', name: 'Efua', rating: 3, comment: 'Good product overall, decent stitching.'
+    productId: testPid, name: 'Efua', rating: 3, comment: 'Good product overall, decent stitching.'
   });
   assert('POST /api/reviews (rating 3) → 201',  r2.status === 201);
 
   // ── Reviews — average calculation ─────────────────
   console.log('\n▸ Reviews — average after 2 submissions');
-  const withReviews = await req('GET', '/api/reviews/1');
+  const withReviews = await req('GET', `/api/reviews/${testPid}`);
   assert('count is 2',                    withReviews.body.data?.count === 2);
   assert('average is 4.0',               withReviews.body.data?.average === 4.0);
   assert('reviews sorted newest first',  withReviews.body.data?.reviews?.length === 2);

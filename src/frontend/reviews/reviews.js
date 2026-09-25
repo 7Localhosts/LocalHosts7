@@ -13,7 +13,9 @@
 
 'use strict';
 
-const API_BASE = 'http://localhost:3000'; // update for production
+// Auto-switches: set window.KH_API_BASE before this script (e.g. in a <script> tag)
+// or it falls back to localhost for local dev.
+const API_BASE = window.KH_API_BASE || 'http://localhost:3000';
 
 // ─── Resolve product ID from URL param ────────────────────────────────────────
 const params    = new URLSearchParams(window.location.search);

@@ -164,3 +164,24 @@ body {
 
 /* ── Loading ─────────────────────────────────────────── */
 .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+/* Modern polish */
+body {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(222, 208, 240, 0.55), transparent 30%),
+    radial-gradient(circle at 90% 14%, rgba(230, 222, 244, 0.65), transparent 26%),
+    var(--bg);
+}
+.panel { border: 1px solid rgba(221, 208, 238, 0.72); border-radius: 18px; }
+.zone-card { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+.zone-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--pink);
+  box-shadow: 0 10px 22px rgba(60, 30, 90, 0.1);
+}
+.cta-wa { transition: filter 0.2s, transform 0.2s, box-shadow 0.2s; }
+.cta-wa:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(37, 211, 102, 0.22);
+}

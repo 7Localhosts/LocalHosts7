@@ -11,6 +11,7 @@ require('dotenv').config();
 
 const express        = require('express');
 const cors           = require('cors');
+const { connect }    = require('./db');
 const paymentsRouter = require('./routes/payments');
 const reviewsRouter  = require('./routes/reviews');
 const contactRouter  = require('./routes/contact');
@@ -71,9 +72,12 @@ app.use((err, _req, res, _next) => {
 });
 
 // ─── Start server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅  Kay's Haven API running on http://localhost:${PORT}`);
-  if (!process.env.PAYSTACK_SECRET_KEY) {
-    console.warn('⚠️   PAYSTACK_SECRET_KEY is not set — payment routes will fail.');
-  }
+// Connect to MongoDB first (non-blocking — server starts even if DB is offline)
+connect().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅  Kay's Haven API running on http://localhost:${PORT}`);
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      console.warn('⚠️   PAYSTACK_SECRET_KEY is not set — payment routes will fail.');
+    }
+  });
 });

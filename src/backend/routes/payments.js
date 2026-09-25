@@ -8,20 +8,44 @@
  *   POST /api/payments/verify      → server-side verification after popup closes
  *   POST /api/payments/webhook     → Paystack event webhook (signature-verified)
  *
+ * Storage:
+ *   When MongoDB is connected (MONGODB_URI set), transactions are persisted in the
+ *   Transaction collection. Otherwise falls back to an in-memory Map so the server
+ *   still works during local development without a DB.
+ *
  * NOTE: The webhook route MUST be mounted BEFORE express.json() in server.js
  *       so we receive the raw body buffer needed for HMAC-SHA512 verification.
  */
 
-const crypto  = require('crypto');
-const express = require('express');
-const axios   = require('axios');
+const crypto      = require('crypto');
+const express     = require('express');
+const axios       = require('axios');
+const { isConnected } = require('../db');
+const Transaction = require('../models/Transaction');
 
 const router = express.Router();
 
-// ─── In-memory transaction store ────────────────────────────────────────────
-// TODO: replace with a real database (MongoDB/MySQL/Postgres) once the
-//       backend-database teammate sets up the DB layer.
-const transactions = new Map();
+// ─── In-memory fallback store ─────────────────────────────────────────────────
+// Used when MONGODB_URI is not set (local dev without a DB).
+const _memTransactions = new Map();
+
+// ─── Storage helpers (DB ↔ memory) ───────────────────────────────────────────
+async function txGet(reference) {
+  if (isConnected()) return Transaction.findOne({ reference });
+  return _memTransactions.get(reference) || null;
+}
+
+async function txSet(reference, data) {
+  if (isConnected()) {
+    return Transaction.findOneAndUpdate(
+      { reference },
+      { $set: data },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
+  const existing = _memTransactions.get(reference) || {};
+  _memTransactions.set(reference, { ...existing, ...data });
+}
 
 // ─── Helper: call Paystack REST API ──────────────────────────────────────────
 const paystack = axios.create({
@@ -73,8 +97,8 @@ router.post('/initialize', async (req, res) => {
       },
     });
 
-    // ── Persist pending transaction locally ────────────────────────────────
-    transactions.set(reference, {
+    // ── Persist transaction ────────────────────────────────────────────────
+    await txSet(reference, {
       reference,
       orderId,
       email,
@@ -83,7 +107,6 @@ router.post('/initialize', async (req, res) => {
       channel: null,
       paystackReference: null,
       paidAt: null,
-      createdAt: new Date().toISOString(),
     });
 
     return res.json({
@@ -125,18 +148,13 @@ router.post('/verify', async (req, res) => {
     // Possible statuses: 'success', 'failed', 'abandoned', 'pending'
     const status = tx.status;
 
-    // ── Update local record ────────────────────────────────────────────────
-    if (transactions.has(reference)) {
-      const local = transactions.get(reference);
-      Object.assign(local, {
-        status,
-        channel:            tx.channel,
-        paystackReference:  tx.reference,
-        paidAt:             tx.paid_at,
-        updatedAt:          new Date().toISOString(),
-      });
-      transactions.set(reference, local);
-    }
+    // ── Update stored record ────────────────────────────────────────────────
+    await txSet(reference, {
+      status,
+      channel:           tx.channel,
+      paystackReference: tx.reference,
+      paidAt:            tx.paid_at,
+    });
 
     return res.json({
       status: 'success',
@@ -203,17 +221,12 @@ router.post('/webhook', (req, res) => {
     case 'charge.success': {
       const { reference, status, channel, paid_at, metadata } = event.data;
 
-      if (transactions.has(reference)) {
-        const local = transactions.get(reference);
-        Object.assign(local, {
-          status:    status,
-          channel:   channel,
-          paidAt:    paid_at,
-          webhookConfirmed: true,
-          updatedAt: new Date().toISOString(),
-        });
-        transactions.set(reference, local);
-      }
+      txSet(reference, {
+        status,
+        channel,
+        paidAt:           paid_at,
+        webhookConfirmed: true,
+      }).catch(err => console.error('[Webhook] txSet failed:', err.message));
 
       console.log(`[Webhook] charge.success — ref: ${reference}, order: ${metadata?.orderId}`);
       break;
