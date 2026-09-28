@@ -1,22 +1,22 @@
 const DELIVERY_FEE = 15.00;
 
+const API_URL = "http://localhost:8000/api/orders";
 
-// ========================================
-// GET REAL CART
-// ========================================
+
+/* =========================
+   CART
+========================= */
 
 function getCartItems() {
   const stored = localStorage.getItem("kayshaven-cart");
 
-  if (!stored) {
-    return [];
-  }
+  if (!stored) return [];
 
   try {
     const cart = JSON.parse(stored);
 
     return cart.map(item => ({
-      id: item.id,
+      id: Number(item.id),
       name: item.name,
       price: Number(item.price),
       qty: Number(item.qty)
@@ -32,20 +32,21 @@ function getCartItems() {
 let cartItems = getCartItems();
 
 
-// ========================================
-// MONEY FORMAT
-// ========================================
+/* =========================
+   MONEY
+========================= */
 
 function money(amount) {
-  return "GH₵" + Number(amount).toFixed(2);
+  return `GHS ${Number(amount || 0).toFixed(2)}`;
 }
 
 
-// ========================================
-// ORDER SUMMARY
-// ========================================
+/* =========================
+   ORDER SUMMARY
+========================= */
 
 function renderOrderSummary() {
+
   const container = document.getElementById("order-items");
 
   container.innerHTML = "";
@@ -53,50 +54,82 @@ function renderOrderSummary() {
   let subtotal = 0;
 
   if (!cartItems.length) {
+
     container.innerHTML = `
       <p>Your cart is empty.</p>
     `;
+
   }
 
   cartItems.forEach(item => {
 
-    const lineTotal = item.price * item.qty;
+    const lineTotal =
+      Number(item.price) * Number(item.qty);
 
     subtotal += lineTotal;
 
-    const row = document.createElement("div");
+    const row =
+      document.createElement("div");
+
     row.className = "order-item";
 
-    const details = document.createElement("div");
 
-    const name = document.createElement("div");
+    const details =
+      document.createElement("div");
+
+
+    const name =
+      document.createElement("div");
+
     name.className = "name";
+
     name.textContent = item.name;
 
-    const qty = document.createElement("div");
+
+    const qty =
+      document.createElement("div");
+
     qty.className = "qty";
-    qty.textContent = `Qty: ${item.qty}`;
+
+    qty.textContent =
+      `Qty: ${item.qty}`;
+
 
     details.append(name, qty);
 
-    const amount = document.createElement("div");
-    amount.textContent = money(lineTotal);
+
+    const amount =
+      document.createElement("div");
+
+    amount.textContent =
+      money(lineTotal);
+
 
     row.append(details, amount);
 
     container.appendChild(row);
+
   });
 
-  const total = subtotal + DELIVERY_FEE;
 
-  document.getElementById("summary-subtotal").textContent =
-    money(subtotal);
+  const total =
+    subtotal + DELIVERY_FEE;
 
-  document.getElementById("summary-delivery").textContent =
-    money(DELIVERY_FEE);
 
-  document.getElementById("summary-total").textContent =
-    money(total);
+  document.getElementById(
+    "summary-subtotal"
+  ).textContent = money(subtotal);
+
+
+  document.getElementById(
+    "summary-delivery"
+  ).textContent = money(DELIVERY_FEE);
+
+
+  document.getElementById(
+    "summary-total"
+  ).textContent = money(total);
+
 
   return {
     subtotal,
@@ -105,12 +138,13 @@ function renderOrderSummary() {
 }
 
 
-let totals = renderOrderSummary();
+let totals =
+  renderOrderSummary();
 
 
-// ========================================
-// PAYMENT METHOD FIELDS
-// ========================================
+/* =========================
+   PAYMENT METHOD
+========================= */
 
 document
   .querySelectorAll('input[name="paymentMethod"]')
@@ -124,21 +158,25 @@ document
           element.style.display = "none";
         });
 
-      const target = document.querySelector(
-        `[data-fields-for="${radio.value}"]`
-      );
+
+      const target =
+        document.querySelector(
+          `[data-fields-for="${radio.value}"]`
+        );
+
 
       if (target) {
         target.style.display = "block";
       }
+
     });
 
   });
 
 
-// ========================================
-// VALIDATION
-// ========================================
+/* =========================
+   VALIDATION
+========================= */
 
 function clearErrors() {
 
@@ -148,29 +186,37 @@ function clearErrors() {
       element.style.display = "none";
     });
 
+
   document
     .querySelectorAll(".field-invalid")
     .forEach(element => {
       element.classList.remove("field-invalid");
     });
+
 }
 
 
 function showError(fieldName) {
 
-  const errorElement = document.querySelector(
-    `[data-error-for="${fieldName}"]`
-  );
+  const errorElement =
+    document.querySelector(
+      `[data-error-for="${fieldName}"]`
+    );
+
 
   if (errorElement) {
     errorElement.style.display = "block";
   }
 
-  const inputElement = document.getElementById(fieldName);
+
+  const inputElement =
+    document.getElementById(fieldName);
+
 
   if (inputElement) {
     inputElement.classList.add("field-invalid");
   }
+
 }
 
 
@@ -180,83 +226,105 @@ function validateForm(data) {
 
   let valid = true;
 
+
   if (!data.fullName.trim()) {
     showError("fullName");
     valid = false;
   }
+
 
   if (!/^[0-9+\s-]{7,15}$/.test(data.phone.trim())) {
     showError("phone");
     valid = false;
   }
 
+
   if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) {
     showError("email");
     valid = false;
   }
+
 
   if (!data.address.trim()) {
     showError("address");
     valid = false;
   }
 
+
   if (!data.city.trim()) {
     showError("city");
     valid = false;
   }
+
 
   if (!data.region.trim()) {
     showError("region");
     valid = false;
   }
 
+
   if (!data.paymentMethod) {
     showError("paymentMethod");
     valid = false;
   }
 
+
   return valid;
 }
 
 
-// ========================================
-// SUBMIT ORDER
-// ========================================
+/* =========================
+   SEND ORDER TO BACKEND
+========================= */
 
 async function submitOrder(order) {
 
-  console.log(
-    "Order payload:",
-    order
-  );
+  const response =
+    await fetch(API_URL, {
 
-  await new Promise(resolve =>
-    setTimeout(resolve, 600)
-  );
+      method: "POST",
 
-  return {
-    orderId:
-      "KH-" +
-      Date.now().toString().slice(-8),
+      headers: {
+        "Content-Type": "application/json"
+      },
 
-    status: "received"
-  };
+      body: JSON.stringify(order)
+
+    });
+
+
+  const result =
+    await response.json();
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      result.error ||
+      result.message ||
+      "Failed to place order"
+    );
+
+  }
+
+
+  return result;
 }
 
 
-// ========================================
-// CHECKOUT FORM
-// ========================================
+/* =========================
+   CHECKOUT FORM
+========================= */
 
 document
   .getElementById("checkout-form")
-  .addEventListener("submit", async function (event) {
+  .addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
-    // Refresh cart in case something changed
-    // before reaching checkout.
+
     cartItems = getCartItems();
+
 
     if (!cartItems.length) {
 
@@ -267,54 +335,73 @@ document
       return;
     }
 
-    totals = renderOrderSummary();
+
+    totals =
+      renderOrderSummary();
+
 
     const formData =
       new FormData(this);
 
+
     const data =
-      Object.fromEntries(formData.entries());
+      Object.fromEntries(
+        formData.entries()
+      );
+
 
     if (!validateForm(data)) {
       return;
     }
 
+
+    /*
+      The database currently stores one shipping_address
+      field, so we combine the address information here.
+    */
+
+    const shippingAddress = [
+      data.address.trim(),
+      data.city.trim(),
+      data.region.trim(),
+      data.notes
+        ? `Notes: ${data.notes.trim()}`
+        : ""
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+
     const order = {
 
-      customer: {
-        fullName: data.fullName.trim(),
-        phone: data.phone.trim(),
-        email: data.email.trim()
-      },
+      customer_name:
+        data.fullName.trim(),
 
-      delivery: {
-        address: data.address.trim(),
-        city: data.city.trim(),
-        region: data.region.trim(),
-        notes: data.notes
-          ? data.notes.trim()
-          : ""
-      },
+      email:
+        data.email.trim(),
 
-      payment: {
-        method: data.paymentMethod
-      },
+      shipping_address:
+        shippingAddress,
 
-      items: cartItems,
+      total_amount:
+        totals.total,
 
-      subtotal: totals.subtotal,
+      items:
+        cartItems.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.qty,
+          price: item.price
+        }))
 
-      deliveryFee: DELIVERY_FEE,
-
-      total: totals.total,
-
-      createdAt:
-        new Date().toISOString()
     };
 
 
     const button =
-      document.getElementById("place-order-btn");
+      document.getElementById(
+        "place-order-btn"
+      );
+
 
     button.disabled = true;
 
@@ -324,27 +411,44 @@ document
 
     try {
 
+      console.log(
+        "Sending order:",
+        order
+      );
+
+
       const result =
         await submitOrder(order);
+
+
+      /*
+        Backend may return the order ID
+        in different forms.
+      */
+
+      const orderId =
+        result.orderId ||
+        result.order_id ||
+        result.order?.id ||
+        "Received";
 
 
       document.getElementById(
         "conf-name"
       ).textContent =
-        order.customer.fullName;
+        data.fullName.trim();
 
 
       document.getElementById(
         "conf-email"
       ).textContent =
-        order.customer.email;
+        data.email.trim();
 
 
       document.getElementById(
         "conf-order-id"
       ).textContent =
-        "Order #" +
-        result.orderId;
+        `Order #${orderId}`;
 
 
       document.getElementById(
@@ -357,6 +461,17 @@ document
         "confirmation-view"
       ).style.display =
         "block";
+
+
+      /*
+        Clear the customer's cart
+        only after the backend confirms
+        the order was accepted.
+      */
+
+      localStorage.removeItem(
+        "kayshaven-cart"
+      );
 
 
       window.scrollTo({
@@ -372,14 +487,17 @@ document
         error
       );
 
+
       alert(
-        "Something went wrong placing your order. Please try again."
+        `Could not place order: ${error.message}`
       );
+
 
       button.disabled = false;
 
       button.textContent =
         "Place order";
+
     }
 
   });
