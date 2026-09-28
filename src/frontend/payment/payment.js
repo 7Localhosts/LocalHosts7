@@ -236,10 +236,52 @@ document.addEventListener('click', e => {
 // ─── Init ────────────────────────────────────────────────────────────────────
 (function init() {
   // Load pending order from localStorage
+  // Priority:
+  //   1. 'kayshaven-pending-order' — the dedicated payment handoff key
+  //   2. 'kayshaven-cart' + 'kayshaven-checkout-customer' — fallback for the
+  //      checkout page (feature/3) which stores cart items separately
   try {
     const raw = localStorage.getItem('kayshaven-pending-order');
     pendingOrder = raw ? JSON.parse(raw) : null;
   } catch { pendingOrder = null; }
+
+  // Fallback: build order from cart + customer data (checkout integration)
+  if (!pendingOrder) {
+    try {
+      const cartRaw = localStorage.getItem('kayshaven-cart');
+      const cart = cartRaw ? JSON.parse(cartRaw) : null;
+
+      if (cart && Array.isArray(cart) && cart.length > 0) {
+        // Read customer info from URL params or localStorage
+        const params = new URLSearchParams(window.location.search);
+        let customer = null;
+        try {
+          const custRaw = localStorage.getItem('kayshaven-checkout-customer');
+          customer = custRaw ? JSON.parse(custRaw) : null;
+        } catch { customer = null; }
+
+        const customerName = params.get('name') || customer?.fullName || customer?.name || 'Customer';
+        const customerEmail = params.get('email') || customer?.email || '';
+
+        const DELIVERY_FEE = 15;
+        const items = cart.map(item => ({
+          id:   item.id,
+          name: item.name,
+          price: Number(item.price),
+          qty:   Number(item.qty || item.quantity || 1),
+        }));
+        const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+        pendingOrder = {
+          orderId: 'KH-' + Date.now().toString().slice(-8),
+          customer: { name: customerName, email: customerEmail },
+          items,
+          deliveryFee: DELIVERY_FEE,
+          total: subtotal + DELIVERY_FEE,
+        };
+      }
+    } catch { /* cart data unreadable — fall through to empty state */ }
+  }
 
   if (!pendingOrder) {
     // No order found — show empty state
@@ -259,3 +301,4 @@ document.addEventListener('click', e => {
     payBtn.addEventListener('click', () => launchPaystack(pendingOrder));
   }
 })();
+

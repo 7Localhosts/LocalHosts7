@@ -1,24 +1,25 @@
 /* ═══════════════════════════════════════════════════════
    payment.css — Kay's Haven Payment Page
-   Matches design tokens from checkout.css
+   Design tokens aligned with storefront (styles.css)
 ═══════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
 :root {
-  --bg:      #f8f6fb;
+  --bg:      #ffffff;
   --panel:   #ffffff;
-  --soft:    #efe9f7;
-  --pink:    #ded0f0;
-  --rose:    #7e57a3;
-  --peach:   #9b6bc4;
-  --sage:    #e6def4;
-  --text:    #241b30;
-  --muted:   #6c5f7c;
-  --line:    #ddd0ee;
+  --soft:    #f9f6fc;
+  --pink:    #f0e5fa;
+  --rose:    #7a13aa;
+  --peach:   #b078d3;
+  --sage:    #b078d3;
+  --text:    #111111;
+  --muted:   #887a99;
+  --line:    #eae0f2;
   --success: #2e7d32;
   --error:   #c0392b;
   --warning: #e65100;
-  --shadow:  0 20px 45px rgba(60, 30, 90, 0.12);
-  --radius:  26px;
+  --shadow:  0 12px 36px rgba(0, 0, 0, 0.05);
+  --radius:  20px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +27,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "DM Sans", sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -39,7 +40,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 18px 32px;
-  background: var(--panel);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
@@ -135,7 +138,7 @@ body {
   width: 100%;
   padding: 16px;
   margin-top: 20px;
-  background: #5b3a80;
+  background: #7a13aa;
   color: #fff;
   border: none;
   border-radius: 14px;
@@ -208,7 +211,7 @@ body {
 
 .btn-primary {
   padding: 13px 28px;
-  background: #5b3a80;
+  background: #7a13aa;
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -257,10 +260,7 @@ body {
 
 /* Modern polish */
 body {
-  background:
-    radial-gradient(circle at 10% 0%, rgba(222, 208, 240, 0.55), transparent 30%),
-    radial-gradient(circle at 90% 14%, rgba(230, 222, 244, 0.65), transparent 26%),
-    var(--bg);
+  background: var(--bg);
 }
 .panel, .status-card {
   border: 1px solid rgba(221, 208, 238, 0.72);
@@ -270,5 +270,5 @@ body {
 .pay-btn:hover:not(:disabled), .btn-primary:hover {
   filter: brightness(1.1);
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(91, 58, 128, 0.24);
+  box-shadow: 0 12px 24px rgba(122, 19, 170, 0.15);
 }

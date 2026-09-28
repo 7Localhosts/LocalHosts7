@@ -16,6 +16,8 @@ const paymentsRouter = require('./routes/payments');
 const reviewsRouter  = require('./routes/reviews');
 const contactRouter  = require('./routes/contact');
 const deliveryRouter = require('./routes/delivery');
+const productsRouter = require('./routes/products');
+const ordersRouter   = require('./routes/orders');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +55,8 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/reviews',  reviewsRouter);
 app.use('/api/contact',  contactRouter);
 app.use('/api/delivery', deliveryRouter);
+app.use('/api/products', productsRouter);
+app.use('/api/orders',   ordersRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
