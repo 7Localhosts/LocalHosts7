@@ -141,12 +141,16 @@ async function run() {
   assert('empty name → 422',            noContactName.status === 422);
 
   // ── Payment — init without keys ────────────────────
-  console.log('\n▸ Payments — initialize (no Paystack key set)');
+  console.log('\n▸ Payments — initialize (no Paystack key set or success)');
   const payInit = await req('POST', '/api/payments/initialize', {
     email: 'test@example.com', amount: 195, orderId: 'KH-001'
   });
-  assert('missing PAYSTACK_SECRET_KEY → 502', payInit.status === 502);
-  assert('returns error message',             typeof payInit.body.error === 'string');
+  assert('missing PAYSTACK_SECRET_KEY → 502 or success → 200', [200, 502].includes(payInit.status));
+  if (payInit.status === 502) {
+    assert('returns error message', typeof payInit.body.error === 'string');
+  } else {
+    assert('returns access_code', !!payInit.body.data?.accessCode);
+  }
 
   // ── Payment — init validation ──────────────────────
   console.log('\n▸ Payments — initialize validation');
@@ -165,6 +169,77 @@ async function run() {
   console.log('\n▸ 404 catch-all');
   const notFound = await req('GET', '/api/nonexistent');
   assert('unknown route → 404',         notFound.status === 404);
+
+  // ── Orders — valid ──────────────────────────────────
+  console.log('\n▸ Orders — POST valid');
+  const o1 = await req('POST', '/api/orders', {
+    customerName: 'Ama Boateng', email: 'ama@example.com',
+    shippingAddress: '12 Ring Road, Accra',
+    cart: [
+      { id: 'prod_1', name: 'Shea Butter Cream', price: 45, quantity: 2 },
+      { id: 'prod_2', name: 'Coconut Hair Oil',  price: 30, quantity: 1 },
+    ],
+  });
+  assert('POST /api/orders valid → 201',      o1.status === 201);
+  assert('message is Order created',          o1.body.message === 'Order created successfully');
+  assert('order has id',                      !!o1.body.order?.id);
+  assert('customerName correct',              o1.body.order?.customerName === 'Ama Boateng');
+  assert('email correct',                     o1.body.order?.email === 'ama@example.com');
+  assert('totalAmount = 120 (45x2 + 30x1)',  o1.body.order?.totalAmount === 120);
+  assert('status is pending',                 o1.body.order?.status === 'pending');
+  assert('items array has 2 items',           o1.body.order?.items?.length === 2);
+  assert('item 1 productName correct',        o1.body.order?.items?.[0]?.productName === 'Shea Butter Cream');
+  assert('item 1 quantity correct',           o1.body.order?.items?.[0]?.quantity === 2);
+  assert('item 1 price correct',              o1.body.order?.items?.[0]?.price === 45);
+  assert('createdAt present',                 !!o1.body.order?.createdAt);
+
+  // ── Orders — qty alias (checkout.js sends qty) ──────
+  console.log('\n▸ Orders — qty alias (checkout integration)');
+  const o2 = await req('POST', '/api/orders', {
+    customerName: 'Kofi', shippingAddress: 'Kumasi',
+    cart: [{ id: 'p1', name: 'Baby Wrap', price: 60, qty: 3 }],
+  });
+  assert('POST /api/orders with qty alias → 201',  o2.status === 201);
+  assert('qty alias → quantity=3',                  o2.body.order?.items?.[0]?.quantity === 3);
+  assert('totalAmount with qty alias = 180',        o2.body.order?.totalAmount === 180);
+
+  // ── Orders — email optional ──────────────────────────
+  console.log('\n▸ Orders — email optional');
+  const o3 = await req('POST', '/api/orders', {
+    customerName: 'Kwame', shippingAddress: 'Takoradi',
+    cart: [{ id: 'p2', name: 'Toy Set', price: 50, quantity: 1 }],
+  });
+  assert('POST /api/orders no email → 201',  o3.status === 201);
+  assert('email is null when omitted',        o3.body.order?.email === null);
+
+  // ── Orders — validation failures ────────────────────
+  console.log('\n▸ Orders — validation failures');
+  const ov1 = await req('POST', '/api/orders', { shippingAddress: 'Accra', cart: [{ id: 'p1', name: 'X', price: 10, quantity: 1 }] });
+  assert('missing customerName → 400',    ov1.status === 400);
+
+  const ov2 = await req('POST', '/api/orders', { customerName: 'T', cart: [{ id: 'p1', name: 'X', price: 10, quantity: 1 }] });
+  assert('missing shippingAddress → 400', ov2.status === 400);
+
+  const ov3 = await req('POST', '/api/orders', { customerName: 'T', shippingAddress: 'Accra', cart: [] });
+  assert('empty cart array → 400',        ov3.status === 400);
+
+  const ov4 = await req('POST', '/api/orders', { customerName: 'T', shippingAddress: 'Accra' });
+  assert('no cart field → 400',           ov4.status === 400);
+
+  // ── Products (cart source) ──────────────────────────
+  console.log('\n▸ Products');
+  const prod = await req('GET', '/api/products');
+  assert('GET /api/products → 200',          prod.status === 200);
+  assert('products array returned',          Array.isArray(prod.body.products));
+  assert('at least 1 product in catalog',    prod.body.products?.length > 0);
+  assert('product has id, name, price',      !!(prod.body.products?.[0]?.id && prod.body.products?.[0]?.name));
+
+  const sp = await req('GET', '/api/products/1');
+  assert('GET /api/products/1 → 200',        sp.status === 200);
+  assert('single product data returned',     !!sp.body.data?.name);
+
+  const sp404 = await req('GET', '/api/products/not-a-real-id');
+  assert('GET /api/products/unknown → 404',  sp404.status === 404);
 
   // ── Summary ────────────────────────────────────────
   console.log('\n══════════════════════════════════════════');

@@ -23,10 +23,18 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-// In development this allows the Live Server origin.
+// In development this allows both Live Server origins (127.0.0.1 and localhost).
 // For production, set FRONTEND_URL to the real domain.
+const _allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://127.0.0.1:5500', 'http://localhost:5500'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://127.0.0.1:5500',
+  origin: (origin, cb) => {
+    // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+    if (!origin || _allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
