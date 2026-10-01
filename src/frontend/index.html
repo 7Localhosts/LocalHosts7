@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kay's Haven | Mothercare</title>
+  <meta name="description" content="Shop thoughtful gifts, baby care and family essentials from Kay's Haven." />
+  <style>
+    :root {
+      --ink: #24313a;
+      --muted: #66747b;
+      --paper: #fffdf8;
+      --panel: #ffffff;
+      --line: #e7e1d8;
+      --coral: #c65d4b;
+      --coral-dark: #9c4335;
+      --sage: #dce8df;
+      --gold: #e4b95f;
+      --shadow: 0 14px 36px rgba(36, 49, 58, .09);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    a { color: inherit; }
+    .topbar {
+      align-items: center;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 24px;
+      justify-content: space-between;
+      padding: 18px clamp(20px, 5vw, 72px);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .logo { font-size: 24px; font-weight: 700; text-decoration: none; }
+    .logo span { color: var(--coral); }
+    nav { align-items: center; display: flex; flex-wrap: wrap; gap: 18px; }
+    nav a { color: var(--muted); font-family: Arial, sans-serif; font-size: 13px; text-decoration: none; }
+    nav a:hover { color: var(--coral-dark); }
+    .cart-link {
+      background: var(--ink);
+      border-radius: 5px;
+      color: white;
+      padding: 10px 14px;
+    }
+    .hero {
+      background: linear-gradient(120deg, var(--sage), #f8ead0);
+      padding: clamp(56px, 9vw, 112px) clamp(20px, 8vw, 120px) 72px;
+    }
+    .hero-inner { max-width: 760px; }
+    .eyebrow {
+      color: var(--coral-dark);
+      font: 700 11px/1.2 Arial, sans-serif;
+      letter-spacing: 1.8px;
+      margin: 0 0 14px;
+    }
+    h1 { font-size: clamp(42px, 7vw, 78px); line-height: .98; margin: 0 0 20px; }
+    .hero p:not(.eyebrow) { color: var(--muted); font: 17px/1.6 Arial, sans-serif; margin: 0; max-width: 600px; }
+    main { margin: 0 auto; max-width: 1240px; padding: 56px clamp(20px, 5vw, 72px) 80px; }
+    .section-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: 22px; }
+    h2 { font-size: 32px; margin: 0; }
+    #catalog-status { color: var(--muted); font: 13px Arial, sans-serif; }
+    .products { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .product {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 270px;
+      padding: 22px;
+    }
+    .product-art { align-items: center; background: #f6efe5; color: var(--coral-dark); display: flex; font-size: 38px; height: 120px; justify-content: center; margin: -22px -22px 20px; }
+    .category { color: var(--coral-dark); font: 700 11px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+    .product h3 { font-size: 20px; line-height: 1.15; margin: 9px 0 8px; }
+    .price { color: var(--ink); font: 700 16px Arial, sans-serif; margin-bottom: 18px; }
+    .product button, .notice a {
+      background: var(--coral);
+      border: 0;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font: 700 13px Arial, sans-serif;
+      margin-top: auto;
+      padding: 12px 14px;
+      text-align: center;
+      text-decoration: none;
+    }
+    .product button:hover, .notice a:hover { background: var(--coral-dark); }
+    .support {
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      margin-top: 72px;
+      padding-top: 32px;
+    }
+    .support a { color: var(--muted); font: 14px/1.5 Arial, sans-serif; text-decoration: none; }
+    .support strong { color: var(--ink); display: block; font-family: Georgia, serif; font-size: 19px; margin-bottom: 5px; }
+    .notice { color: var(--muted); font: 14px Arial, sans-serif; padding: 24px 0; }
+    @media (max-width: 650px) {
+      .topbar { align-items: flex-start; flex-direction: column; gap: 14px; }
+      nav { gap: 12px; }
+      .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="index.html">Kay's <span>Haven</span></a>
+    <nav aria-label="Main navigation">
+      <a href="delivery/delivery.html">Delivery</a>
+      <a href="reviews/reviews.html">Reviews</a>
+      <a href="contact/contact.html">Contact</a>
+      <a class="cart-link" href="checkout/checkout.html">Cart (<span id="cart-count">0</span>)</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">THOUGHTFUL CARE, BEAUTIFULLY GIFTED</p>
+      <h1>Small comforts for growing families.</h1>
+      <p>Discover warm, useful gifts and everyday essentials chosen with care for babies, parents and the people who love them.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="section-heading">
+      <h2>Shop the collection</h2>
+      <span id="catalog-status">Loading products...</span>
+    </div>
+    <section class="products" id="products" aria-live="polite"></section>
+
+    <section class="support" aria-label="Customer support">
+      <a href="delivery/delivery.html"><strong>Delivery across Ghana</strong>See zones, fees and pickup options.</a>
+      <a href="reviews/reviews.html"><strong>Hear from our community</strong>Read and share product reviews.</a>
+      <a href="contact/contact.html"><strong>Need a hand?</strong>Message us about products or orders.</a>
+    </section>
+  </main>
+
+  <script>
+    'use strict';
+    const API_BASE = window.KH_API_BASE || 'http://localhost:3000';
+    const productsEl = document.getElementById('products');
+    const statusEl = document.getElementById('catalog-status');
+    const cartCountEl = document.getElementById('cart-count');
+    const icons = ['Gift', 'Care', 'Home', 'Bundle', 'Treat', 'Bloom'];
+
+    function escapeHTML(value) {
+      return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function readCart() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('kayshaven-cart') || '[]');
+        return Array.isArray(cart) ? cart : [];
+      } catch { return []; }
+    }
+
+    function updateCartCount() {
+      const count = readCart().reduce((sum, item) => sum + Number(item.qty || item.quantity || 1), 0);
+      cartCountEl.textContent = count;
+    }
+
+    function addToCart(product) {
+      const cart = readCart();
+      const existing = cart.find(item => String(item.id) === String(product.id));
+      if (existing) existing.qty = Number(existing.qty || existing.quantity || 1) + 1;
+      else cart.push({ id: product.id, name: product.name, price: Number(product.price), qty: 1 });
+      localStorage.setItem('kayshaven-cart', JSON.stringify(cart));
+      updateCartCount();
+      statusEl.textContent = product.name + ' added to cart';
+    }
+
+    function renderProducts(products) {
+      productsEl.innerHTML = products.map((product, index) => `
+        <article class="product">
+          <div class="product-art" aria-hidden="true">${icons[index % icons.length]}</div>
+          <div class="category">${escapeHTML(product.category || 'Mothercare')}</div>
+          <h3>${escapeHTML(product.name)}</h3>
+          <div class="price">GHS ${Number(product.price).toFixed(2)}</div>
+          <button type="button" data-product-id="${escapeHTML(product.id)}">Add to cart</button>
+        </article>`).join('');
+      productsEl.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+        const product = products.find(item => String(item.id) === button.dataset.productId);
+        if (product) addToCart(product);
+      }));
+      statusEl.textContent = products.length + ' products';
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(`${API_BASE}/api/products`);
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error || 'Could not load products.');
+        renderProducts(json.products || []);
+      } catch (error) {
+        statusEl.textContent = 'Catalog unavailable';
+        productsEl.innerHTML = `<div class="notice">Could not load the catalog. Please check that the backend is running at ${escapeHTML(API_BASE)}.</div>`;
+        console.error('[catalog]', error);
+      }
+    }
+
+    updateCartCount();
+    loadProducts();
+  </script>
+</body>
+</html>

@@ -77,7 +77,7 @@ if (form) {
 
       if (!res.ok) throw new Error(json.error || 'Submission failed.');
 
-      showToast('Message sent! We'll get back to you within 24 hours. 🙏', 'success');
+      showToast("Message sent! We'll get back to you within 24 hours. 🙏", 'success');
       form.reset();
     } catch (err) {
       console.error('[contact]', err);

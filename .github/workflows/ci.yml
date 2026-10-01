@@ -26,7 +26,7 @@ jobs:
 
   # ─── Job 2: API smoke tests ──────────────────────────────────────────────────
   api-tests:
-    name: API smoke tests (43 assertions)
+    name: API smoke tests (71 assertions)
     runs-on: ubuntu-latest
     defaults:
       run:
