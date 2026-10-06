@@ -1,3 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
+:root {
+  --font-primary: "Montserrat", sans-serif;
+  --font-elegant: "Cormorant Garamond", serif;
+  --font-brand: "Mastery Kingdom", serif;
+}
+
+html,
+body {
+  font-family: var(--font-primary);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+}
+
+.elegant-text {
+  font-family: var(--font-elegant);
+}
+
+.brand-text {
+  font-family: var(--font-brand);
+}
 * {
     margin: 0;
     padding: 0;

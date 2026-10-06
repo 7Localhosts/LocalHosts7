@@ -1,0 +1,182 @@
+[1mdiff --git a/src/admin/index.html b/src/admin/index.html[m
+[1mindex a857f0e..7df8b8c 100644[m
+[1m--- a/src/admin/index.html[m
+[1m+++ b/src/admin/index.html[m
+[36m@@ -1,160 +1,735 @@[m
+[31m-<!doctype html>[m
+[32m+[m[32m```html[m
+[32m+[m[32m<!DOCTYPE html>[m
+ <html lang="en">[m
+ <head>[m
+[31m-  <meta charset="utf-8">[m
+[31m-  <meta name="viewport" content="width=device-width, initial-scale=1">[m
+[31m-  <meta name="theme-color" content="#174d45">[m
+[31m-  <title>LocalHosts7 | Employee workspace</title>[m
+[32m+[m[32m  <meta charset="UTF-8">[m
+[32m+[m[32m  <meta name="viewport" content="width=device-width, initial-scale=1.0">[m
+[32m+[m
+[32m+[m[32m  <title>Kay's Haven | Staff Dashboard</title>[m
+[32m+[m
+   <link rel="stylesheet" href="styles.css">[m
+   <script src="app.js" defer></script>[m
+ </head>[m
+[32m+[m
+ <body>[m
+[31m-  <header class="topbar">[m
+[31m-    <a class="brand" href="#home" aria-label="LocalHosts7 home">[m
+[31m-      <span class="brand-mark" aria-hidden="true">L</span>[m
+[31m-      <span>LocalHosts<span class="brand-number">7</span></span>[m
+[31m-    </a>[m
+[31m-    <div class="topbar-right">[m
+[31m-      <span class="workspace-label">TEAM WORKSPACE</span>[m
+[31m-      <button class="button button-dark" id="open-login" type="button">Log in <span aria-hidden="true">&#8599;</span></button>[m
+[31m-    </div>[m
+[31m-  </header>[m
+[31m-[m
+[31m-  <main>[m
+[31m-    <section class="welcome screen" id="home" aria-labelledby="welcome-title">[m
+[31m-      <div class="welcome-copy">[m
+[31m-        <p class="eyebrow"><span class="status-dot"></span> EMPLOYEE PORTAL</p>[m
+[31m-        <h1 id="welcome-title">Good work<br>starts <em>with care.</em></h1>[m
+[31m-        <p class="welcome-description">Your day, your team, and the details that keep every order moving. Sign in with your employee account to open the operations dashboard.</p>[m
+[31m-        <button class="button button-primary button-large" id="welcome-login" type="button">Log in <span aria-hidden="true">&#8594;</span></button>[m
+[31m-        <p class="welcome-note">A workspace for the people behind the care.</p>[m
+[31m-      </div>[m
+[31m-      <div class="welcome-visual" aria-label="Illustration of a cared-for package ready to ship">[m
+[31m-        <div class="sun-disc"></div>[m
+[31m-        <div class="leaf leaf-one"></div>[m
+[31m-        <div class="leaf leaf-two"></div>[m
+[31m-        <div class="package">[m
+[31m-          <div class="package-seal"></div>[m
+[31m-          <span class="package-wordmark">made with<br>care</span>[m
+[31m-          <span class="package-spark" aria-hidden="true">&#10022;</span>[m
+[32m+[m
+[32m+[m[32m  <!-- STAFF LOGIN -->[m
+[32m+[m[32m  <main class="login" id="login-screen">[m
+[32m+[m
+[32m+[m[32m    <section class="login-aside">[m
+[32m+[m
+[32m+[m[32m      <p class="eyebrow">[m
+[32m+[m[32m        <span class="status-dot"></span>[m
+[32m+[m[32m        STAFF ACCESS[m
+[32m+[m[32m      </p>[m
+[32m+[m
+[32m+[m[32m      <h1>[m
+[32m+[m[32m        Good work starts[m
+[32m+[m[32m        <span style="color: #000000;">with care</span>[m
+[32m+[m[32m      </h1>[m
+[32m+[m
+[32m+[m[32m      <p>[m
+[32m+[m[32m        Manage orders, inventory and the daily work behind Kay's Haven.[m
+[32m+[m[32m      </p>[m
+[32m+[m
+[32m+[m[32m      <button class="text-button" id="back-home" type="button">[m
+[32m+[m[32m        ← Back to store[m
+[32m+[m[32m      </button>[m
+[32m+[m
+[32m+[m[32m    </section>[m
+[32m+[m
+[32m+[m[32m    <section class="login-panel">[m
+[32m+[m
+[32m+[m[32m      <p class="eyebrow">STAFF LOGIN</p>[m
+[32m+[m
+[32m+[m[32m      <h2>Welcome back</h2>[m
+[32m+[m
+[32m+[m[32m      <p class="form-intro">[m
+[32m+[m[32m        Sign in to access the Kay's Haven staff workspace.[m
+[32m+[m[32m      </p>[m
+[32m+[m
+[32m+[m[32m      <form id="login-form">[m
+[32m+[m
+[32m+[m[32m        <label for="email">Email address</label>[m
+[32m+[m[32m        <input[m
+[32m+[m[32m          id="email"[m
+[32m+[m[32m          name="email"[m
+[32m+[m[32m          type="email"[m
+[32m+[m[32m          placeholder="Enter your email"[m
+[32m+[m[32m          autocomplete="username"[m
+[32m+[m[32m          required[m
+[32m+[m[32m        >[m
+[32m+[m
+[32m+[m[32m        <label for="password">Password</label>[m
+[32m+[m
+[32m+[m[32m        <div class="password-wrap">[m
+[32m+[m[32m          <input[m
+[32m+[m[32m            id="password"[m
+[32m+[m[32m            name="password"[m
+[32m+[m[32m            type="password"[m
+[32m+[m[32m            placeholder="Enter your password"[m
+[32m+[m[32m            autocomplete="current-password"[m
+[32m+[m[32m            required[m
+[32m+[m[32m          >[m
+[32m+[m
+[32m+[m[32m          <button[m
+[32m+[m[32m            class="password-toggle"[m
+[32m+[m[32m            id="password-toggle"[m
+[32m+[m[32m            type="button"[m
+[32m+[m[32m          >[m
+[32m+[m[32m            SHOW[m
+[32m+[m[32m          </button>[m
+         </div>[m
+[31m-        <div class="visual-caption"><span>01 / 03</span><span>Thoughtful care, delivered.</span></div>[m
+[31m-      </div>[m
+[32m+[m
+[32m+[m[32m        <p[m
+[32m+[m[32m          class="form-error"[m
+[32m+[m[32m          id="login-error"[m
+[32m+[m[32m          aria-live="polite"[m
+[32m+[m[32m        ></p>[m
+[32m+[m
+[32m+[m[32m        <button[m
+[32m+[m[32m          class="button button-primary button-large submit-button"[m
+[32m+[m[32m          type="submit"[m
+[32m+[m[32m        >[m
+[32m+[m[32m          Sign in[m
+[32m+[m[32m        </button>[m
+[32m+[m
+[32m+[m[32m      </form>[m
+[32m+[m
+[32m+[m[32m      <p class="security-note">[m
+[32m+[m[32m        Staff access is restricted to authorised Kay's Haven employees.[m
+[32m+[m[32m      </p>[m
+[32m+[m
+     </section>[m
+ [m
+[31m-    <section class="login screen is-hidden" id="login-screen" aria-labelledby="login-title" aria-hidden="true">[m
+[31m-      <div class="login-aside">[m
+[31m-        <p class="eyebrow"><span class="status-dot"></span> LOCALHOSTS7 / TEAM</p>[m
+[31m-        <h1>Make room<br>for <em>good work.</em></h1>[m
+[31m-        <p>Your employee account gives you access to order operations and inventory.</p>[m
+[31m-        <button class="text-button" id="back-home" type="button"><span aria-hidden="true">&#8592;</span> Back to home</button>[m
+[32m+[m[32m  </main>[m
+[32m+[m
+[32m+[m
+[32m+[m[32m  <!-- EMPLOYEE DASHBOARD -->[m
+[32m+[m[32m  <main class="dashboard is-hidden" id="dashboard-screen">[m
+[32m+[m
+[32m+[m[32m    <!-- SIDEBAR -->[m
+[32m+[m[32m    <aside class="sidebar">[m
+[32m+[m
+[32m+[m[32m      <div class="sidebar-heading">[m
+[32m+[m[32m        <span class="sidebar-label">STAFF WORKSPACE</span>[m
+[32m+[m
+[32m+[m[32m        <span class="store-name">[m
+[32m+[m[32m          Kay's Haven[m
+[32m+[m[32m        </span>[m
+       </div>[m
+[31m-      <div class="login-panel">[m
+[31m-        <p class="eyebrow">WELCOME BACK</p>[m
+[31m-        <h2 id="login-title">Log in to your account</h2>[m
+[31m-        <p class="form-intro">Use your employee email and password to continue.</p>[m
+[31m-        <form id="login-form" novalidate>[m
+[31m-          <label for="email">Work email</label>[m
+[31m-          <input id="email" name="email" type="email" autocomplete="username" placeholder="you@company.com" required>[m
+[31m-          <label for="password">Password</label>[m
+[31m-          <div class="password-wrap">[m
+[31m-            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>[m
+[31m-            <button class="password-toggle" id="toggle-password" type="button" aria-label="Show password">SHOW</button>[m
+[32m+[m
+[32m+[m[32m      <nav class="side-nav" aria-label="Dashboard navigation">[m
+[32m+[m
+[32m+[m[32m        <button[m
+[32m+[m[3

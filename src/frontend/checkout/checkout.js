@@ -16,11 +16,12 @@ function getCartItems() {
     const cart = JSON.parse(stored);
 
     return cart.map(item => ({
-      id: Number(item.id),
-      name: item.name,
-      price: Number(item.price),
-      qty: Number(item.qty)
-    }));
+  id: Number(item.id),
+  name: item.name,
+  price: Number(item.price),
+  qty: Number(item.qty),
+  size: item.size || ""
+}));
 
   } catch (error) {
     console.error("Could not read cart:", error);
@@ -386,13 +387,14 @@ document
       total_amount:
         totals.total,
 
-      items:
-        cartItems.map(item => ({
-          product_id: item.id,
-          product_name: item.name,
-          quantity: item.qty,
-          price: item.price
-        }))
+     items:
+  cartItems.map(item => ({
+    product_id: item.id,
+    product_name: item.name,
+    quantity: item.qty,
+    price: item.price,
+    size: item.size || ""
+  }))
 
     };
 
