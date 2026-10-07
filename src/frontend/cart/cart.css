@@ -493,3 +493,13 @@ body {
     }
 
 }
+
+.cart-item > img {
+    width: 110px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.cart-item label { display: block; margin-top: 12px; }
+.cart-item input { width: 76px; margin-left: 8px; padding: 7px; }

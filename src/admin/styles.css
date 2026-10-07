@@ -172,6 +172,8 @@ th:last-child, td:last-child { padding-right: 0; text-align: right; }
 .inventory-submit { min-height: 38px; gap: 10px; white-space: nowrap; font-size: 11px; }
 .inventory-feedback { min-height: 14px; margin: 8px 0 0; color: #7a13aa; font-size: 10px; }
 .inventory-alert .status-dot { background: #7a13aa; }
+#inventory-rows input { width: 180px; display: block; margin: 3px 0; padding: 6px; border: 1px solid var(--line); }
+#inventory-rows button { min-height: 30px; padding: 0 10px; }
 
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

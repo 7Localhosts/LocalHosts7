@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = window.KAYS_HAVEN_API_URL || "http://localhost:8000";
 
 /* -----------------------------
    STATE
@@ -27,6 +27,8 @@ const logoutButton = document.querySelector("#logout-button");
 const inventoryForm = document.querySelector("#inventory-form");
 const inventoryRows = document.querySelector("#inventory-rows");
 const inventoryFeedback = document.querySelector("#inventory-feedback");
+const adminForm = document.querySelector("#admin-form");
+const adminFeedback = document.querySelector("#admin-feedback");
 
 const changePasswordForm =
   document.querySelector("#change-password-form");
@@ -207,7 +209,7 @@ async function loadInventory() {
 
   try {
     const response =
-      await fetch(`${API_URL}/api/products`);
+      await fetch(`${API_URL}/api/products`, { headers: { Authorization: `Bearer ${accessToken}` } });
 
     const result =
       await response.json();
@@ -234,7 +236,7 @@ async function loadInventory() {
 
     inventoryRows.innerHTML = `
       <tr>
-        <td colspan="5">
+      <td colspan="5">
           Failed to load inventory.
         </td>
       </tr>
@@ -276,9 +278,9 @@ function renderInventory() {
         GH₵${Number(product.price || 0).toFixed(2)}
       </td>
 
-      <td>
-        ${stock}
-      </td>
+      <td>${stock}</td>
+
+      <td>GHS ${Number(product.price || 0).toFixed(2)}</td>
 
       <td>
         <span class="order-status ${
@@ -321,6 +323,75 @@ function renderInventory() {
   }
 }
 
+function renderInventory() {
+  if (!inventoryRows) return;
+  inventoryRows.replaceChildren();
+  inventory.forEach(product => {
+    const row = document.createElement("tr");
+    const stock = Number(product.stock || 0);
+    [product.name || "", product.category || "", stock, `GHS ${Number(product.price || 0).toFixed(2)}`]
+      .forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = String(value);
+        row.appendChild(cell);
+      });
+    const statusCell = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = `order-status ${stock <= 10 ? "status-new" : "status-ready"}`;
+    badge.textContent = stock <= 10 ? "Reorder soon" : "In stock";
+    statusCell.appendChild(badge);
+    row.appendChild(statusCell);
+    const editCell = document.createElement("td");
+    const sizesInput = document.createElement("input");
+    sizesInput.type = "text";
+    sizesInput.placeholder = "Sizes, comma separated";
+    sizesInput.value = Array.isArray(product.sizes) ? product.sizes.join(", ") : "";
+    sizesInput.dataset.productSizes = String(product.id);
+    sizesInput.setAttribute("aria-label", `Sizes for ${product.name}`);
+    const imageInput = document.createElement("input");
+    imageInput.type = "text";
+    imageInput.placeholder = "Image URL or Images/file.jpg";
+    imageInput.value = product.image || "";
+    imageInput.dataset.productImage = String(product.id);
+    imageInput.setAttribute("aria-label", `Image for ${product.name}`);
+    const saveButton = document.createElement("button");
+    saveButton.type = "button";
+    saveButton.className = "button button-primary";
+    saveButton.textContent = "Save";
+    saveButton.dataset.saveProduct = String(product.id);
+    editCell.append(sizesInput, imageInput, saveButton);
+    row.appendChild(editCell);
+    inventoryRows.appendChild(row);
+  });
+  const productCount = document.querySelector("#product-count");
+  const restockCount = document.querySelector("#restock-count");
+  const lowStock = inventory.filter(product => Number(product.stock || 0) <= 10).length;
+  if (productCount) productCount.textContent = `${inventory.length} ${inventory.length === 1 ? "product" : "products"}`;
+  if (restockCount) restockCount.textContent = `${lowStock} NEED RESTOCK`;
+}
+
+inventoryRows?.addEventListener("click", async event => {
+  const button = event.target.closest("[data-save-product]");
+  if (!button || !accessToken) return;
+  const id = button.dataset.saveProduct;
+  const sizes = inventoryRows.querySelector(`[data-product-sizes="${CSS.escape(id)}"]`)?.value || "";
+  const image = inventoryRows.querySelector(`[data-product-image="${CSS.escape(id)}"]`)?.value.trim() || "";
+  button.disabled = true;
+  if (inventoryFeedback) inventoryFeedback.textContent = "Saving product details…";
+  try {
+    const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(id)}`, {
+      method: "PATCH", headers: authHeaders(), body: JSON.stringify({ sizes, image })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed to save product details");
+    if (inventoryFeedback) inventoryFeedback.textContent = "Product sizes and image saved.";
+    await loadInventory();
+  } catch (error) {
+    if (inventoryFeedback) inventoryFeedback.textContent = error.message;
+    button.disabled = false;
+  }
+});
+
 /* -----------------------------
    ADD PRODUCT
 ----------------------------- */
@@ -360,6 +431,10 @@ if (inventoryForm) {
           0
         );
 
+      const image = String(formData.get("image") || "").trim();
+      const sizes = String(formData.get("sizes") || "")
+        .split(",").map(size => size.trim()).filter(Boolean);
+
       if (!name || !category) {
         if (inventoryFeedback) {
           inventoryFeedback.textContent =
@@ -368,7 +443,7 @@ if (inventoryForm) {
         return;
       }
 
-      if (!Number.isFinite(price) || price < 0) {
+      if (!Number.isFinite(price) || price <= 0) {
         if (inventoryFeedback) {
           inventoryFeedback.textContent =
             "Enter a valid price.";
@@ -401,8 +476,9 @@ if (inventoryForm) {
                 category,
                 price,
                 stock,
-                image: null,
-                description: null
+                image: image || null,
+                description: null,
+                sizes
               })
             }
           );
@@ -482,20 +558,55 @@ async function loadOrders() {
         ? result.orders
         : [];
 
-    if (ordersRows) {
-      renderOrders(ordersRows);
-    } else if (ordersContainer) {
-      renderOrdersContainer(
-        ordersContainer
-      );
-    }
+    if (ordersRows) renderOrders(ordersRows);
+    const recentRows = document.querySelector("#recent-orders-rows");
+    if (recentRows) renderOrders(recentRows);
+    const count = document.querySelector("#orders-page-count");
+    if (count) count.textContent = `${orders.length} ${orders.length === 1 ? "order" : "orders"}`;
+    const navCount = document.querySelector("#orders-count");
+    if (navCount) navCount.textContent = String(orders.length);
 
   } catch (error) {
     console.error(
       "Orders error:",
       error
     );
+    for (const rows of [ordersRows, document.querySelector("#recent-orders-rows")]) {
+      if (!rows) continue;
+      rows.replaceChildren();
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 6;
+      cell.textContent = error.message || "Failed to load orders.";
+      row.appendChild(cell);
+      rows.appendChild(row);
+    }
   }
+}
+
+if (adminForm) {
+  adminForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!accessToken) return;
+    const values = Object.fromEntries(new FormData(adminForm).entries());
+    if (adminFeedback) adminFeedback.textContent = "Creating staff account…";
+    try {
+      const response = await fetch(`${API_URL}/api/staff`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({
+          full_name: String(values.full_name || "").trim(),
+          login_name: String(values.login_name || "").trim(),
+          password: String(values.password || "")
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Failed to create admin account.");
+      adminForm.reset();
+      if (adminFeedback) adminFeedback.textContent = "Admin account created successfully.";
+    } catch (error) {
+      if (adminFeedback) adminFeedback.textContent = error.message;
+    }
+  });
 }
 
 /* -----------------------------
@@ -575,6 +686,38 @@ function renderOrders(rows) {
   });
 }
 
+
+function renderOrders(rows) {
+  rows.replaceChildren();
+  if (!orders.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.textContent = "No orders yet.";
+    row.appendChild(cell);
+    rows.appendChild(row);
+    return;
+  }
+  orders.forEach(order => {
+    const row = document.createElement("tr");
+    const items = Array.isArray(order.order_items) && order.order_items.length
+      ? order.order_items.map(item => `${item.product_name || "Product"} × ${item.quantity}${item.size ? ` · Size: ${item.size}` : ""}`).join("; ")
+      : "No items";
+    [
+      order.order_number || order.id || "",
+      order.customer_name || order.name || "",
+      items,
+      order.status || order.payment_status || "Pending",
+      `GHS ${Number(order.total_amount || 0).toFixed(2)}`,
+      formatDate(order.created_at)
+    ].forEach(value => {
+      const cell = document.createElement("td");
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    });
+    rows.appendChild(row);
+  });
+}
 
 function renderOrdersContainer(container) {
   container.innerHTML = "";

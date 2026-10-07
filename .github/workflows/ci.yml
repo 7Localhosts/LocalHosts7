@@ -12,13 +12,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Repository structure check
         run: |
           test -f README.md
-          test -f TEAM.md
-          test -f AI_USAGE.md
-          test -f Makefile
-          test -d docs
-          test -d src
+          test -f src/frontend/index.html
+          test -f src/admin/index.html
+          test -f src/backend/server.js
+          test -f supabase/migrations/202610070001_checkout_sizes_payments.sql
           test -d tests
-          test -d deployment
+      - name: Install backend dependencies
+        working-directory: src/backend
+        run: npm ci
+      - name: Backend tests
+        working-directory: src/backend
+        run: npm test
+      - name: JavaScript syntax checks
+        run: |
+          node --check src/backend/server.js
+          node --check src/backend/order-utils.js
+          node --check src/admin/app.js
+          node --check src/frontend/script.js
+          node --check src/frontend/checkout/checkout.js
+          node --check src/frontend/products/product.js

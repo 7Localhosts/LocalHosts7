@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Product Details - Kay's Haven</title>
+    <meta name="api-base" content="http://localhost:8000">
 
     <link rel="stylesheet" href="product.css">
 </head>
@@ -58,7 +59,7 @@
 
                 <!-- SIZE -->
 
-                <div class="product-variant">
+                <div class="product-variant" hidden>
 
                     <label for="product-size">
                         Size
@@ -141,7 +142,8 @@
 
     <!-- JAVASCRIPT -->
 
-    <script src="products.js"></script>
+    <script src="../product-images.js"></script>
+    <script src="../api-config.js"></script>
     <script src="product.js"></script>
 
 </body>

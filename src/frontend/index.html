@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kay's Haven | Quality Products from Crib to Campus</title>
-  <meta name="description" content="Kay's Haven — quality products from crib to campus.">
+  <meta name="description" content="Kay's Haven â€” quality products from crib to campus.">
+  <meta name="api-base" content="http://localhost:8000">
   <link rel="stylesheet" href="styles.css">
+  <script src="product-images.js"></script>
+  <script src="api-config.js"></script>
 </head>
 <body>
   <div class="announcement">
-    Nationwide delivery · Visit us in <strong>Dzorwulu & Achimota</strong>
+    Nationwide delivery Â· Visit us in <strong>Dzorwulu & Achimota</strong>
   </div>
 
   <header class="site-header">
@@ -25,9 +28,9 @@
 </nav>
 
       <div class="nav-actions">
-        <button class="icon-btn" id="searchBtn" aria-label="Search">⌕</button>
+        <button class="icon-btn" id="searchBtn" aria-label="Search">âŒ•</button>
         <button class="cart-btn" id="cartBtn">Cart <span id="cartCount">0</span></button>
-        <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+        <button class="menu-btn" id="menuBtn" aria-label="Open menu">â˜°</button>
       </div>
     </div>
 
@@ -53,7 +56,7 @@
           <p class="eyebrow">KAY'S HAVEN</p>
           <h1>Quality products<br><em>from crib to campus.</em></h1>
           <p class="hero-text">
-            From baby essentials to school supplies, toys, books and more —
+            From baby essentials to school supplies, toys, books and more â€”
             everything your little ones need as they grow.
           </p>
 
@@ -69,7 +72,7 @@
 
           <div class="hero-card">
             <span class="hero-badge">KAY'S HAVEN</span>
-            <div class="hero-placeholder">ADD<br>HERO IMAGE</div>
+            <img class="hero-placeholder" src="Images/WhatsApp%20Image%202026-09-22%20at%204.02.33%20PM.jpeg" alt="Kay's Haven baby clothing" loading="lazy">
 
             <div class="hero-card-copy">
               <strong>Crib to campus essentials</strong>
@@ -91,43 +94,43 @@
 
         <div class="category-grid">
           <button class="category-card" data-category="Baby">
-            <span class="category-icon">♡</span>
+            <span class="category-icon">â™¡</span>
             <strong>Baby</strong>
-            <small>0–1 years</small>
+            <small>0â€“1 years</small>
           </button>
 
           <button class="category-card" data-category="Toddler">
-            <span class="category-icon">✦</span>
+            <span class="category-icon">âœ¦</span>
             <strong>Toddler</strong>
-            <small>1–3 years</small>
+            <small>1â€“3 years</small>
           </button>
 
           <button class="category-card" data-category="Kids">
-            <span class="category-icon">★</span>
+            <span class="category-icon">â˜…</span>
             <strong>Kids</strong>
-            <small>3–12 years</small>
+            <small>3â€“12 years</small>
           </button>
 
           <button class="category-card" data-category="Teens">
-            <span class="category-icon">◆</span>
+            <span class="category-icon">â—†</span>
             <strong>Teens</strong>
-            <small>13–18 years</small>
+            <small>13â€“18 years</small>
           </button>
 
           <button class="category-card" data-category="Toys">
-            <span class="category-icon">◉</span>
+            <span class="category-icon">â—‰</span>
             <strong>Toys</strong>
             <small>Fun for every age</small>
           </button>
 
           <button class="category-card" data-category="Accessories">
-            <span class="category-icon">✧</span>
+            <span class="category-icon">âœ§</span>
             <strong>Accessories</strong>
             <small>Little extras</small>
           </button>
 
           <button class="category-card" data-category="Back to School">
-            <span class="category-icon">✎</span>
+            <span class="category-icon">âœŽ</span>
             <strong>Back to School</strong>
             <small>School essentials</small>
           </button>
@@ -244,10 +247,11 @@
 
       <div>
         <h4>Help</h4>
-        <a href="#">Delivery information</a>
-        <a href="#">Returns</a>
-        <a href="#">FAQs</a>
-        <a href="#">Reviews</a>
+        <a href="policies.html#about">About Kay's Haven</a>
+          <a href="policies.html#delivery">Delivery information</a>
+          <a href="policies.html#refunds">Returns &amp; refunds</a>
+          <a href="policies.html#faq">FAQs</a>
+          <a href="policies.html#feedback">Customer feedback</a>
       </div>
 
       <div>
@@ -260,15 +264,15 @@
     </div>
 
     <div class="container footer-bottom">
-      <span>© 2026 Kay's Haven. All rights reserved.</span>
-      <span>Privacy · Terms</span>
+      <span>Â© 2026 Kay's Haven. All rights reserved.</span>
+      <span><a href="policies.html#terms">Terms</a> Â· <a href="policies.html#refunds">Refunds &amp; cancellation</a></span>
     </div>
   </footer>
 
   <aside class="cart-drawer" id="cartDrawer">
     <div class="drawer-head">
       <h2>Your cart</h2>
-      <button id="closeCart">×</button>
+      <button id="closeCart">Ã—</button>
     </div>
 
     <div class="cart-items" id="cartItems"></div>
@@ -285,71 +289,6 @@
   </aside>
 
   <div class="overlay" id="overlay"></div>
-
-  <div class="modal" id="checkoutModal">
-    <div class="modal-card">
-      <button class="modal-close" id="closeCheckout">×</button>
-
-      <p class="eyebrow">GUEST CHECKOUT</p>
-      <h2>Where should we deliver?</h2>
-
-      <form id="checkoutForm">
-        <div class="form-grid">
-          <label>
-            Full name
-            <input name="name" required placeholder="Your full name">
-          </label>
-
-          <label>
-            Phone / WhatsApp
-            <input name="phone" required placeholder="059 523 7037">
-          </label>
-
-          <label class="wide">
-            Email
-            <input type="email" name="email" placeholder="you@example.com">
-          </label>
-
-          <label class="wide">
-            Delivery address
-            <textarea name="address" required placeholder="House number, street, area..."></textarea>
-          </label>
-
-          <label>
-            City / Area
-            <input name="city" required placeholder="Accra">
-          </label>
-
-          <label>
-            Delivery method
-            <select name="delivery">
-              <option>Home delivery</option>
-              <option>Pickup — Dzorwulu</option>
-              <option>Pickup — Achimota</option>
-            </select>
-          </label>
-
-          <label class="wide">
-            Payment method
-            <select name="payment">
-              <option>Mobile Money</option>
-              <option>Visa Card</option>
-              <option>Bank Transfer</option>
-              <option>Cash</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="checkout-summary">
-          <span>Order total</span>
-          <strong id="checkoutTotal">GHS 0.00</strong>
-        </div>
-
-        <button class="btn btn-primary full" type="submit">Place order</button>
-        <p class="small-note">Payment processing and order submission connect to your backend.</p>
-      </form>
-    </div>
-  </div>
 
   <div class="toast" id="toast"></div>
 

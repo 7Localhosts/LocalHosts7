@@ -1,5 +1,19 @@
 let products = [];
-let cart = JSON.parse(localStorage.getItem("kayshaven-cart") || "[]");
+let cart = readStoredCart();
+
+function readStoredCart() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("kayshaven-cart") || "[]");
+    return Array.isArray(stored) ? stored.filter(Boolean).map(item => ({
+      ...item,
+      id: item.id ?? item.product_id,
+      qty: Number(item.qty ?? item.quantity) || 1,
+      size: item.size || ""
+    })) : [];
+  } catch {
+    return [];
+  }
+}
 
 let currentFilter = "All";
 let searchTerm = "";
@@ -16,7 +30,7 @@ const money = amount =>
 
 async function loadProducts() {
   try {
-    const response = await fetch("http://localhost:8000/api/products");
+    const response = await fetch(`${window.KAYS_HAVEN_API_URL || "http://localhost:8000"}/api/products`);
 
     if (!response.ok) {
       throw new Error(`Server error: ${response.status}`);
@@ -70,22 +84,23 @@ function renderProducts() {
 
     const stock = Number(product.stock ?? 0);
 
-    const image = product.image
-      ? `<img src="${product.image}" alt="${product.name}">`
-      : `<div class="placeholder">ADD<br>PRODUCT IMAGE</div>`;
+    const imageUrl = productImageUrl(product);
+    const image = imageUrl
+      ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" loading="lazy">`
+      : `<div class="placeholder">Image unavailable</div>`;
 
     const outOfStock = stock <= 0;
 
     return `
       <article class="product-card">
 
-        <a href="products/product.html?id=${product.id}" class="product-link">
+        <a href="products/product.html?id=${encodeURIComponent(product.id)}" class="product-link">
 
           <div class="product-image">
 
             ${
               product.badge
-                ? `<span class="product-badge">${product.badge}</span>`
+                ? `<span class="product-badge">${escapeHtml(product.badge)}</span>`
                 : ""
             }
 
@@ -101,9 +116,9 @@ function renderProducts() {
 
           <div class="product-info">
 
-            <small>${product.category || ""}</small>
+            <small>${escapeHtml(product.category || "")}</small>
 
-            <h3>${product.name || "Unnamed Product"}</h3>
+            <h3>${escapeHtml(product.name || "Unnamed Product")}</h3>
 
             <strong>${money(product.price)}</strong>
 
@@ -113,8 +128,8 @@ function renderProducts() {
 
         <button
           class="add-btn"
-          onclick="addToCart(${product.id})"
-          aria-label="Add ${product.name} to cart"
+          data-add-product="${escapeHtml(product.id)}"
+          aria-label="Add ${escapeHtml(product.name)} to cart"
           ${outOfStock ? "disabled" : ""}
         >
           +
@@ -169,9 +184,7 @@ function cartTotal() {
 
 function addToCart(id) {
 
-  const product = products.find(
-    item => Number(item.id) === Number(id)
-  );
+  const product = products.find(item => String(item.id) === String(id));
 
   if (!product) {
     toast("Product not found");
@@ -185,9 +198,11 @@ function addToCart(id) {
     return;
   }
 
-  const existing = cart.find(
-    item => Number(item.id) === Number(id)
-  );
+  if (Array.isArray(product.sizes) && product.sizes.length) {
+    window.location.href = `products/product.html?id=${encodeURIComponent(product.id)}`;
+    return;
+  }
+  const existing = cart.find(item => String(item.id) === String(id) && !item.size);
 
   if (existing) {
 
@@ -222,13 +237,13 @@ function addToCart(id) {
 function changeQty(id, delta) {
 
   const item = cart.find(
-    product => Number(product.id) === Number(id)
+    product => String(product.id) === String(id)
   );
 
   if (!item) return;
 
   const product = products.find(
-    product => Number(product.id) === Number(id)
+    product => String(product.id) === String(id)
   );
 
   const stock = product
@@ -240,7 +255,7 @@ function changeQty(id, delta) {
   if (item.qty <= 0) {
 
     cart = cart.filter(
-      product => Number(product.id) !== Number(id)
+      product => String(product.id) !== String(id)
     );
 
   } else if (stock > 0 && item.qty > stock) {
@@ -276,7 +291,7 @@ function renderCart() {
 
   $("cartItems").innerHTML = cart.length
 
-    ? cart.map(item => `
+    ? cart.map((item, index) => `
 
       <div class="cart-item">
 
@@ -284,7 +299,7 @@ function renderCart() {
 
           ${
             item.image
-              ? `<img src="${item.image}" alt="${item.name}">`
+              ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}">`
               : `PRODUCT<br>IMAGE`
           }
 
@@ -292,14 +307,15 @@ function renderCart() {
 
         <div>
 
-          <h4>${item.name}</h4>
+          <h4>${escapeHtml(item.name)}</h4>
 
           <p>${money(item.price)}</p>
+          ${item.size ? `<p>Size: ${escapeHtml(item.size)}</p>` : ""}
 
           <div class="qty">
 
             <button
-              onclick="changeQty(${item.id}, -1)"
+              onclick="changeCartQty(${index}, -1)"
               aria-label="Decrease quantity"
             >
               −
@@ -308,7 +324,7 @@ function renderCart() {
             <span>${item.qty}</span>
 
             <button
-              onclick="changeQty(${item.id}, 1)"
+              onclick="changeCartQty(${index}, 1)"
               aria-label="Increase quantity"
             >
               +
@@ -320,7 +336,7 @@ function renderCart() {
 
         <button
           class="remove"
-          onclick="changeQty(${item.id}, -${item.qty})"
+          onclick="changeCartQty(${index}, -${item.qty})"
         >
           Remove
         </button>
@@ -602,3 +618,27 @@ if ($("newsletterForm")) {
 
 loadProducts();
 renderCart();
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  })[character]);
+}
+
+function changeCartQty(index, delta) {
+  const item = cart[index];
+  if (!item) return;
+  const product = products.find(entry => String(entry.id) === String(item.id));
+  const stock = Number(product?.stock ?? item.stock ?? 0);
+  const next = Number(item.qty || 0) + Number(delta);
+  if (next <= 0) cart.splice(index, 1);
+  else if (next > stock) toast("Maximum available stock reached");
+  else item.qty = next;
+  saveCart();
+  renderCart();
+}
+
+document.addEventListener("click", event => {
+  const button = event.target.closest("[data-add-product]");
+  if (button) addToCart(button.dataset.addProduct);
+});
