@@ -135,6 +135,7 @@ assert.doesNotMatch(shop, /searchBtn|searchPanel|Search products/);
 assert.doesNotMatch(storefrontScript, /searchBtn|searchPanel|searchInput/);
 assert.match(shop, /<span>Quality products<\/span> <em>from crib to campus\.<\/em>/);
 assert.match(shop, /aria-label="Open menu" aria-controls="mobileNav" aria-expanded="false"><span><\/span><span><\/span><span><\/span>/);
+assert.equal((shop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "desktop and mobile storefront Login links target the sibling admin directory from frontend roots");
 assert.match(shop, /social-links[\s\S]*?aria-label="Instagram: @kayshaven\.mothercare"[\s\S]*?<svg/);
 assert.match(shop, /social-links[\s\S]*?aria-label="Facebook: Kay's Haven"[\s\S]*?<svg/);
 assert.match(fs.readFileSync(path.join(root, "DESIGN_SYSTEM.md"), "utf8"), /#000000[\s\S]*?black footer/i);
@@ -413,6 +414,7 @@ try {
   const builtAdmin = fs.readFileSync(path.join(previewOutput, "admin", "index.html"), "utf8");
   assert.match(builtLanding, /href="shop\.html"[^>]*>Enter Shop/);
   assert.match(builtShop, /<span>Quality products<\/span>/);
+  assert.equal((builtShop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "built desktop and mobile Login links target the sibling admin directory");
   assert.doesNotMatch(builtShop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop/);
   assert.match(builtAdmin, /href="\.\.\/shop\.html"/);
   assert.match(builtAdmin, /src="\.\.\/images\/landing-mother-and-baby-clean\.png"/);
@@ -423,9 +425,11 @@ try {
     const html = fs.readFileSync(pageFile, "utf8");
     for (const [, rawUrl] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
       if (!rawUrl || /^(?:[a-z]+:|\/\/|#)/i.test(rawUrl)) continue;
-      const localUrl = decodeURIComponent(rawUrl.split(/[?#]/, 1)[0]);
+      const browserUrl = new URL(rawUrl, `http://preview.local/${relativePage}`);
+      const localUrl = decodeURIComponent(browserUrl.pathname).replace(/^\/+/, "");
       if (!localUrl) continue;
-      assert.equal(fs.existsSync(path.resolve(path.dirname(pageFile), localUrl)), true, `${relativePage} asset/link resolves: ${rawUrl}`);
+      const resolvedPath = path.resolve(previewOutput, localUrl);
+      assert.equal(fs.existsSync(resolvedPath), true, `${relativePage} asset/link resolves: ${rawUrl}`);
     }
   }
   assert.throws(() => buildStaticPreview(previewOutput), /already exists/);
