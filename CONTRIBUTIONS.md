@@ -27,6 +27,7 @@ This evidence snapshot was reviewed on 2026-10-16 and is not a peer evaluation. 
 
 - The active local branch is `integrate-admin`. At the start of the October 16 checkpoint it contained five local commits ahead of its tracked origin branch. Those commits retain their existing author metadata; do not interpret them as contributions by the four feature-branch members above.
 - This checkpoint adds `6f2357e` for the storefront Login route and its regression checks, and `4ef40da` for 73 catalogue-mapped product images plus the existing brand/landing assets. Both were created with the repository's configured local Git author name, `Maclean`; these integration commits are not attributed to another team member.
+- The checkpoint commits and evidence update were pushed normally to the existing `origin/integrate-admin` branch. The latest pushed checkpoint commit is `3c507f8`. No force-push, merge, or deployment occurred.
 - The local project safety branch is `backup/pre-dcit208-20261016`; it is a recovery snapshot, not a team contribution.
 - The checkpoint ran the existing backend/frontend test suite and 14 JavaScript syntax checks successfully. Browser evidence and limitations are recorded in `docs/06_sprint_2_quality/major-integration-test-output-2026-10-16.md`.
 - Three members currently have only issue-assignment evidence in the inspected GitHub records. Ask them to provide their own authentic commit, pull request, review, and testing links if work exists elsewhere. No activity should be created on their behalf.

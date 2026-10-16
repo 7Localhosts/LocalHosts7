@@ -6,7 +6,7 @@ This audit records known AI assistance for the current repository handoff. It do
 
 - Codex inspected local Git status/history, source configuration, tests, D0–D10 folder contents, backend health, and Supabase schema using read-only checks.
 - Codex prepared the documentation and test matrix in this working tree from repository/GitHub evidence and actual command output.
-- No live payment, database mutation, migration, PR, merge, or deployment was performed. Two local integration commits were created on `integrate-admin` after checks: `6f2357e` (Login path and regression check) and `4ef40da` (verified mapped image assets). Their author metadata is the repository's configured local Git identity; no teammate identity was substituted. A normal push has not yet been attempted as of this audit snapshot.
+- No live payment, database mutation, migration, PR, merge, or deployment was performed. Three local integration commits were created on `integrate-admin` after checks: `6f2357e` (Login path and regression check), `4ef40da` (verified mapped image assets), and `3c507f8` (test/contribution evidence). Their author metadata is the repository's configured local Git identity; no teammate identity was substituted. The branch was pushed normally to the existing origin, with no force-push.
 - Secret values were not printed or written to documentation.
 
 ## Earlier AI assistance / attribution
