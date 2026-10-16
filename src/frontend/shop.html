@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" href="images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <title>Kay's Haven | Quality products from crib to campus.</title>
+  <meta name="description" content="Kay's Haven — Quality products from crib to campus.">
+  <meta name="api-base" content="">
+  <link rel="stylesheet" href="brand-system.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="product-images.js?v=5"></script>
+  <script src="api-config.js"></script>
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <symbol id="icon-shop" viewBox="0 0 24 24"><path d="M3 10h18l-1.3 10H4.3L3 10Z"/><path d="M5 10 7 4h10l2 6M9 10v3m6-3v3"/></symbol>
+    <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="icon-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.3 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 9H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></symbol>
+    <symbol id="icon-baby" viewBox="0 0 24 24"><path d="M8 4h8m-7 0v3l-3 3v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9l-3-3V4"/><path d="M8 13h8m-6 3h4"/></symbol>
+    <symbol id="icon-toddler" viewBox="0 0 24 24"><path d="M7 14c-2 0-3 1.5-3 3s1.5 3 4 3 4-1.5 4-3.5S10 14 7 14Zm10-8c-2 0-3 1.5-3 3s1.5 3 4 3 4-1.5 4-3.5S20 6 17 6Z"/><path d="M6 11v.01M16 3v.01"/></symbol>
+    <symbol id="icon-kids" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M8 21v-5l-2-4a2 2 0 0 1 2-3h8a2 2 0 0 1 2 3l-2 4v5m-4-12v5m-4 0h8"/></symbol>
+    <symbol id="icon-teens" viewBox="0 0 24 24"><path d="M5 8 12 4l7 4v12H5V8Z"/><path d="M5 8h14m-7-4v16m-7-8h5m4 0h5"/></symbol>
+    <symbol id="icon-toys" viewBox="0 0 24 24"><path d="M8 7a3 3 0 1 1 6 0v1h2a4 4 0 0 1 4 4v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a4 4 0 0 1 4-4h0V7Z"/><path d="M8 13v.01M16 13v.01m-6 3a3 3 0 0 0 4 0"/></symbol>
+    <symbol id="icon-accessories" viewBox="0 0 24 24"><path d="M4 8h16l-1 13H5L4 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></symbol>
+    <symbol id="icon-school" viewBox="0 0 24 24"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v17H5.5A2.5 2.5 0 0 0 3 22V5.5Zm18 0A2.5 2.5 0 0 0 18.5 3H12v17h6.5A2.5 2.5 0 0 1 21 22V5.5Z"/><path d="M6 7h3m-3 4h3m6-4h3m-3 4h3"/></symbol>
+    <symbol id="icon-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-7 7L3 12Z"/><circle cx="7.5" cy="8" r="1"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16m-10 4v7m4-7v7M6 7l1 14h10l1-14M9 7V4h6v3"/></symbol>
+  </svg>
+  <div class="announcement">
+    Shop online or visit us in <strong>Dzorwulu & Achimota</strong>
+  </div>
+
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="#" class="logo kh-brand" aria-label="Kay's Haven home"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
+
+      <nav class="desktop-nav">
+  <a href="#shop"><svg class="nav-icon" aria-hidden="true"><use href="#icon-shop"/></svg>Shop</a>
+  <a href="#categories"><svg class="nav-icon" aria-hidden="true"><use href="#icon-grid"/></svg>Categories</a>
+  <a href="policies.html#about"><svg class="nav-icon" aria-hidden="true"><use href="#icon-info"/></svg>About</a>
+  <a href="#contact"><svg class="nav-icon" aria-hidden="true"><use href="#icon-mail"/></svg>Contact</a>
+  <a href="admin/"><svg class="nav-icon" aria-hidden="true"><use href="#icon-user"/></svg>Login</a>
+</nav>
+
+      <div class="nav-actions">
+        <button class="cart-btn" id="cartBtn" type="button" aria-label="Open shopping cart, 0 items"><svg class="nav-icon cart-icon" aria-hidden="true"><use href="#icon-cart"/></svg><span id="cartCount">0</span></button>
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobileNav" hidden>
+      <a href="#shop"><svg class="nav-icon" aria-hidden="true"><use href="#icon-shop"/></svg>Shop</a>
+      <a href="#categories"><svg class="nav-icon" aria-hidden="true"><use href="#icon-grid"/></svg>Categories</a>
+      <a href="policies.html#about"><svg class="nav-icon" aria-hidden="true"><use href="#icon-info"/></svg>About</a>
+      <a href="#contact"><svg class="nav-icon" aria-hidden="true"><use href="#icon-mail"/></svg>Contact</a>
+      <a href="admin/"><svg class="nav-icon" aria-hidden="true"><use href="#icon-user"/></svg>Login</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="category-strip" id="categories">
+      <div class="container">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">SHOP BY CATEGORY</p>
+            <h2>Find their next favourite</h2>
+          </div>
+        </div>
+
+        <div class="category-grid">
+          <button class="category-card" data-category="Baby">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-baby"/></svg>
+            <strong>Baby</strong>
+            <small>0–1 years</small>
+          </button>
+
+          <button class="category-card" data-category="Toddler">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-toddler"/></svg>
+            <strong>Toddler</strong>
+            <small>1–3 years</small>
+          </button>
+
+          <button class="category-card" data-category="Kids">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-kids"/></svg>
+            <strong>Kids</strong>
+            <small>3–12 years</small>
+          </button>
+
+          <button class="category-card" data-category="Teens">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-teens"/></svg>
+            <strong>Teens</strong>
+            <small>13–18 years</small>
+          </button>
+
+          <button class="category-card" data-category="Toys">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-toys"/></svg>
+            <strong>Toys</strong>
+            <small>Fun for every age</small>
+          </button>
+
+          <button class="category-card" data-category="Accessories">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-accessories"/></svg>
+            <strong>Accessories</strong>
+            <small>Little extras</small>
+          </button>
+
+          <button class="category-card" data-category="Back to School">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-school"/></svg>
+            <strong>Back to School</strong>
+            <small>School essentials</small>
+          </button>
+
+          <button class="category-card sale-card" data-category="Clearance">
+            <svg class="category-icon" aria-hidden="true"><use href="#icon-tag"/></svg>
+            <strong>Clearance</strong>
+            <small>Last-chance deals</small>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="products-section" id="shop">
+      <div class="container">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">THE HAVEN SHOP</p>
+            <h2>Featured products</h2>
+          </div>
+
+          <div class="filter-wrap">
+            <button class="filter active" data-filter="All">All</button>
+            <button class="filter" data-filter="Baby">Baby</button>
+            <button class="filter" data-filter="Toddler">Toddler</button>
+            <button class="filter" data-filter="Kids">Kids</button>
+            <button class="filter" data-filter="Teens">Teens</button>
+            <button class="filter" data-filter="Toys">Toys</button>
+            <button class="filter" data-filter="Accessories">Accessories</button>
+            <button class="filter" data-filter="Back to School">School</button>
+            <button class="filter" data-filter="Clearance">Clearance</button>
+          </div>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+        <p class="empty-state" id="emptyState">No products found. Try another search.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer id="contact">
+    <div class="container footer-grid">
+      <div>
+        <a href="#" class="logo kh-brand" aria-label="Kay's Haven home"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
+        <p class="footer-note"><span>Quality products</span> <em>from crib to campus.</em></p>
+        <p class="social-handle">@kayshaven.mothercare</p>
+
+        <div class="social-links">
+          <a href="https://www.instagram.com/kayshaven.mothercare/" target="_blank" rel="noopener noreferrer" aria-label="Instagram: @kayshaven.mothercare">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/></svg>
+          </a>
+          <a href="https://www.facebook.com/profile.php?id=100051290409328" target="_blank" rel="noopener noreferrer" aria-label="Facebook: Kay's Haven">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.4 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.2V13H10v8h3.4Z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <h4>Shop</h4>
+        <a href="#shop">All products</a>
+        <a href="#categories">Categories</a>
+        <a href="#shop">Back to School</a>
+        <a href="#shop">Clearance</a>
+      </div>
+
+      <div>
+        <h4>Help</h4>
+          <a href="policies.html#about">About <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span></a>
+          <a href="policies.html#collection">Transport and collection</a>
+          <a href="policies.html#refunds">Returns &amp; refunds</a>
+          <a href="policies.html#faq">FAQs</a>
+          <a href="policies.html#feedback">Customer feedback</a>
+      </div>
+
+      <div>
+        <h4>Contact</h4>
+        <a href="https://wa.me/233595237037" target="_blank" rel="noopener">WhatsApp: 059 523 7037</a>
+        <a href="tel:+233540987398">Phone: 054 098 7398</a>
+        <a href="mailto:Kayshaven.gh@gmail.com">Kayshaven.gh@gmail.com</a>
+        <p>Dzorwulu & Achimota</p>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <span>© 2026 <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span>. All rights reserved.</span>
+      <span><a href="policies.html#terms">Terms</a> · <a href="policies.html#refunds">Refunds &amp; cancellation</a></span>
+    </div>
+  </footer>
+
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="drawer-head">
+      <h2><svg class="heading-icon" aria-hidden="true"><use href="#icon-cart"/></svg>Your cart</h2>
+      <button id="closeCart" type="button" aria-label="Close cart">×</button>
+    </div>
+
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-footer">
+      <div class="total-row">
+        <span>Subtotal</span>
+        <strong id="cartTotal">GHS 0.00</strong>
+      </div>
+
+      <button class="btn btn-primary full" id="checkoutBtn">Proceed to checkout</button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
