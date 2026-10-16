@@ -554,7 +554,7 @@ function renderInventory() {
     card.className = "inventory-product-card";
     card.dataset.inventoryProduct = String(product.id);
     card.setAttribute("role", "listitem");
-    const imageUrl = productImageUrl(product, "../frontend/images/");
+    const imageUrl = productImageUrl(product, "../frontend/product-images/");
     card.dataset.originalImageUrl = imageUrl || "";
 
     const previewArea = document.createElement("div");
@@ -1294,7 +1294,7 @@ function appendOrderCard(container, order, historical) {
     itemRow.className = "order-product-row";
     const catalogueProduct = inventory.find(product => String(product.id) === String(item.product_id)) || {};
     const imageProduct = { ...catalogueProduct, id: item.product_id ?? catalogueProduct.id, image: catalogueProduct.image || item.product_image || item.image || "" };
-    const imageUrl = productImageUrl(imageProduct, "../frontend/images/");
+    const imageUrl = productImageUrl(imageProduct, "../frontend/product-images/");
     const thumbnail = document.createElement("div");
     thumbnail.className = "order-product-thumbnail";
     if (imageUrl) {

@@ -46,14 +46,14 @@ function assembleSite(output, apiBase) {
       html = html.replace("../frontend/product-images.js", "../product-images.js");
       html = html.replace("../frontend/api-config.js", "../api-config.js");
       html = html.replace("../frontend/brand-system.css", "../brand-system.css");
-      html = html.replace("../frontend/images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png", "../images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png");
-      html = html.replace("../frontend/images/landing-mother-and-baby-clean.png", "../images/landing-mother-and-baby-clean.png");
+      html = html.replace("../frontend/site-assets/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png", "../site-assets/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png");
+      html = html.replace("../frontend/site-assets/landing-mother-and-baby-clean.png", "../site-assets/landing-mother-and-baby-clean.png");
     }
     fs.writeFileSync(file, html, "utf8");
   }
   const adminScript = path.join(output, "admin", "app.js");
   const adminScriptSource = fs.readFileSync(adminScript, "utf8");
-  fs.writeFileSync(adminScript, adminScriptSource.replaceAll("../frontend/images/", "../images/"), "utf8");
+  fs.writeFileSync(adminScript, adminScriptSource.replaceAll("../frontend/product-images/", "../product-images/"), "utf8");
   return output;
 }
 

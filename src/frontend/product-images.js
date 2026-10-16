@@ -1,4 +1,4 @@
-// Verified catalogue image assignments. The local folder is lowercase for case-sensitive production hosts.
+// Verified catalogue image assignments. Product files live outside the legacy Images folder to avoid case-only path collisions.
 const verifiedProductImagesById = new Map([
   ["4", "4-seba-med-cleansing-bar.png"],
   ["6", "6-tommee-tippee-bottle-and-warmer.png"],
@@ -145,7 +145,7 @@ const unavailableVerifiedSourcePaths = new Set([
   "images/catalog-cleaned/little-angel.jpg"
 ]);
 
-function productImageUrl(product, prefix = "images/") {
+function productImageUrl(product, prefix = "product-images/") {
   if (!product) return "";
 
   const rawImage = typeof product.image === "string" ? product.image.trim().replace(/\\/g, "/") : "";

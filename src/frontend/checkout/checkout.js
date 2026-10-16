@@ -52,7 +52,7 @@ function renderOrderSummary() {
   const container = document.getElementById("order-items");
   const message = document.getElementById("checkout-price-message");
   const items = lines.map(({ item, product, quantity, unitPrice }) => {
-    const image = product ? productImageUrl(product, "../images/") : "";
+    const image = product ? productImageUrl(product, "../product-images/") : "";
     const imageMarkup = image && product?.imageAvailable
       ? `<img class="checkout-item-image" data-checkout-product-id="${escapeHtml(product.id)}" src="${escapeHtml(image)}" alt="" loading="lazy">`
       : "";
@@ -86,7 +86,7 @@ async function loadCheckoutCatalogue() {
     await Promise.all([...cartIds].map(async id => {
       const product = checkoutProducts.get(id);
       if (!product) return;
-      const image = productImageUrl(product, "../images/");
+      const image = productImageUrl(product, "../product-images/");
       const absoluteImage = image ? new URL(image, window.location.href).href : "";
       product.imageAvailable = await productImageLoads(absoluteImage);
     }));
@@ -100,7 +100,7 @@ async function loadCheckoutCatalogue() {
         item.price = Number(product.price);
         cartPricesChanged = true;
       }
-      if (product?.imageAvailable) item.image = product.image || productImageUrl(product, "../images/");
+      if (product?.imageAvailable) item.image = product.image || productImageUrl(product, "../product-images/");
     });
     if (cartPricesChanged) localStorage.setItem("kayshaven-cart", JSON.stringify(cachedCart));
     renderOrderSummary();

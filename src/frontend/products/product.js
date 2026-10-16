@@ -12,7 +12,7 @@ async function loadProduct() {
     const product = products.find(item => String(item.id) === String(productId));
     if (!product) throw new Error("This product could not be found.");
 
-    const imageUrl = productImageUrl(product, "../images/");
+    const imageUrl = productImageUrl(product, "../product-images/");
     const absoluteImageUrl = imageUrl ? new URL(imageUrl, window.location.href).href : "";
     if (!await productImageLoads(absoluteImageUrl)) {
       throw new Error("This product is not currently available in the shop.");
@@ -93,7 +93,7 @@ async function loadProduct() {
         const currentQty = Number(existing.qty ?? existing.quantity ?? 0);
         existing.qty = currentQty + qty;
       } else {
-        const productImage = productImageUrl(product, "../images/");
+        const productImage = productImageUrl(product, "../product-images/");
         cart.push({ id: product.id, name: product.name, category: product.category, price: Number(product.price), image: productImage ? new URL(productImage, window.location.href).href : "", size, qty });
       }
       localStorage.setItem("kayshaven-cart", JSON.stringify(cart));

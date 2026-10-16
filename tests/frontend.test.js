@@ -13,7 +13,7 @@ assert.equal(context.productImageUrl({ id: 1 }), "", "unmapped products must not
 const verifiedImageEntries = vm.runInNewContext("Array.from(verifiedProductImagesById.entries())", context);
 assert.equal(verifiedImageEntries.length, 73, "only the visually verified product assignments are active");
 for (const [id, filename] of verifiedImageEntries) {
-  assert.equal(fs.existsSync(path.join(frontend, "images", filename)), true, `verified file exists for product ${id}: ${filename}`);
+  assert.equal(fs.existsSync(path.join(frontend, "product-images", filename)), true, `verified file exists for product ${id}: ${filename}`);
 }
 for (const product of [
   { id: 52, name: "Tommee tipped bottle and warmer", image: "Images/catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" },
@@ -21,7 +21,7 @@ for (const product of [
   { id: 187, name: "Smiggle blue back pack", image: "Images/catalog-cleaned/smiggle-blue-back-pack.jpg" }
 ]) {
   const imageUrl = context.productImageUrl(product);
-  assert.equal(imageUrl, `images/${verifiedImageEntries.find(([id]) => id === String(product.id))[1]}`);
+  assert.equal(imageUrl, `product-images/${verifiedImageEntries.find(([id]) => id === String(product.id))[1]}`);
   assert.equal(fs.existsSync(path.join(frontend, imageUrl)), true, `verified catalogue product resolves a file: ${imageUrl}`);
 }
 assert.equal(context.productImageUrl({ name: "An unmapped item" }), "", "unmatched products keep an honest image fallback");
@@ -32,14 +32,14 @@ assert.equal(context.productImageUrl({ id: 5, name: "Little Angel", image: "http
 assert.equal(context.productImageUrl({ id: 52, image: "https://store.supabase.co/storage/v1/object/public/kays-haven-products/9efc40bb-1145-4e62-84b4-3e6776ec5c2e.webp" }), "https://store.supabase.co/storage/v1/object/public/kays-haven-products/9efc40bb-1145-4e62-84b4-3e6776ec5c2e.webp", "a saved storage URL takes precedence over a legacy local mapping");
 assert.equal(context.productImageUrl({ id: 51, name: "Little angel", image: "Images/catalog-cleaned/little-angel.jpg" }), "", "missing edited sources do not leave broken legacy paths");
 assert.equal(context.productImageUrl({ id: 16, name: "Monsoon Blue Floral Dress", image: "Images/catalog-cleaned/monsoon-blue-floral-dress.jpg" }), "", "visually conflicting products remain unmapped");
-assert.equal(context.productImageUrl({ name: "Pink Baby Layette Bodysuit" }), "images/15-pink-baby-layette-bodysuit.png", "exact-name verified mappings resolve the renamed asset");
-assert.equal(context.productImageUrl({ id: 71, name: "Blue red. 3pk sleep suit" }), "images/71-blue-red-3pk-sleep-suit.png", "the verified baby sleepsuit photo resolves for its matched product ID");
+assert.equal(context.productImageUrl({ name: "Pink Baby Layette Bodysuit" }), "product-images/15-pink-baby-layette-bodysuit.png", "exact-name verified mappings resolve the renamed asset");
+assert.equal(context.productImageUrl({ id: 71, name: "Blue red. 3pk sleep suit" }), "product-images/71-blue-red-3pk-sleep-suit.png", "the verified baby sleepsuit photo resolves for its matched product ID");
 assert.equal(context.productImageUrl({ id: 23, name: "Blue Red 3pk Sleepsuit" }), "", "a similarly named teen catalogue row does not inherit the baby sleepsuit photo");
 for (const [product, prefix, base] of [
-  [{ id: 52, image: "Images/catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "images/", frontend],
-  [{ id: 52, image: "Images/catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "../images/", path.join(frontend, "products")],
-  [{ id: 52, image: "catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "images/", frontend],
-  [{ id: 52, image: "catalog-cleaned\\tommee-tipped-bottle-and-warmer.jpg" }, "../images/", path.join(frontend, "products")]
+  [{ id: 52, image: "Images/catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "product-images/", frontend],
+  [{ id: 52, image: "Images/catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "../product-images/", path.join(frontend, "products")],
+  [{ id: 52, image: "catalog-cleaned/tommee-tipped-bottle-and-warmer.jpg" }, "product-images/", frontend],
+  [{ id: 52, image: "catalog-cleaned\\tommee-tipped-bottle-and-warmer.jpg" }, "../product-images/", path.join(frontend, "products")]
 ]) {
   const imageUrl = context.productImageUrl(product, prefix);
   const imagePath = path.resolve(base, decodeURIComponent(imageUrl));
@@ -67,8 +67,8 @@ assert.match(landing, /class="landing-wordmark kh-brand"[^>]*><span class="kh-br
 assert.match(landing, /<p class="landing-slogan"[^>]*>Quality products from crib to campus\.<\/p>/);
 assert.match(landing, /href="shop\.html">Enter Shop<\/a>/);
 assert.doesNotMatch(landing, /href="#shop"/);
-assert.match(landing, /src="images\/landing-mother-and-baby-clean\.png"/);
-assert.equal(fs.existsSync(path.join(frontend, "images", "landing-mother-and-baby-clean.png")), true);
+assert.match(landing, /src="site-assets\/landing-mother-and-baby-clean\.png"/);
+assert.equal(fs.existsSync(path.join(frontend, "site-assets", "landing-mother-and-baby-clean.png")), true);
 assert.doesNotMatch(landing, /landing-approved-mobile/);
 assert.doesNotMatch(landing, /brand-flourish|<svg/);
 const brandStyles = fs.readFileSync(path.join(frontend, "brand-system.css"), "utf8");
@@ -183,7 +183,7 @@ assert.match(adminPage, /id="inventory-list-feedback"/);
 assert.match(adminPage, /id="inventory-rows"[^>]*role="list"/);
 assert.match(adminPage, /product-images\.js/);
 assert.match(adminPage, /rel="icon"[^>]+Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png/);
-assert.match(adminPage, /src="\.\.\/frontend\/images\/landing-mother-and-baby-clean\.png"/);
+assert.match(adminPage, /src="\.\.\/frontend\/site-assets\/landing-mother-and-baby-clean\.png"/);
 assert.doesNotMatch(adminPage, /Welcome Back|Sign in to access the Kay's Haven staff workspace\./i);
 assert.doesNotMatch(adminPage, /Image URL|Reorder at/);
 assert.match(adminPage, /PRODUCT CATALOGUE/);
@@ -246,7 +246,7 @@ assert.match(adminScript, /Size: \$\{String\(item\.size \|\| "N\/A"\)\}/);
 assert.match(adminScript, /appendField\(summary, "Order date", formatDate\(order\.created_at\)/);
 assert.match(adminScript, /appendField\(meta, "Payment method", order\.payment_method\)/);
 assert.match(adminScript, /\["Line total", formatOrderMoney\(Number\(item\.price \|\| 0\) \* Number\(item\.quantity \|\| 0\)\)\]/);
-assert.match(adminScript, /productImageUrl\(imageProduct, "\.\.\/frontend\/images\/"\)/);
+assert.match(adminScript, /productImageUrl\(imageProduct, "\.\.\/frontend\/product-images\/"\)/);
 assert.match(adminScript, /orders = groupOrdersById\(Array\.isArray\(result\.orders\) \? result\.orders : \[\]\)\s*\.sort\(\(a, b\) => Date\.parse\(b\.created_at \|\| ""\) - Date\.parse\(a\.created_at \|\| ""\)\)/);
 assert.match(adminScript, /appendField\(summary, "Order total", formatOrderMoney\(order\.total_amount\)/);
 assert.match(adminScript, /button\.dataset\.orderAction = status/);
@@ -311,7 +311,7 @@ assert.doesNotMatch(adminStyles, /status-history/);
 assert.doesNotMatch(backendSource, /status-history|order_status_history/);
 assert.match(adminScript, /24 \* 60 \* 60 \* 1000/);
 assert.match(adminScript, /function filterOrders\(query\)/);
-assert.match(adminScript, /productImageUrl\(product, "\.\.\/frontend\/images\/"\)/);
+assert.match(adminScript, /productImageUrl\(product, "\.\.\/frontend\/product-images\/"\)/);
 assert.match(adminStyles, /\.order-product-row\s*\{[^}]*grid-template-columns/s);
 assert.match(adminStyles, /\.order-card-summary\s*\{[^}]*padding-top:/s);
 assert.match(adminStyles, /Playfair Display[^}]+font-style:\s*italic/);
@@ -339,9 +339,9 @@ assert.match(backendSource, /size\s*\n\s*\)/);
 assert.doesNotMatch(backendSource, /readDeliveryFee|DELIVERY_FEE_GHS|delivery_fee/i);
 assert.match(backendSource, /expected_total/);
 assert.match(backendSource, /amount: Math\.round\(priced\.total \* 100\)/);
-assert.match(staticBuild, /\.replace\("\.\.\/frontend\/images\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png", "\.\.\/images\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png"\)/);
-assert.match(staticBuild, /\.replace\("\.\.\/frontend\/images\/landing-mother-and-baby-clean\.png", "\.\.\/images\/landing-mother-and-baby-clean\.png"\)/);
-assert.match(staticBuild, /replaceAll\("\.\.\/frontend\/images\/", "\.\.\/images\/"\)/);
+assert.match(staticBuild, /\.replace\("\.\.\/frontend\/site-assets\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png", "\.\.\/site-assets\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png"\)/);
+assert.match(staticBuild, /\.replace\("\.\.\/frontend\/site-assets\/landing-mother-and-baby-clean\.png", "\.\.\/site-assets\/landing-mother-and-baby-clean\.png"\)/);
+assert.match(staticBuild, /replaceAll\("\.\.\/frontend\/product-images\/", "\.\.\/product-images\/"\)/);
 assert.match(localPreview, /process\.env\.STATIC_PORT \|\| 5502/);
 const allCss = [
   fs.readFileSync(path.join(frontend, "styles.css"), "utf8"),
@@ -403,11 +403,11 @@ const previewOutput = path.join(previewRoot, "site");
 try {
   const { buildStaticPreview } = require("../deployment/build-static");
   assert.equal(buildStaticPreview(previewOutput), previewOutput);
-  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "images/hero-mother-and-baby.avif", "images/landing-mother-and-baby-clean.png", "images/landing-approved-background.png", "images/landing-approved-mobile.jpg", "images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"]) {
+  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"]) {
     assert.equal(fs.existsSync(path.join(previewOutput, required)), true, `built output includes ${required}`);
   }
   for (const [, filename] of verifiedImageEntries) {
-    assert.equal(fs.existsSync(path.join(previewOutput, "images", filename)), true, `production-style output includes verified image ${filename}`);
+    assert.equal(fs.existsSync(path.join(previewOutput, "product-images", filename)), true, `production-style output includes verified image ${filename}`);
   }
   const builtLanding = fs.readFileSync(path.join(previewOutput, "index.html"), "utf8");
   const builtShop = fs.readFileSync(path.join(previewOutput, "shop.html"), "utf8");
@@ -417,8 +417,8 @@ try {
   assert.equal((builtShop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "built desktop and mobile Login links target the sibling admin directory");
   assert.doesNotMatch(builtShop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop/);
   assert.match(builtAdmin, /href="\.\.\/shop\.html"/);
-  assert.match(builtAdmin, /src="\.\.\/images\/landing-mother-and-baby-clean\.png"/);
-  assert.match(fs.readFileSync(path.join(previewOutput, "admin", "app.js"), "utf8"), /productImageUrl\(product, "\.\.\/images\/"\)/);
+  assert.match(builtAdmin, /src="\.\.\/site-assets\/landing-mother-and-baby-clean\.png"/);
+  assert.match(fs.readFileSync(path.join(previewOutput, "admin", "app.js"), "utf8"), /productImageUrl\(product, "\.\.\/product-images\/"\)/);
   const builtPages = ["index.html", "shop.html", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"];
   for (const relativePage of builtPages) {
     const pageFile = path.join(previewOutput, relativePage);

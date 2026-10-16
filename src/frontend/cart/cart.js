@@ -22,7 +22,7 @@ async function currentProduct(productId) {
   const { products = [] } = await response.json();
   const product = products.find(item => String(item.id) === String(productId));
   if (!product) throw new Error("This product is no longer available.");
-  const image = productImageUrl(product, "../images/");
+  const image = productImageUrl(product, "../product-images/");
   const absoluteImage = image ? new URL(image, window.location.href).href : "";
   if (!await productImageLoads(absoluteImage)) throw new Error("This product no longer has a working image and cannot be checked out.");
   return product;
@@ -36,7 +36,7 @@ function renderCart() {
     const available = cartAvailability.get(String(item.id)) === true;
     const pending = !cartAvailability.has(String(item.id));
     const source = available ? cartAvailability.get(`product:${item.id}`) : null;
-    const image = available ? productImageUrl(source || item, "../images/") : "";
+    const image = available ? productImageUrl(source || item, "../product-images/") : "";
     return `
     <article class="cart-item" data-cart-index="${index}">
       ${image ? `<img class="cart-item-image" src="${safe(image)}" alt="${safe(item.name)}">` : ""}
@@ -65,7 +65,7 @@ async function refreshCartAvailability() {
     await Promise.all(cart.map(async item => {
       const id = String(item.id ?? item.product_id);
       const product = products.find(entry => String(entry.id) === id);
-      const image = product ? productImageUrl(product, "../images/") : "";
+      const image = product ? productImageUrl(product, "../product-images/") : "";
       const absoluteImage = image ? new URL(image, window.location.href).href : "";
       const available = Boolean(product && await productImageLoads(absoluteImage));
       cartAvailability.set(id, available);
