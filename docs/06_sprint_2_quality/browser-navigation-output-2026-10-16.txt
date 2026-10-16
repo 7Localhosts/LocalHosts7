@@ -1,0 +1,7 @@
+Local browser navigation verification — 2026-10-16
+
+Desktop: opened http://localhost:5502/, clicked Enter Shop, then clicked the storefront header Login link. Result: URL became http://localhost:5502/admin/ and the existing Kay's Haven Staff Dashboard sign-in form was visible.
+
+Mobile: set viewport to 390 x 844, opened http://localhost:5502/, clicked Enter Shop, opened the mobile navigation menu, then clicked Login. Result: URL became http://localhost:5502/admin/ and the existing sign-in form was visible. The viewport override was reset after the test.
+
+No credentials were entered and authentication was not attempted.

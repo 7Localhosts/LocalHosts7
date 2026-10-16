@@ -1,0 +1,12 @@
+
+> backend@1.0.0 test
+> node ../../tests/backend.test.js && node ../../tests/frontend.test.js
+
+◇ injected env (4) from .env
+Check email validation
+Check server prices, sizes, and product visibility
+Check selectable fulfillment transitions
+Check required sizes with stale inventory counts
+Check backend health endpoint
+All backend checks passed
+Frontend assets and checkout wiring passed

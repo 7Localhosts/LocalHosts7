@@ -1,0 +1,9 @@
+GET /api/health: PASS success=True message=Backend is running
+GET /api/products: PASS rows=192
+HTTP 200 / title=Kay's Haven | Quality products from crib to campus.
+HTTP 200 /shop.html title=Kay's Haven | Quality products from crib to campus.
+HTTP 200 /products/product.html?id=1 title=Product Details - Kay's Haven
+HTTP 200 /cart/cart.html title=Your Cart - Kay's Haven
+HTTP 200 /checkout/checkout.html title=Secure checkout | Kay's Haven
+HTTP 200 /admin/ title=Kay's Haven | Staff Dashboard
+No database mutation, upload, order creation, payment, or migration was run.

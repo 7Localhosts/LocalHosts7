@@ -1,0 +1,16 @@
+PASS deployment\build-static.js
+PASS deployment\serve-local.js
+PASS product-images-cleaned\review-2026-10-14\generate-visual-review.js
+PASS src\admin\app.js
+PASS src\admin\order-groups.js
+PASS src\backend\order-utils.js
+PASS src\backend\server.js
+PASS src\frontend\api-config.js
+PASS src\frontend\cart\cart.js
+PASS src\frontend\checkout\checkout.js
+PASS src\frontend\product-images.js
+PASS src\frontend\products\product.js
+PASS src\frontend\script.js
+PASS tests\backend.test.js
+PASS tests\frontend.test.js
+SUMMARY files=15 failed=0
