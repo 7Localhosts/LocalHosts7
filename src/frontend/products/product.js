@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const productId = params.get("id");
-const API_URL = `${window.KAYS_HAVEN_API_URL || "http://localhost:8000"}/api/products`;
+const API_URL = `${window.KAYS_HAVEN_API_URL}/api/products`;
 const money = value => `GHS ${Number(value || 0).toFixed(2)}`;
 
 async function loadProduct() {
@@ -12,46 +12,72 @@ async function loadProduct() {
     const product = products.find(item => String(item.id) === String(productId));
     if (!product) throw new Error("This product could not be found.");
 
+    const imageUrl = productImageUrl(product, "../images/");
+    const absoluteImageUrl = imageUrl ? new URL(imageUrl, window.location.href).href : "";
+    if (!await productImageLoads(absoluteImageUrl)) {
+      throw new Error("This product is not currently available in the shop.");
+    }
+
     document.title = `${product.name} | Kay's Haven`;
     document.getElementById("product-name").textContent = product.name;
-    document.getElementById("product-price").textContent = money(product.price);
+    const price = Number(product.price);
+    const priceIsValid = Number.isFinite(price) && price > 0;
+    document.getElementById("product-price").textContent = priceIsValid ? money(price) : "Price unavailable";
     document.getElementById("product-description").textContent = product.description || "";
     document.querySelector(".product-category").textContent = product.category || "KAY'S HAVEN";
     const image = document.getElementById("product-image");
-    image.src = productImageUrl(product, "../Images/");
+    const imageFrame = image.parentElement;
+    imageFrame.classList.remove("is-missing");
+    image.hidden = false;
+    image.onerror = () => {
+      image.hidden = true;
+      imageFrame.classList.add("is-missing");
+      document.getElementById("add-to-cart").disabled = true;
+    };
+    image.src = imageUrl;
     image.alt = product.name;
 
     const quantity = document.getElementById("quantity");
-    const stock = Math.max(0, Number(product.stock || 0));
-    quantity.max = stock;
+    quantity.min = "1";
+    quantity.removeAttribute("max");
+    quantity.step = "1";
     const sizeSelect = document.getElementById("product-size");
-    const sizes = Array.isArray(product.sizes) ? product.sizes : [];
+    const sizes = productSizeOptions(product);
     const sizeField = document.querySelector(".product-variant");
-    sizeField.hidden = !sizes.length;
+    sizeField.hidden = false;
     sizeSelect.required = sizes.length > 0;
     sizeSelect.addEventListener("change", () => sizeSelect.setCustomValidity(""));
     const selectPrompt = document.createElement("option");
     selectPrompt.value = "";
-    selectPrompt.textContent = "Choose a size";
-    selectPrompt.disabled = true;
+    selectPrompt.textContent = "None / N/A";
     selectPrompt.selected = true;
+    const sizeLabel = value => ({
+      s: "Small (S)", small: "Small (S)", "small (s)": "Small (S)",
+      m: "Medium (M)", medium: "Medium (M)", "medium (m)": "Medium (M)",
+      l: "Large (L)", large: "Large (L)", "large (l)": "Large (L)",
+      xl: "Extra Large (XL)", xlarge: "Extra Large (XL)", "extra large": "Extra Large (XL)", "extra large (xl)": "Extra Large (XL)", xxl: "Extra Large (XL)", "2xl": "Extra Large (XL)"
+    }[String(value).trim().toLowerCase()] || String(value));
     sizeSelect.replaceChildren(selectPrompt, ...sizes.map(size => {
       const option = document.createElement("option");
       option.value = size;
-      option.textContent = size;
+      option.textContent = sizeLabel(size);
       return option;
     }));
 
-    document.getElementById("decrease-quantity").onclick = () => quantity.value = Math.max(1, Number(quantity.value) - 1);
-    document.getElementById("increase-quantity").onclick = () => quantity.value = Math.min(stock || 1, Number(quantity.value) + 1);
-    quantity.addEventListener("change", () => quantity.value = Math.max(1, Math.min(stock || 1, Number(quantity.value) || 1)));
+    const decreaseQuantity = document.getElementById("decrease-quantity");
+    const increaseQuantity = document.getElementById("increase-quantity");
+    decreaseQuantity.onclick = () => quantity.value = Math.max(1, Number(quantity.value) - 1);
+    increaseQuantity.onclick = () => quantity.value = Math.max(1, Number(quantity.value) || 1) + 1;
+    quantity.addEventListener("change", () => {
+      quantity.value = Math.max(1, Number(quantity.value) || 1);
+    });
 
     const addButton = document.getElementById("add-to-cart");
-    addButton.disabled = stock <= 0;
-    addButton.textContent = stock > 0 ? "Add to Cart" : "Out of Stock";
+    addButton.disabled = !priceIsValid;
+    addButton.textContent = !priceIsValid ? "Unavailable" : "Add to Cart";
     addButton.onclick = () => {
       const qty = Number(quantity.value);
-      if (!Number.isInteger(qty) || qty < 1 || qty > stock) return;
+      if (!Number.isInteger(qty) || qty < 1) return;
       if (sizes.length && !sizeSelect.value) {
         sizeSelect.setCustomValidity("Choose a size.");
         sizeSelect.reportValidity();
@@ -65,20 +91,17 @@ async function loadProduct() {
       const existing = cart.find(item => String(item.id) === String(product.id) && String(item.size || "") === size);
       if (existing) {
         const currentQty = Number(existing.qty ?? existing.quantity ?? 0);
-        if (currentQty + qty > stock) {
-          alert("That quantity is greater than the available stock.");
-          return;
-        }
         existing.qty = currentQty + qty;
       } else {
-        cart.push({ id: product.id, name: product.name, category: product.category, price: Number(product.price), image: product.image || "", size, qty });
+        const productImage = productImageUrl(product, "../images/");
+        cart.push({ id: product.id, name: product.name, category: product.category, price: Number(product.price), image: productImage ? new URL(productImage, window.location.href).href : "", size, qty });
       }
       localStorage.setItem("kayshaven-cart", JSON.stringify(cart));
-      window.location.href = "../index.html";
+      window.location.href = "../shop.html";
     };
   } catch (error) {
     console.error("Product loading error:", error);
-    page.innerHTML = `<h1>Product unavailable</h1><p>${escapeProductText(error.message)}</p><a href="../index.html#shop">Back to shop</a>`;
+    page.innerHTML = `<h1>Product unavailable</h1><p>${escapeProductText(error.message)}</p><a href="../shop.html#shop">Back to shop</a>`;
   }
 }
 

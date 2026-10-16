@@ -1,0 +1,39 @@
+:root { --landing-ink: #17131b; }
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body.landing-page { min-height: 100svh; margin: 0; color: var(--landing-ink); background: #fff; font-family: var(--kh-body-font); }
+.landing-cover { position: relative; width: 100%; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; justify-content: center; padding: clamp(14px, 4vw, 54px); overflow: hidden; isolation: isolate; background: #f7f2fb; }
+/* Cover the viewport without distorting the approved source artwork. */
+.landing-background { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: left center; }
+.landing-copy { position: relative; width: min(100%, 715px); min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: clamp(26px, 4vh, 42px) clamp(20px, 5vw, 54px); border: 1px solid rgba(255, 255, 255, .92); border-radius: 24px; background: rgba(255, 255, 255, .82); box-shadow: 0 14px 40px rgba(40, 27, 54, .12); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); text-align: center; }
+.landing-welcome { max-width: 100%; margin: 0 0 8px; color: #000; font-family: "Playfair Display", serif; font-size: clamp(23px, 2vw, 30px); font-style: italic; font-weight: 500; line-height: 1.2; animation: landing-rise .48s .08s both; }
+.landing-wordmark { max-width: 100%; display: inline-flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: .18em; margin: 0 0 clamp(18px, 3vh, 27px); font-family: "Montserrat", sans-serif; font-size: clamp(40px, 5.2vw, 66px); font-weight: 700; letter-spacing: -.045em; line-height: 1.12; white-space: normal; animation: landing-rise .52s .18s both; }
+.landing-wordmark .kh-brand__kays { font-size: 1em; }
+.landing-wordmark .kh-brand__haven { font-size: 1em; }
+.landing-slogan { max-width: 100%; margin: 0 0 clamp(16px, 2.7vh, 24px); color: #000; font-family: "Playfair Display", serif; font-size: clamp(19px, 1.85vw, 27px); font-style: normal; font-weight: 500; line-height: 1.3; text-wrap: balance; animation: landing-rise .52s .3s both; }
+.enter-shop { width: min(315px, 100%); min-height: 62px; display: inline-flex; align-items: center; justify-content: center; padding: 10px 22px; border: 1px solid var(--kh-primary); border-radius: 999px; color: #fff; background: var(--kh-primary); font-size: clamp(19px, 2vw, 23px); font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; transition: background-color .2s ease, transform .2s ease; animation: landing-rise .52s .42s both; }
+.enter-shop:hover { background: var(--kh-primary-dark); transform: translateY(-2px); }
+.enter-shop:focus-visible { outline: 3px solid var(--kh-primary); outline-offset: 4px; }
+@media (max-width: 900px) {
+  .landing-copy { width: min(100%, 620px); padding: 28px clamp(20px, 5vw, 42px); border-radius: 24px; }
+  .landing-welcome { font-size: clamp(22px, 4vw, 28px); }
+  .landing-wordmark { font-size: clamp(38px, 8vw, 58px); }
+  .landing-slogan { font-size: clamp(18px, 3vw, 22px); }
+}
+@media (max-width: 480px) {
+  .landing-cover { padding: 14px; }
+  .landing-copy { width: 100%; padding: 25px 18px; border-radius: 20px; }
+  .landing-welcome { font-size: 21px; }
+  .landing-wordmark { gap: .16em; margin-bottom: 20px; font-size: clamp(34px, 10vw, 44px); }
+  .landing-slogan { margin-bottom: 15px; font-size: 17px; }
+  .enter-shop { min-height: 54px; font-size: 19px; }
+}
+@media (max-width: 640px) {
+  .landing-background { object-position: 78% center; }
+}
+@media (max-width: 350px) {
+  .landing-wordmark { font-size: 32px; }
+}
+@keyframes landing-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .landing-copy *, .landing-copy *::before, .landing-copy *::after { animation: none !important; transition: none !important; } }

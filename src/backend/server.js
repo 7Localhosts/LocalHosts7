@@ -1,406 +1,1078 @@
 const http = require("http");
 const { createClient } = require("@supabase/supabase-js");
-const { buildPricedItems } = require("./order-utils");
+const crypto = require("crypto");
+const { buildPricedItems, canTransitionOrderStatus } = require("./order-utils");
 require("dotenv").config();
 
-const PORT = Number(process.env.PORT || 8000);
-const DELIVERY_FEE = Number(process.env.DELIVERY_FEE_GHS || 15);
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
-const PAYSTACK_CALLBACK_URL = process.env.PAYSTACK_CALLBACK_URL;
+const PORT = process.env.PORT || 8000;
+const PRODUCT_CATEGORIES = new Set(["Baby", "Toddler", "Kids", "Teens", "Toys", "Accessories", "Back to School", "Clearance"]);
 
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  : null;
+function isStoredProductImageUrl(value) {
+  try {
+    const project = new URL(process.env.SUPABASE_URL);
+    const image = new URL(String(value || ""));
+    const bucket = process.env.KAYS_HAVEN_PRODUCT_BUCKET || "kays-haven-products";
+    const escapedBucket = bucket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+    return image.origin === project.origin && new RegExp(`^/storage/v1/object/public/${escapedBucket}/${uuid}\\.(?:jpg|png|webp)$`, "i").test(image.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function describeProductImageStorageError(error) {
+  const message = String(error?.message || "");
+  const code = String(error?.statusCode || error?.code || "");
+  if (/bucket\s+(?:was\s+)?not found|no such bucket/i.test(message) || /bucketnotfound/i.test(code) || code === "404") {
+    return {
+      code: "PRODUCT_IMAGE_BUCKET_MISSING",
+      error: "Product image storage bucket is missing. Apply supabase/migrations/202610120001_product_image_storage.sql in the Supabase SQL Editor."
+    };
+  }
+  if (/unauthorized|forbidden|not allowed|permission|row-level security/i.test(`${code} ${message}`) || code === "401" || code === "403") {
+    return {
+      code: "PRODUCT_IMAGE_STORAGE_ACCESS_DENIED",
+      error: "Supabase Storage rejected this upload. Check the backend service-role configuration and Storage permissions."
+    };
+  }
+  return {
+    code: "PRODUCT_IMAGE_UPLOAD_FAILED",
+    error: "Product image upload failed in Supabase Storage. Check the backend logs for the storage error code."
+  };
+}
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// -------------------------
+// HELPERS
+// -------------------------
 
 function sendJson(res, status, data) {
   res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
-    "Vary": "Origin",
-    "Cache-Control": "no-store"
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
   });
+
   res.end(JSON.stringify(data));
 }
 
-function readBody(req) {
+function readBody(req, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let body = "";
+    let bytesRead = 0;
+    let tooLarge = false;
+
     req.on("data", chunk => {
+      bytesRead += chunk.length;
+      if (bytesRead > maxBytes) {
+        if (!tooLarge) reject(new Error("Request body is too large"));
+        tooLarge = true;
+        return;
+      }
+      if (tooLarge) return;
       body += chunk;
-      if (body.length > 1024 * 1024) {
-        reject(new Error("Request body is too large"));
-        req.destroy();
+    });
+
+    req.on("end", () => {
+      if (tooLarge) return;
+      try {
+        resolve(JSON.parse(body || "{}"));
+      } catch {
+        reject(new Error("Invalid JSON"));
       }
     });
-    req.on("end", () => {
-      try { resolve(JSON.parse(body || "{}")); }
-      catch { reject(new Error("Invalid JSON")); }
-    });
+
     req.on("error", reject);
   });
 }
 
+// -------------------------
+// STAFF AUTHENTICATION
+// -------------------------
+
 async function authenticateStaff(req) {
-  if (!supabase || !supabaseAdmin) return null;
-  const authorization = req.headers.authorization || "";
-  if (!authorization.startsWith("Bearer ")) return null;
-  const { data: { user }, error: authError } = await supabase.auth.getUser(authorization.slice(7));
-  if (authError || !user) return null;
-  const { data: staff, error } = await supabaseAdmin.from("staff")
-    .select("id, full_name, login_name, auth_email, active")
-    .eq("id", user.id).eq("active", true).single();
-  return error || !staff ? null : { user, staff };
+  const authorization =
+    req.headers.authorization || "";
+
+  if (!authorization.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token =
+    authorization.slice(7);
+
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return null;
+  }
+
+  const {
+    data: staff,
+    error: staffError
+  } = await supabaseAdmin
+    .from("staff")
+    .select(
+      "id, full_name, login_name, auth_email, active"
+    )
+    .eq("id", user.id)
+    .eq("active", true)
+    .single();
+
+  if (staffError || !staff) {
+    return null;
+  }
+
+  return {
+    user,
+    staff
+  };
 }
 
-function publicError(error, fallback) {
-  console.error(fallback, error);
-  return fallback;
-}
+// -------------------------
+// SERVER
+// -------------------------
 
-async function paystackRequest(path, options = {}) {
-  if (!PAYSTACK_SECRET_KEY) throw new Error("Paystack is not configured on the server");
-  const response = await fetch(`https://api.paystack.co${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
-  const result = await response.json();
-  if (!response.ok || !result.status) throw new Error(result.message || "Paystack request failed");
-  return result.data;
-}
+const requestHandler = async (req, res) => {
 
-function validEmail(value) {
-  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-}
-
-function createServer() {
-  return http.createServer(async (req, res) => {
+    // CORS preflight
     if (req.method === "OPTIONS") {
       res.writeHead(204, {
-        "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
-        "Vary": "Origin"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization",
+        "Access-Control-Allow-Methods":
+          "GET, POST, PATCH, DELETE, OPTIONS"
       });
+
       res.end();
       return;
     }
 
-    const pathname = new URL(req.url, "http://localhost").pathname;
-    if (pathname === "/api/health" && req.method === "GET") {
-      sendJson(res, 200, { success: true, message: "Backend is running" });
+    // -------------------------
+    // HEALTH
+    // -------------------------
+
+    if (
+      req.method === "GET" &&
+      req.url === "/api/health"
+    ) {
+      sendJson(res, 200, {
+        success: true,
+        message: "Backend is running"
+      });
+
       return;
     }
 
-    if (pathname === "/api/checkout/config" && req.method === "GET") {
-      sendJson(res, 200, { currency: "GHS", delivery_fee: DELIVERY_FEE });
-      return;
-    }
-
-    if (!supabaseAdmin || !supabase) {
-      sendJson(res, 503, { error: "Supabase is not configured on the server" });
-      return;
-    }
-
-    if (pathname === "/api/products" && req.method === "GET") {
-      try {
-        const { data, error } = await supabaseAdmin.from("products").select("*").order("id");
-        if (error) throw error;
-        sendJson(res, 200, { products: data || [] });
-      } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to load products") });
-      }
-      return;
-    }
-
-    if (pathname === "/api/products" && req.method === "POST") {
-      if (!await authenticateStaff(req)) {
-        sendJson(res, 401, { error: "Unauthorized" });
-        return;
-      }
+    if (req.method === "POST" && req.url === "/api/payments/initialize") {
+      let createdOrderId;
       try {
         const body = await readBody(req);
-        const name = String(body.name || "").trim();
-        const category = String(body.category || "").trim();
-        const price = Number(body.price);
-        const stock = Number(body.stock ?? 0);
-        const sizes = Array.isArray(body.sizes)
-          ? body.sizes.map(size => String(size).trim()).filter(Boolean)
-          : String(body.sizes || "").split(",").map(size => size.trim()).filter(Boolean);
-        if (!name || !category || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) {
-          sendJson(res, 400, { error: "Name, category, positive price and valid stock are required" });
+        const customerName = String(body.customer_name || "").trim();
+        const email = String(body.email || "").trim();
+        const phone = String(body.phone || "").trim();
+        const expectedTotal = Number(body.expected_total);
+        if (!isValidCheckoutContact(customerName, email, phone)) {
+          sendJson(res, 400, { error: "Enter your name and phone number, and check the email format if provided." });
           return;
         }
-        const { data: product, error } = await supabaseAdmin.from("products").insert({
-          name, category, price, stock, sizes,
-          image: body.image ? String(body.image).trim() : null,
-          description: body.description ? String(body.description).trim() : null
-        }).select().single();
-        if (error) throw error;
-        sendJson(res, 201, { success: true, product });
+        if (!Number.isFinite(expectedTotal) || expectedTotal < 0) {
+          sendJson(res, 400, { error: "The checkout total is invalid. Refresh your cart and try again." });
+          return;
+        }
+        if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > 100) {
+          sendJson(res, 400, { error: "Your cart is empty or contains too many items." });
+          return;
+        }
+
+        const productIds = [...new Set(body.items.map(item => item.product_id ?? item.id).filter(id => id !== undefined && id !== null))];
+        const { data: products, error: productsError } = await supabaseAdmin
+          .from("products").select("id, name, price, sizes, is_active").in("id", productIds);
+        if (productsError) throw productsError;
+        const priced = buildPricedItems(body.items, products || []);
+        if (Math.round(expectedTotal * 100) !== Math.round(priced.total * 100)) {
+          sendJson(res, 409, { error: "Product prices changed. Refresh the checkout total before paying." });
+          return;
+        }
+        const reference = `KH-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+        const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert([{
+          customer_name: customerName,
+          email: email || null,
+          phone,
+          total_amount: priced.total,
+          status: "Pending",
+          payment_status: "pending",
+          payment_method: "Paystack",
+          payment_reference: reference
+        }]).select("id, order_number").single();
+        if (orderError) throw orderError;
+        createdOrderId = order.id;
+
+        const { error: itemError } = await supabaseAdmin.from("order_items").insert(priced.items.map(item => ({
+          order_id: order.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          price: item.price,
+          size: item.size
+        })));
+        if (itemError) throw itemError;
+
+        const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
+        if (!callbackUrl || !/^https:\/\//i.test(callbackUrl)) throw new Error("Payment callback URL is not configured");
+        const paystackEmail = email || createGuestPaystackEmail(callbackUrl);
+        const payment = await paystackRequest("/transaction/initialize", {
+          email: paystackEmail,
+          amount: Math.round(priced.total * 100),
+          currency: "GHS",
+          reference,
+          callback_url: callbackUrl,
+          metadata: { order_id: order.id, order_number: order.order_number || String(order.id), customer_name: customerName }
+        });
+        sendJson(res, 200, { authorization_url: payment.authorization_url, reference });
       } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to create product") });
+        if (createdOrderId) {
+          await supabaseAdmin.from("orders").update({ payment_status: "failed", status: "Payment setup failed" }).eq("id", createdOrderId);
+        }
+        const status = /required|valid|stock|size|available|invalid price/i.test(error.message) ? 400 : 502;
+        sendJson(res, status, { error: status === 400 ? error.message : "Payment could not be started. Please try again." });
       }
       return;
     }
 
-    if (pathname.startsWith("/api/products/") && req.method === "PATCH") {
-      if (!await authenticateStaff(req)) {
-        sendJson(res, 401, { error: "Unauthorized" });
-        return;
-      }
+    if (req.method === "POST" && req.url === "/api/payments/verify") {
       try {
-        const id = decodeURIComponent(pathname.slice("/api/products/".length));
         const body = await readBody(req);
-        const updates = {};
-        if (Object.hasOwn(body, "sizes")) {
-          updates.sizes = Array.isArray(body.sizes)
-            ? body.sizes.map(size => String(size).trim()).filter(Boolean)
-            : String(body.sizes || "").split(",").map(size => size.trim()).filter(Boolean);
+        const reference = String(body.reference || "").trim();
+        if (!reference || reference.length > 120) {
+          sendJson(res, 400, { error: "A valid payment reference is required." });
+          return;
         }
-        if (Object.hasOwn(body, "image")) updates.image = body.image ? String(body.image).trim() : null;
-        if (Object.hasOwn(body, "stock")) {
-          const stock = Number(body.stock);
-          if (!Number.isInteger(stock) || stock < 0) {
-            sendJson(res, 400, { error: "Stock must be a non-negative whole number" });
+        const { data: order, error: orderError } = await supabaseAdmin.from("orders")
+          .select("id, order_number, customer_name, total_amount, payment_reference, payment_status")
+          .eq("payment_reference", reference).single();
+        if (orderError || !order) {
+          sendJson(res, 404, { error: "Payment reference was not found." });
+          return;
+        }
+        if (order.payment_status !== "paid") {
+          const payment = await paystackRequest(`/transaction/verify/${encodeURIComponent(reference)}`);
+          const expectedAmount = Math.round(Number(order.total_amount) * 100);
+          if (payment.reference !== reference || payment.status !== "success" || payment.currency !== "GHS" || Number(payment.amount) !== expectedAmount) {
+            sendJson(res, 409, { error: "Payment is not confirmed. No order has been marked paid." });
             return;
           }
-          updates.stock = stock;
+          const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
+          if (finalizeError) throw finalizeError;
         }
-        if (!Object.keys(updates).length) {
-          sendJson(res, 400, { error: "Provide sizes, image or stock to update" });
-          return;
-        }
-        const { data: product, error } = await supabaseAdmin.from("products").update(updates).eq("id", id).select().single();
-        if (error) throw error;
-        sendJson(res, 200, { success: true, product });
-      } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to update product") });
+        sendJson(res, 200, { success: true, order_id: order.id, order_number: order.order_number, customer_name: order.customer_name });
+      } catch {
+        console.error("Payment verification failed");
+        sendJson(res, 502, { error: "Payment could not be verified right now. Please try again." });
       }
       return;
     }
 
-    if (pathname === "/api/staff/login" && req.method === "POST") {
+        // -------------------------
+    // GET PRODUCTS
+    // -------------------------
+
+    const productsRequestUrl = new URL(req.url, "http://localhost");
+    if (req.method === "GET" && productsRequestUrl.pathname === "/api/products") {
       try {
-        const body = await readBody(req);
-        const loginName = String(body.login_name || body.loginName || "").trim().toLowerCase();
-        const password = String(body.password || "");
-        if (!loginName || !password) {
-          sendJson(res, 400, { error: "Login name and password are required" });
+        const includeInactive = productsRequestUrl.searchParams.get("include_inactive") === "true";
+        if (includeInactive && !await authenticateStaff(req)) {
+          sendJson(res, 401, { error: "Unauthorized" });
           return;
         }
-        const { data: staff, error } = await supabaseAdmin.from("staff").select("*")
-          .eq("login_name", loginName).eq("active", true).single();
-        if (error || !staff) {
-          sendJson(res, 401, { error: "Invalid login name or password" });
-          return;
-        }
-        const { data, error: loginError } = await supabase.auth.signInWithPassword({ email: staff.auth_email, password });
-        if (loginError) {
-          sendJson(res, 401, { error: "Invalid login name or password" });
-          return;
-        }
-        sendJson(res, 200, {
-          success: true, session: data.session,
-          staff: { id: staff.id, full_name: staff.full_name, login_name: staff.login_name, auth_email: staff.auth_email }
-        });
-      } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Login failed") });
-      }
-      return;
-    }
+        let productsQuery = supabaseAdmin
+          .from("products")
+          .select("*")
+          .order("id");
+        if (!includeInactive) productsQuery = productsQuery.eq("is_active", true);
+        const { data, error } = await productsQuery;
 
-    if (pathname === "/api/staff/me" && req.method === "GET") {
-      const authenticated = await authenticateStaff(req);
-      if (!authenticated) sendJson(res, 401, { error: "Unauthorized" });
-      else sendJson(res, 200, { staff: authenticated.staff });
-      return;
-    }
-
-    if (pathname === "/api/staff" && req.method === "POST") {
-      if (!await authenticateStaff(req)) {
-        sendJson(res, 401, { error: "Unauthorized" });
-        return;
-      }
-      try {
-        const body = await readBody(req);
-        const fullName = String(body.full_name || "").trim();
-        const loginName = String(body.login_name || "").trim().toLowerCase();
-        const password = String(body.password || "");
-        if (!fullName || !loginName || password.length < 8) {
-          sendJson(res, 400, { error: "Full name, login name and a password of at least 8 characters are required" });
-          return;
-        }
-        const authEmail = `${loginName}@kayshaven.local`;
-        const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({ email: authEmail, password, email_confirm: true });
-        if (createError) throw createError;
-        const { data: staff, error } = await supabaseAdmin.from("staff").insert({
-          id: created.user.id, full_name: fullName, login_name: loginName, auth_email: authEmail, active: true
-        }).select().single();
         if (error) {
-          await supabaseAdmin.auth.admin.deleteUser(created.user.id);
           throw error;
         }
-        sendJson(res, 201, { success: true, staff });
+
+        sendJson(res, 200, {
+          products: data || []
+        });
+
       } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to create admin") });
+        console.error(
+          "Products error:",
+          error
+        );
+
+        sendJson(res, 500, {
+          error: "Failed to load products"
+        });
       }
+
       return;
     }
 
-    if (pathname === "/api/staff/password" && req.method === "POST") {
+    if (req.method === "POST" && req.url === "/api/products/images") {
       const authenticated = await authenticateStaff(req);
       if (!authenticated) {
         sendJson(res, 401, { error: "Unauthorized" });
         return;
       }
       try {
-        const { new_password: newPassword } = await readBody(req);
-        if (typeof newPassword !== "string" || newPassword.length < 8) {
-          sendJson(res, 400, { error: "Password must be at least 8 characters" });
+        const body = await readBody(req, 7 * 1024 * 1024);
+        const dataUrl = String(body.data_url || "");
+        const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
+        if (!match) {
+          sendJson(res, 400, { error: "Choose a JPEG, PNG or WebP product image." });
           return;
         }
-        const { error } = await supabaseAdmin.auth.admin.updateUserById(authenticated.user.id, { password: newPassword });
-        if (error) throw error;
-        sendJson(res, 200, { success: true });
+        const mimeType = match[1];
+        const file = Buffer.from(match[2], "base64");
+        if (!file.length || file.length > 5 * 1024 * 1024) {
+          sendJson(res, 413, { error: "Product images must be 5 MB or smaller." });
+          return;
+        }
+        const isJpeg = mimeType === "image/jpeg" && file[0] === 0xff && file[1] === 0xd8 && file[2] === 0xff;
+        const isPng = mimeType === "image/png" && file.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+        const isWebp = mimeType === "image/webp" && file.toString("ascii", 0, 4) === "RIFF" && file.toString("ascii", 8, 12) === "WEBP";
+        if (!isJpeg && !isPng && !isWebp) {
+          sendJson(res, 400, { error: "The selected file does not match its image type." });
+          return;
+        }
+
+        const bucketName = process.env.KAYS_HAVEN_PRODUCT_BUCKET || "kays-haven-products";
+        const extension = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[mimeType];
+        const objectPath = `${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await supabaseAdmin.storage.from(bucketName).upload(objectPath, file, {
+          contentType: mimeType,
+          cacheControl: "31536000",
+          upsert: false
+        });
+        if (uploadError) {
+          const failure = describeProductImageStorageError(uploadError);
+          console.error("Product image upload failed", {
+            statusCode: uploadError.statusCode || null,
+            code: uploadError.code || null
+          });
+          sendJson(res, 503, failure);
+          return;
+        }
+        const { data: publicUrl } = supabaseAdmin.storage.from(bucketName).getPublicUrl(objectPath);
+        sendJson(res, 201, { success: true, image_url: publicUrl.publicUrl });
       } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to change password") });
+        const status = /too large/i.test(error.message) ? 413 : 400;
+        sendJson(res, status, { error: status === 413 ? "Product image request is too large." : "Could not upload this product image." });
       }
       return;
     }
 
-    if (pathname === "/api/orders" && req.method === "GET") {
-      if (!await authenticateStaff(req)) {
+    // -------------------------
+    // ADD PRODUCT
+    // -------------------------
+
+    if (
+      req.method === "POST" &&
+      req.url === "/api/products"
+    ) {
+      const authenticated =
+        await authenticateStaff(req);
+
+      if (!authenticated) {
+        sendJson(res, 401, {
+          error: "Unauthorized"
+        });
+
+        return;
+      }
+
+      try {
+        const body =
+          await readBody(req);
+
+        const name =
+          String(
+            body.name || ""
+          ).trim();
+
+        const category =
+          String(
+            body.category || ""
+          ).trim();
+
+        const price =
+          Number(body.price);
+
+        const image =
+          body.image
+            ? String(body.image).trim()
+            : null;
+
+        const description =
+          body.description
+            ? String(body.description).trim()
+            : null;
+
+        const stock =
+          Number(body.stock ?? 0);
+        const sizes = body.sizes === undefined ? [] : body.sizes;
+
+        if (
+          !name ||
+          !PRODUCT_CATEGORIES.has(category) ||
+          !Number.isFinite(price) || price <= 0 ||
+          !isStoredProductImageUrl(image)
+        ) {
+          sendJson(res, 400, {
+            error:
+              "Name, a valid category, positive price and uploaded product image are required"
+          });
+
+          return;
+        }
+
+        if (
+          !Number.isInteger(stock) ||
+          stock < 0
+        ) {
+          sendJson(res, 400, {
+            error:
+              "Stock must be a valid number"
+          });
+
+          return;
+        }
+        if (!Array.isArray(sizes) || sizes.some(size => typeof size !== "string")) {
+          sendJson(res, 400, { error: "Sizes must be a list of text options." });
+          return;
+        }
+
+        const {
+          data: product,
+          error
+        } = await supabaseAdmin
+          .from("products")
+          .insert([{
+            name,
+            category,
+            price,
+            image,
+            description,
+            stock,
+            is_active: true,
+            sizes: [...new Set(sizes.map(size => size.trim()).filter(Boolean))]
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        sendJson(res, 201, {
+          success: true,
+          product
+        });
+
+      } catch (error) {
+        console.error(
+          "Create product error:",
+          error
+        );
+
+        sendJson(res, 500, {
+          error:
+            "Failed to create product"
+        });
+      }
+
+      return;
+    }
+
+    if (req.method === "PATCH" && /^\/api\/products\/[^/]+$/.test(req.url)) {
+      const authenticated = await authenticateStaff(req);
+      if (!authenticated) {
         sendJson(res, 401, { error: "Unauthorized" });
         return;
       }
       try {
-        const { data, error } = await supabaseAdmin.from("orders").select(`*, order_items(product_id, product_name, quantity, price, size)`)
-          .order("created_at", { ascending: false });
+        const id = decodeURIComponent(req.url.slice("/api/products/".length));
+        const body = await readBody(req);
+        const update = {};
+        if (Object.hasOwn(body, "name")) {
+          update.name = String(body.name || "").trim();
+          if (!update.name) throw new Error("Product name is required");
+        }
+        if (Object.hasOwn(body, "category")) {
+          update.category = String(body.category || "").trim();
+          if (!PRODUCT_CATEGORIES.has(update.category)) throw new Error("Choose one of the existing product categories");
+        }
+        if (Object.hasOwn(body, "description")) update.description = String(body.description || "").trim();
+        if (Object.hasOwn(body, "image")) {
+          update.image = body.image ? String(body.image).trim() : null;
+          if (!isStoredProductImageUrl(update.image)) throw new Error("Upload a valid JPEG, PNG or WebP product image before saving");
+        }
+        if (Object.hasOwn(body, "sizes")) {
+          if (!Array.isArray(body.sizes) || body.sizes.some(size => typeof size !== "string")) throw new Error("Sizes must be a list of text options");
+          update.sizes = [...new Set(body.sizes.map(size => size.trim()).filter(Boolean))];
+        }
+        if (Object.hasOwn(body, "price")) {
+          update.price = Number(body.price);
+          if (!Number.isFinite(update.price) || update.price <= 0) throw new Error("Price must be greater than zero");
+        }
+        if (Object.hasOwn(body, "stock")) {
+          update.stock = Number(body.stock);
+          if (!Number.isInteger(update.stock) || update.stock < 0) throw new Error("Stock must be a non-negative whole number");
+        }
+        if (Object.hasOwn(body, "is_active")) {
+          if (typeof body.is_active !== "boolean") throw new Error("Storefront availability must be enabled or disabled");
+          update.is_active = body.is_active;
+        }
+        if (!Object.keys(update).length) throw new Error("No product changes were supplied");
+        const { data: product, error } = await supabaseAdmin.from("products")
+          .update(update).eq("id", id).select("*").single();
         if (error) throw error;
-        sendJson(res, 200, { orders: data || [] });
+        sendJson(res, 200, { success: true, product });
       } catch (error) {
-        sendJson(res, 500, { error: publicError(error, "Failed to load orders") });
+        sendJson(res, 400, { error: error.message || "Could not update product" });
       }
       return;
     }
 
-    if (pathname === "/api/payments/initialize" && req.method === "POST") {
+    if (req.method === "DELETE" && /^\/api\/products\/[^/]+$/.test(req.url)) {
+      const authenticated = await authenticateStaff(req);
+      if (!authenticated) {
+        sendJson(res, 401, { error: "Unauthorized" });
+        return;
+      }
       try {
-        if (!PAYSTACK_CALLBACK_URL) throw new Error("PAYSTACK_CALLBACK_URL is not configured");
-        const body = await readBody(req);
-        const name = String(body.customer_name || "").trim();
-        const email = String(body.email || "").trim().toLowerCase();
-        const address = String(body.shipping_address || "").trim();
-        const phone = String(body.phone || "").trim();
-        if (!name || !validEmail(email) || !address || !Array.isArray(body.items) || !body.items.length) {
-          sendJson(res, 400, { error: "Name, valid email, delivery address and order items are required" });
-          return;
-        }
-
-        const ids = [...new Set(body.items.map(item => String(item.product_id ?? item.id ?? "").trim()).filter(Boolean))];
-        const { data: products, error: productError } = await supabaseAdmin.from("products").select("id,name,price,stock,sizes").in("id", ids);
+        const id = decodeURIComponent(req.url.slice("/api/products/".length));
+        const { data: product, error: productError } = await supabaseAdmin.from("products")
+          .select("id").eq("id", id).maybeSingle();
         if (productError) throw productError;
-        const { items, total } = buildPricedItems(body.items, products, DELIVERY_FEE);
-        const reference = `KH-${Date.now()}-${require("crypto").randomBytes(5).toString("hex")}`;
-        const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert({
-          order_number: reference.toUpperCase(), customer_name: name, email, phone, shipping_address: address, total_amount: total,
-          status: "Pending", payment_status: "pending", payment_reference: reference, payment_method: "Paystack"
-        }).select().single();
-        if (orderError) throw orderError;
-        const { error: itemsError } = await supabaseAdmin.from("order_items").insert(items.map(item => ({ ...item, order_id: order.id })));
-        if (itemsError) {
-          await supabaseAdmin.from("orders").delete().eq("id", order.id);
-          throw itemsError;
-        }
-        try {
-          const payment = await paystackRequest("/transaction/initialize", {
-            method: "POST",
-            body: JSON.stringify({
-              email, amount: String(Math.round(total * 100)), currency: "GHS", reference,
-              callback_url: PAYSTACK_CALLBACK_URL,
-              channels: ["card", "mobile_money", "bank", "bank_transfer", "ussd"],
-              metadata: { order_id: order.id, customer_name: name, phone }
-            })
-          });
-          sendJson(res, 201, { success: true, order_id: order.id, order_number: order.order_number || reference, authorization_url: payment.authorization_url, reference });
-        } catch (error) {
-          await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
-          await supabaseAdmin.from("orders").delete().eq("id", order.id);
-          throw error;
-        }
-      } catch (error) {
-        const isInputError = /required|available|stock|size|quantity|invalid/i.test(error.message || "");
-        sendJson(res, isInputError ? 400 : 500, { error: isInputError ? error.message : publicError(error, "Could not start payment") });
-      }
-      return;
-    }
-
-    if (pathname === "/api/payments/verify" && req.method === "POST") {
-      try {
-        const body = await readBody(req);
-        const reference = String(body.reference || "").trim();
-        if (!reference) {
-          sendJson(res, 400, { error: "Payment reference is required" });
+        if (!product) {
+          sendJson(res, 404, { error: "Product not found." });
           return;
         }
-        const payment = await paystackRequest(`/transaction/verify/${encodeURIComponent(reference)}`, { method: "GET" });
-        const { data: order, error } = await supabaseAdmin.from("orders").select("id,order_number,customer_name,total_amount,payment_status")
-          .eq("payment_reference", reference).single();
-        if (error || !order) throw new Error("Order was not found for this payment");
-        const expectedKobo = Math.round(Number(order.total_amount) * 100);
-        if (payment.reference !== reference || payment.status !== "success" || payment.currency !== "GHS" || Number(payment.amount) !== expectedKobo) {
-          await supabaseAdmin.from("orders").update({ payment_status: "failed", status: "Payment failed" }).eq("id", order.id).eq("payment_status", "pending");
-          sendJson(res, 402, { error: "Payment could not be verified" });
-          return;
-        }
-        if (order.payment_status !== "paid") {
-          const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
-          if (finalizeError) {
-            await supabaseAdmin.from("orders").update({ payment_status: "paid", status: "Paid - Stock review" }).eq("id", order.id);
-            console.error("Paid order needs stock review", finalizeError);
-            sendJson(res, 409, { error: `Payment was received, but this order needs a stock review. Contact Kay's Haven and quote ${reference}.` });
+        const { error: deleteError } = await supabaseAdmin.rpc("delete_product_without_orders", { p_product_id: id });
+        if (deleteError) {
+          if (/referenced by existing orders/i.test(String(deleteError.message || ""))) {
+            sendJson(res, 409, { error: "This product appears in order history and cannot be permanently deleted. Hide it from the storefront instead." });
             return;
           }
+          if (/product not found/i.test(String(deleteError.message || ""))) {
+            sendJson(res, 404, { error: "Product not found." });
+            return;
+          }
+          throw deleteError;
         }
-        sendJson(res, 200, { success: true, order_id: order.id, order_number: order.order_number || order.id, customer_name: order.customer_name, status: "paid" });
-      } catch (error) {
-        sendJson(res, 400, { error: publicError(error, "Payment verification failed") });
+        sendJson(res, 200, { success: true, product_id: id });
+      } catch {
+        sendJson(res, 500, { error: "Could not safely delete this product." });
       }
       return;
     }
 
-    if (pathname === "/api/orders" && req.method === "POST") {
-      sendJson(res, 410, { error: "Orders must be placed through secure Paystack checkout" });
+    // -------------------------
+    // STAFF LOGIN
+    // -------------------------
+
+    if (
+      req.method === "POST" &&
+      req.url === "/api/staff/login"
+    ) {
+      try {
+        const body =
+          await readBody(req);
+
+        const loginName =
+          String(
+            body.login_name ||
+            body.loginName ||
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+        if (!loginName || !password) {
+          sendJson(res, 400, {
+            error:
+              "Login name and password are required"
+          });
+
+          return;
+        }
+
+        const {
+          data: staff,
+          error: staffError
+        } = await supabaseAdmin
+          .from("staff")
+          .select("*")
+          .eq("login_name", loginName)
+          .eq("active", true)
+          .single();
+
+        if (staffError || !staff) {
+          sendJson(res, 401, {
+            error:
+              "Invalid login name or password"
+          });
+
+          return;
+        }
+
+        const {
+          data: authData,
+          error: authError
+        } = await supabase.auth.signInWithPassword({
+          email: staff.auth_email,
+          password
+        });
+
+        if (authError) {
+          sendJson(res, 401, {
+            error:
+              "Invalid login name or password"
+          });
+
+          return;
+        }
+
+        sendJson(res, 200, {
+          success: true,
+          session: authData.session,
+          staff: {
+            id: staff.id,
+            full_name: staff.full_name,
+            login_name: staff.login_name,
+            auth_email: staff.auth_email
+          }
+        });
+
+      } catch (error) {
+        console.error(
+          "Login error:",
+          error
+        );
+
+        sendJson(res, 500, {
+          error: "Login failed"
+        });
+      }
+
       return;
     }
 
-    sendJson(res, 404, { error: "Route not found" });
+    // -------------------------
+    // CURRENT STAFF
+    // -------------------------
+
+    if (
+      req.method === "GET" &&
+      req.url === "/api/staff/me"
+    ) {
+      const authenticated =
+        await authenticateStaff(req);
+
+      if (!authenticated) {
+        sendJson(res, 401, {
+          error: "Unauthorized"
+        });
+
+        return;
+      }
+
+      sendJson(res, 200, {
+        staff: authenticated.staff
+      });
+
+      return;
+    }
+
+    // -------------------------
+    // ADD STAFF
+    // -------------------------
+
+    if (
+      req.method === "POST" &&
+      req.url === "/api/staff"
+    ) {
+      const authenticated =
+        await authenticateStaff(req);
+
+      if (!authenticated) {
+        sendJson(res, 401, {
+          error: "Unauthorized"
+        });
+
+        return;
+      }
+
+      try {
+        const body =
+          await readBody(req);
+
+        const fullName =
+          String(
+            body.full_name || ""
+          ).trim();
+
+        const loginName =
+          String(
+            body.login_name || ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+        if (
+          !fullName ||
+          !loginName ||
+          !password
+        ) {
+          sendJson(res, 400, {
+            error:
+              "Full name, login name and password are required"
+          });
+
+          return;
+        }
+
+        if (password.length < 8) {
+          sendJson(res, 400, {
+            error:
+              "Password must be at least 8 characters"
+          });
+
+          return;
+        }
+
+        const authEmail =
+          `${loginName}@kayshaven.local`;
+
+        const {
+          data: createdUser,
+          error: createError
+        } = await supabaseAdmin.auth.admin.createUser({
+          email: authEmail,
+          password,
+          email_confirm: true
+        });
+
+        if (createError) {
+          throw createError;
+        }
+
+        const {
+          data: newStaff,
+          error: staffInsertError
+        } = await supabaseAdmin
+          .from("staff")
+          .insert([{
+            id: createdUser.user.id,
+            full_name: fullName,
+            login_name: loginName,
+            auth_email: authEmail,
+            active: true
+          }])
+          .select()
+          .single();
+
+        if (staffInsertError) {
+          await supabaseAdmin.auth.admin.deleteUser(
+            createdUser.user.id
+          );
+
+          throw staffInsertError;
+        }
+
+        sendJson(res, 201, {
+          success: true,
+          staff: newStaff
+        });
+
+      } catch (error) {
+        console.error(
+          "Create staff error:",
+          error
+        );
+
+        sendJson(res, 500, {
+          error:
+            "Failed to create admin"
+        });
+      }
+
+      return;
+    }
+
+    // -------------------------
+    // CHANGE PASSWORD
+    // -------------------------
+
+    if (
+      req.method === "POST" &&
+      req.url === "/api/staff/password"
+    ) {
+      const authenticated =
+        await authenticateStaff(req);
+
+      if (!authenticated) {
+        sendJson(res, 401, {
+          error: "Unauthorized"
+        });
+
+        return;
+      }
+
+      try {
+        const body =
+          await readBody(req);
+
+        const newPassword =
+          String(
+            body.new_password || ""
+          );
+
+        if (newPassword.length < 8) {
+          sendJson(res, 400, {
+            error:
+              "Password must be at least 8 characters"
+          });
+
+          return;
+        }
+
+        const {
+          error
+        } =
+          await supabaseAdmin.auth.admin.updateUserById(
+            authenticated.user.id,
+            {
+              password: newPassword
+            }
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        sendJson(res, 200, {
+          success: true,
+          message:
+            "Password changed successfully"
+        });
+
+      } catch (error) {
+        console.error(
+          "Password change error:",
+          error
+        );
+
+        sendJson(res, 500, {
+          error:
+            "Failed to change password"
+        });
+      }
+
+      return;
+    }
+
+// -------------------------
+// GET ORDERS
+// -------------------------
+
+if (req.method === "PATCH" && /^\/api\/orders\/[^/]+\/status$/.test(req.url)) {
+  const authenticated = await authenticateStaff(req);
+  if (!authenticated) {
+    sendJson(res, 401, { error: "Unauthorized" });
+    return;
+  }
+  try {
+    const id = decodeURIComponent(req.url.slice("/api/orders/".length).replace(/\/status$/, ""));
+    const { status } = await readBody(req);
+    if (!["Completed", "Canceled"].includes(status)) {
+      sendJson(res, 400, { error: "Choose Completed or Canceled." });
+      return;
+    }
+
+    const { data: existing, error: readError } = await supabaseAdmin.from("orders")
+      .select("id, status, payment_status").eq("id", id).single();
+    if (readError || !existing) {
+      sendJson(res, 404, { error: "Order not found." });
+      return;
+    }
+    if (!canTransitionOrderStatus(existing.status, existing.payment_status, status)) {
+      sendJson(res, 400, { error: "Choose Completed or Canceled." });
+      return;
+    }
+    let update = supabaseAdmin.from("orders").update({ status }).eq("id", id);
+    update = existing.status == null ? update.is("status", null) : update.eq("status", existing.status);
+    update = existing.payment_status == null ? update.is("payment_status", null) : update.eq("payment_status", existing.payment_status);
+    const { data: order, error } = await update.select("*").maybeSingle();
+    if (error) throw error;
+    if (!order) {
+      sendJson(res, 409, { error: "This order changed while you were editing it. Refresh the orders list and try again." });
+      return;
+    }
+    sendJson(res, 200, { success: true, order });
+  } catch {
+    sendJson(res, 500, { error: "Could not update order status." });
+  }
+  return;
+}
+
+if (
+  req.method === "GET" &&
+  req.url === "/api/orders"
+) {
+  const authenticated =
+    await authenticateStaff(req);
+
+  if (!authenticated) {
+    sendJson(res, 401, {
+      error: "Unauthorized"
+    });
+
+    return;
+  }
+
+  try {
+    const {
+      data,
+      error
+    } = await supabaseAdmin
+      .from("orders")
+      .select(`
+        *,
+        order_items (
+          id,
+          product_id,
+          product_name,
+          quantity,
+          price,
+          size
+        )
+      `)
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    sendJson(res, 200, {
+      orders: data || []
+    });
+
+  } catch (error) {
+    console.error(
+      "Orders error:",
+      error
+    );
+
+    sendJson(res, 500, {
+      error:
+        "Failed to load orders"
+    });
+  }
+
+  return;
+}
+
+    // -------------------------
+// CREATE ORDER
+// -------------------------
+
+if (req.method === "POST" && req.url === "/api/orders") {
+  sendJson(res, 410, { error: "Use secure checkout to create an order." });
+  return;
+}
+
+// NOT FOUND
+    // -------------------------
+
+    sendJson(res, 404, {
+      error: "Route not found"
+    });
+  };
+
+// -------------------------
+// START SERVER
+// -------------------------
+
+if (require.main === module) {
+  createServer().listen(PORT, () => {
+    console.log(`Backend running on http://localhost:${PORT}`);
   });
 }
 
-if (require.main === module) {
-  if (process.env.NODE_ENV === "production") {
-    const required = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "PAYSTACK_SECRET_KEY", "PAYSTACK_CALLBACK_URL", "FRONTEND_ORIGIN"];
-    const missing = required.filter(name => !process.env[name]);
-    if (missing.length || FRONTEND_ORIGIN === "*") {
-      throw new Error(`Production configuration is incomplete: ${missing.join(", ") || "FRONTEND_ORIGIN must be set"}`);
-    }
-  }
-  const server = createServer();
-  server.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+async function paystackRequest(endpoint, payload) {
+  if (!process.env.PAYSTACK_SECRET_KEY) throw new Error("Payment service is not configured");
+  const response = await fetch(`https://api.paystack.co${endpoint}`, {
+    method: payload ? "POST" : "GET",
+    headers: {
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: payload ? JSON.stringify(payload) : undefined,
+    signal: AbortSignal.timeout(15000)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.status !== true) throw new Error("Payment service could not complete the request");
+  return result.data;
 }
 
-module.exports = { createServer, validEmail, buildPricedItems };
+function createServer() {
+  return http.createServer(requestHandler);
+}
+
+function validEmail(value) {
+  const email = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidOptionalEmail(value) {
+  const email = String(value || "").trim();
+  return !email || validEmail(email);
+}
+
+function isValidCheckoutContact(customerName, email, phone) {
+  return Boolean(String(customerName || "").trim() && String(phone || "").trim() && isValidOptionalEmail(email));
+}
+
+function createGuestPaystackEmail(callbackUrl) {
+  const callback = new URL(callbackUrl);
+  if (callback.protocol !== "https:" || !callback.hostname) {
+    throw new Error("A secure payment callback domain is required");
+  }
+  return `checkout-${crypto.randomBytes(16).toString("hex")}@${callback.hostname.toLowerCase()}`;
+}
+
+module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };

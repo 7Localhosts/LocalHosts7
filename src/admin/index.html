@@ -3,46 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="api-base" content="http://localhost:8000">
+  <link rel="icon" type="image/png" href="../frontend/images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png">
+  <meta name="api-base" content="">
   <title>Kay's Haven | Staff Dashboard</title>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../frontend/brand-system.css">
+  <link rel="stylesheet" href="styles.css?v=20261015">
+  <script src="../frontend/product-images.js?v=5"></script>
   <script src="../frontend/api-config.js"></script>
-  <script src="app.js" defer></script>
+  <script src="order-groups.js"></script>
+  <script src="app.js?v=20261015" defer></script>
 </head>
 
 <body>
 
   <!-- STAFF LOGIN -->
   <main class="login" id="login-screen">
+    <img class="login-photo" src="../frontend/images/landing-mother-and-baby-clean.png" alt="" aria-hidden="true">
 
     <section class="login-aside">
 
-      <p class="eyebrow">
-        <span class="status-dot"></span>
-        STAFF ACCESS
-      </p>
+      <a class="login-wordmark kh-brand" href="../shop.html" aria-label="Kay's Haven shop"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
 
-      <h1>
-        Good work starts
-        <span style="color: #000000;">with care</span>
-      </h1>
+      <div class="login-intro-card">
+        <p class="eyebrow">
+          <span class="status-dot"></span>
+          STAFF ACCESS
+        </p>
 
-      <p>
-        Manage orders, inventory and the daily work behind Kay's Haven.
-      </p>
+        <h1>
+          Good work starts
+          <span>with care</span>
+        </h1>
+
+        <p>
+          Manage orders, inventory and the daily work behind <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span>.
+        </p>
+      </div>
 
     </section>
 
     <section class="login-panel">
 
       <p class="eyebrow">STAFF LOGIN</p>
-
-      <h2>Welcome back</h2>
-
-      <p class="form-intro">
-        Sign in to access the Kay's Haven staff workspace.
-      </p>
 
       <form id="login-form">
 
@@ -96,7 +99,7 @@
       </form>
 
       <p class="security-note">
-        Staff access is restricted to authorised Kay's Haven employees.
+        Staff access is restricted to authorised <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span> employees.
       </p>
 
     </section>
@@ -115,9 +118,7 @@
           STAFF WORKSPACE
         </span>
 
-        <span class="store-name">
-          Kay's Haven
-        </span>
+        <span class="store-name kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span>
 
       </div>
 
@@ -128,7 +129,6 @@
           type="button"
           data-view="overview"
         >
-          <span class="nav-icon">⌂</span>
           <span>Overview</span>
         </button>
 
@@ -137,7 +137,6 @@
           type="button"
           data-view="orders"
         >
-          <span class="nav-icon">▤</span>
           <span>Orders</span>
           <span class="nav-count" id="orders-count">0</span>
         </button>
@@ -147,7 +146,6 @@
           type="button"
           data-view="inventory"
         >
-          <span class="nav-icon">□</span>
           <span>Inventory</span>
         </button>
 
@@ -156,7 +154,6 @@
           type="button"
           data-view="admins"
         >
-          <span class="nav-icon">+</span>
           <span>Admins</span>
         </button>
 
@@ -189,7 +186,6 @@
           id="logout-button"
           type="button"
         >
-          <span>↪</span>
           Log out
         </button>
 
@@ -227,12 +223,8 @@
 
           <div>
 
-            <p class="eyebrow">
-              KAY'S HAVEN
-            </p>
-
             <h1 id="dashboard-title">
-              Good morning<span>.</span>
+              Good Day
             </h1>
 
             <p class="page-subtitle">
@@ -240,12 +232,6 @@
             </p>
 
           </div>
-
-          <span class="live-pill">
-            <span class="status-dot"></span>
-            LIVE
-          </span>
-
         </div>
 
 
@@ -255,7 +241,6 @@
 
             <div class="metric-label">
               <span>ORDERS TODAY</span>
-              <span class="metric-icon">▤</span>
             </div>
 
             <strong id="orders-today-count">
@@ -266,17 +251,6 @@
               Orders received today
             </p>
 
-            <div class="sparkline">
-              <i style="height: 22%;"></i>
-              <i style="height: 38%;"></i>
-              <i style="height: 31%;"></i>
-              <i style="height: 58%;"></i>
-              <i style="height: 45%;"></i>
-              <i style="height: 72%;"></i>
-              <i style="height: 60%;"></i>
-              <i style="height: 86%;"></i>
-            </div>
-
           </article>
 
 
@@ -284,7 +258,6 @@
 
             <div class="metric-label">
               <span>PENDING ORDERS</span>
-              <span class="metric-icon">◷</span>
             </div>
 
             <strong id="orders-pending-count">
@@ -295,17 +268,6 @@
               Orders awaiting processing
             </p>
 
-            <div class="metric-progress">
-              <span
-                id="pending-progress"
-                style="width: 0%;"
-              ></span>
-            </div>
-
-            <small>
-              Keep orders moving
-            </small>
-
           </article>
 
 
@@ -313,7 +275,6 @@
 
             <div class="metric-label">
               <span>SALES</span>
-              <span class="metric-icon">₵</span>
             </div>
 
             <strong id="sales-total">
@@ -324,157 +285,7 @@
               Total recorded sales
             </p>
 
-            <div class="sparkline spark-coral">
-              <i style="height: 35%;"></i>
-              <i style="height: 50%;"></i>
-              <i style="height: 42%;"></i>
-              <i style="height: 66%;"></i>
-              <i style="height: 58%;"></i>
-              <i style="height: 76%;"></i>
-              <i style="height: 70%;"></i>
-              <i style="height: 90%;"></i>
-            </div>
-
           </article>
-
-        </div>
-
-
-        <div class="content-grid">
-
-          <section class="orders-panel">
-
-            <div class="section-heading">
-
-              <div>
-
-                <p class="eyebrow">
-                  RECENT ACTIVITY
-                </p>
-
-                <h2>
-                  Recent orders
-                </h2>
-
-              </div>
-
-              <button
-                class="text-button view-orders"
-                type="button"
-                data-view="orders"
-              >
-                View all →
-              </button>
-
-            </div>
-
-            <div class="table-scroll">
-
-              <table>
-
-                <thead>
-                  <tr>
-                    <th>ORDER</th>
-                    <th>CUSTOMER</th>
-                    <th>ITEMS</th>
-                    <th>STATUS</th>
-                    <th>TOTAL</th>
-                    <th>DATE</th>
-                  </tr>
-                </thead>
-
-                <tbody id="recent-orders-rows"></tbody>
-
-              </table>
-
-            </div>
-
-          </section>
-
-
-          <section class="stock-panel">
-
-            <div class="section-heading">
-
-              <div>
-
-                <p class="eyebrow">
-                  INVENTORY
-                </p>
-
-                <h2>
-                  Stock overview
-                </h2>
-
-              </div>
-
-              <button
-                class="icon-button"
-                type="button"
-                aria-label="Refresh inventory"
-                id="refresh-inventory"
-              >
-                ↻
-              </button>
-
-            </div>
-
-            <ul class="stock-list" id="stock-list">
-
-              <li>
-                <span class="stock-swatch"></span>
-
-                <span class="stock-product">
-                  <strong>Baby care</strong>
-                  <small>Products</small>
-                </span>
-
-                <span class="stock-quantity">
-                  <strong>—</strong>
-                  <small>Stock</small>
-                </span>
-              </li>
-
-              <li>
-                <span class="stock-swatch swatch-two"></span>
-
-                <span class="stock-product">
-                  <strong>Mother care</strong>
-                  <small>Products</small>
-                </span>
-
-                <span class="stock-quantity">
-                  <strong>—</strong>
-                  <small>Stock</small>
-                </span>
-              </li>
-
-              <li>
-                <span class="stock-swatch swatch-three"></span>
-
-                <span class="stock-product">
-                  <strong>School essentials</strong>
-                  <small>Products</small>
-                </span>
-
-                <span class="stock-quantity">
-                  <strong>—</strong>
-                  <small>Stock</small>
-                </span>
-              </li>
-
-            </ul>
-
-            <button
-              class="stock-link"
-              type="button"
-              data-view="inventory"
-            >
-              Manage inventory
-              <span>→</span>
-            </button>
-
-          </section>
 
         </div>
 
@@ -482,7 +293,7 @@
         <footer class="dashboard-footer">
 
           <span>
-            Kay's Haven Staff Workspace
+            <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span> Staff Workspace
           </span>
 
           <span>
@@ -505,259 +316,169 @@
 
           <div>
 
-            <p class="eyebrow">
-              ORDERS
-            </p>
-
             <h1 id="orders-title">
-              Customer orders
+              Customer Orders
             </h1>
 
             <p class="page-subtitle">
-              Review orders placed through the Kay's Haven store.
+              Review orders placed through the <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span> store.
             </p>
 
           </div>
 
-          <span
-            class="order-count"
-            id="orders-page-count"
-          >
-            0 orders
-          </span>
+          <div class="orders-heading-actions">
+            <span class="order-count" id="orders-page-count">0 orders</span>
+            <button class="button button-primary" id="refresh-orders" type="button">Refresh orders</button>
+            <small id="orders-refreshed-at" aria-live="polite"></small>
+            <small id="orders-feedback" class="orders-feedback" role="status" aria-live="polite"></small>
+          </div>
 
         </div>
 
 
-        <section class="simple-panel">
-
-          <div class="section-heading">
-
-            <div>
-
-              <p class="eyebrow">
-                ORDER MANAGEMENT
-              </p>
-
-              <h2>
-                All orders
-              </h2>
-
-            </div>
-
-          </div>
-
-          <div class="table-scroll">
-
-            <table>
-
-              <thead>
-                <tr>
-                  <th>ORDER</th>
-                  <th>CUSTOMER</th>
-                  <th>ITEMS</th>
-                  <th>STATUS</th>
-                  <th>TOTAL</th>
-                  <th>DATE</th>
-                </tr>
-              </thead>
-
-              <tbody id="orders-rows"></tbody>
-
-            </table>
-
-          </div>
-
+        <section class="simple-panel orders-panel" aria-label="Customer orders">
+          <label class="orders-search" for="orders-search-input">
+            Find customers or orders
+            <input id="orders-search-input" type="search" autocomplete="off" placeholder="Search name, email, phone or order number">
+          </label>
+          <section class="orders-bucket" aria-labelledby="active-orders-title">
+            <h2 id="active-orders-title">Active Orders</h2>
+            <div class="orders-list" id="orders-active-rows" role="list" aria-label="Active orders grouped by customer"></div>
+          </section>
+          <section class="orders-bucket" aria-labelledby="order-history-title">
+            <h2 id="order-history-title">Order History</h2>
+            <div class="orders-list" id="orders-history-rows" role="list" aria-label="Completed and canceled orders grouped by customer"></div>
+          </section>
         </section>
 
       </section>
 
 
       <!-- INVENTORY -->
-      <section
-        class="dashboard-view is-hidden"
-        id="view-inventory"
-        aria-labelledby="inventory-title"
-      >
-
+      <section class="dashboard-view is-hidden" id="view-inventory" aria-labelledby="inventory-title">
         <div class="page-heading">
-
           <div>
-
-            <p class="eyebrow">
-              INVENTORY
-            </p>
-
-            <h1 id="inventory-title">
-              Manage stock
-            </h1>
-
-            <p class="page-subtitle">
-              Keep products and stock information organised.
-            </p>
-
+            <p class="eyebrow">INVENTORY</p>
+            <h1 id="inventory-title">Manage products</h1>
+            <p class="page-subtitle">Add products and control what customers see in the storefront.</p>
           </div>
-
+          <span class="live-pill" id="product-count">Loading products…</span>
         </div>
 
+        <nav class="inventory-tabs" role="tablist" aria-label="Inventory sections">
+          <button class="inventory-tab" id="inventory-tab-single" type="button" role="tab" aria-controls="inventory-panel-single" aria-selected="true" data-inventory-tab="single">Add Single Product</button>
+          <button class="inventory-tab" id="inventory-tab-bulk" type="button" role="tab" aria-controls="inventory-panel-bulk" aria-selected="false" data-inventory-tab="bulk" tabindex="-1">Add Multiple Products</button>
+          <button class="inventory-tab" id="inventory-tab-view" type="button" role="tab" aria-controls="inventory-panel-view" aria-selected="false" data-inventory-tab="view" tabindex="-1">View Products</button>
+        </nav>
 
-        <section class="simple-panel inventory-entry">
-
-          <div class="section-heading">
-
-            <div>
-
-              <p class="eyebrow">
-                ADD PRODUCT
-              </p>
-
-              <h2>
-                New inventory item
-              </h2>
-
+        <section class="inventory-tab-panel" id="inventory-panel-single" role="tabpanel" aria-labelledby="inventory-tab-single" data-inventory-panel="single">
+          <section class="simple-panel inventory-entry">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">ADD PRODUCT</p>
+                <h2>New product</h2>
+              </div>
             </div>
-
-          </div>
-
-
-          <form
-            class="inventory-form"
-            id="inventory-form"
-          >
-
-            <label class="inventory-name-field">
-              Product name
-
-              <input
-                id="inventory-name"
-                name="name"
-                type="text"
-                placeholder="Product name"
-                required
-              >
-            </label>
-
-
-            <label>
-              Category
-
-<select id="inventory-category" name="category" required>
-  <option value="">Select category</option>
-  <option value="Baby">Baby</option>
-  <option value="Toddler">Toddler</option>
-  <option value="Kids">Kids</option>
-  <option value="Teens">Teens</option>
-  <option value="Toys">Toys</option>
-  <option value="Accessories">Accessories</option>
-  <option value="Back to School">Back to School</option>
-  <option value="Clearance">Clearance</option>
-</select>
-            </label>
-
-
-            <label>
-              Quantity
-
-              <input
-                id="inventory-quantity"
-                name="quantity"
-                type="number"
-                min="0"
-                placeholder="0"
-                required
-              >
-            </label>
-
-
-            <label>
-              Price (GHS)
-              <input id="inventory-price" name="price" type="number" min="0.01" step="0.01" required>
-            </label>
-
-            <label>
-              Image URL (optional)
-              <input id="inventory-image" name="image" type="text" placeholder="Image URL or Images/file.jpg">
-            </label>
-
-            <label>
-              Sizes (comma separated, optional)
-              <input id="inventory-sizes" name="sizes" type="text" placeholder="e.g. 0-3 months, 3-6 months">
-            </label>
-
-            <label>
-              Reorder at
-
-              <input
-                id="inventory-reorder"
-                name="reorderAt"
-                type="number"
-                min="0"
-                placeholder="10"
-                value="10"
-                required
-              >
-            </label>
-
-
-            <button
-              class="button button-primary inventory-submit"
-              type="submit"
-            >
-              Add product
-            </button>
-
-          </form>
-
-          <p
-            class="inventory-feedback"
-            id="inventory-feedback"
-            aria-live="polite"
-          ></p>
-
+            <form class="inventory-form inventory-single-form" id="inventory-form">
+              <div class="inventory-single-image">
+                <label class="inventory-field">
+                  Product image <span class="inventory-field-hint">JPEG, PNG or WebP · up to 5 MB</span>
+                  <input id="inventory-image-file" name="image_file" type="file" accept="image/jpeg,image/png,image/webp" required>
+                </label>
+                <div class="inventory-upload-preview" id="inventory-upload-preview" hidden>
+                  <img id="inventory-upload-preview-image" alt="Selected product image preview">
+                  <span>Image preview</span>
+                </div>
+              </div>
+              <div class="inventory-single-fields">
+                <label class="inventory-field inventory-name-field">
+                  Product name
+                  <input id="inventory-name" name="name" type="text" placeholder="Product name" required>
+                </label>
+                <div class="inventory-field-pair">
+                  <label class="inventory-field">
+                    Category
+                    <select id="inventory-category" name="category" required>
+                      <option value="">Select category</option>
+                      <option value="Baby">Baby</option>
+                      <option value="Toddler">Toddler</option>
+                      <option value="Kids">Kids</option>
+                      <option value="Teens">Teens</option>
+                      <option value="Toys">Toys</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Back to School">Back to School</option>
+                      <option value="Clearance">Clearance</option>
+                    </select>
+                  </label>
+                  <label class="inventory-field">
+                    Price (GHS)
+                    <input id="inventory-price" name="price" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+                  </label>
+                </div>
+                <div class="inventory-form-actions">
+                  <button class="button button-primary inventory-submit" type="submit">Save Product</button>
+                  <button class="button button-secondary inventory-reset" type="reset">Clear Form</button>
+                </div>
+              </div>
+            </form>
+            <p class="inventory-feedback" id="inventory-feedback" aria-live="polite"></p>
+          </section>
         </section>
 
-
-        <section class="simple-panel">
-
-          <div class="section-heading">
-
-            <div>
-
-              <p class="eyebrow">
-                CURRENT STOCK
-              </p>
-
-              <h2>
-                Inventory
-              </h2>
-
+        <section class="inventory-tab-panel" id="inventory-panel-bulk" role="tabpanel" aria-labelledby="inventory-tab-bulk" data-inventory-panel="bulk" hidden>
+          <section class="simple-panel bulk-products-panel" aria-labelledby="bulk-products-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">BULK ENTRY</p>
+                <h2 id="bulk-products-title">Add multiple products</h2>
+                <p class="page-subtitle">Select photos together, then enter each product's name, category and price.</p>
+              </div>
             </div>
-
-          </div>
-
-          <div class="table-scroll">
-
-            <table>
-
-              <thead>
-                <tr>
-                  <th>PRODUCT</th>
-                  <th>CATEGORY</th>
-                  <th>QUANTITY</th>
-                  <th>PRICE</th>
-                  <th>STATUS</th>
-                  <th>SIZE OPTIONS &amp; IMAGE</th>
-                </tr>
-              </thead>
-
-              <tbody id="inventory-rows"></tbody>
-
-            </table>
-
-          </div>
-
+            <label class="bulk-file-label" for="bulk-product-images">
+              Product images (JPEG, PNG or WebP; up to 5 MB each)
+              <input id="bulk-product-images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+            </label>
+            <div id="bulk-product-list" class="bulk-product-list" aria-live="polite"></div>
+            <div class="bulk-products-actions">
+              <button class="button button-primary" id="save-bulk-products" type="button" disabled>Save All Products</button>
+              <p id="bulk-products-feedback" class="inventory-feedback" role="status" aria-live="polite"></p>
+            </div>
+          </section>
         </section>
 
+        <section class="inventory-tab-panel" id="inventory-panel-view" role="tabpanel" aria-labelledby="inventory-tab-view" data-inventory-panel="view" hidden>
+          <section class="simple-panel inventory-products-panel" aria-labelledby="view-products-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">PRODUCT CATALOGUE</p>
+                <h2 id="view-products-title">View Products</h2>
+                <p class="page-subtitle">Published and hidden products from Supabase.</p>
+              </div>
+            </div>
+            <div class="inventory-filters">
+              <label class="inventory-search" for="inventory-search">
+                Search products
+                <input id="inventory-search" type="search" placeholder="Search by product name" autocomplete="off">
+              </label>
+              <label class="inventory-search" for="inventory-category-filter">
+                Filter by category
+                <select id="inventory-category-filter">
+                  <option value="">All categories</option>
+                  <option value="Baby">Baby</option>
+                  <option value="Toddler">Toddler</option>
+                  <option value="Kids">Kids</option>
+                  <option value="Teens">Teens</option>
+                  <option value="Toys">Toys</option>
+                  <option value="Accessories">Accessories</option>
+                  <option value="Back to School">Back to School</option>
+                  <option value="Clearance">Clearance</option>
+                </select>
+              </label>
+            </div>
+            <p class="inventory-list-feedback" id="inventory-list-feedback" role="status" aria-live="polite"></p>
+            <div id="inventory-rows" class="inventory-product-list" role="list" aria-label="Supabase products"></div>
+          </section>
+        </section>
       </section>
 
             <!-- ADMINS -->
@@ -780,7 +501,7 @@
             </h1>
 
             <p class="page-subtitle">
-              Create accounts for the people who help run Kay's Haven.
+              Create accounts for the people who help run <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span>.
             </p>
 
           </div>
@@ -869,7 +590,7 @@
           ></p>
 
         </section>
-        
+
 
 
         <!-- CHANGE PASSWORD -->

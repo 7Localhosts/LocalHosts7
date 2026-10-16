@@ -3,15 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png">
   <title>Secure checkout | Kay's Haven</title>
-  <meta name="api-base" content="http://localhost:8000">
+  <meta name="api-base" content="">
+  <link rel="stylesheet" href="../brand-system.css">
   <link rel="stylesheet" href="checkout.css">
 </head>
 <body>
   <div class="page-title">
-    <a href="../index.html" class="back-link">← Continue shopping</a>
+    <a class="kh-brand checkout-brand" href="../shop.html" aria-label="Kay's Haven shop"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
+    <a href="../shop.html" class="back-link">Continue shopping</a>
     <h1>Checkout</h1>
-    <p>Enter your delivery details. Payment is securely completed on Paystack.</p>
+    <p>Enter your contact details. Payment is securely completed on Paystack.</p>
   </div>
   <div id="checkout-view" class="checkout-grid">
     <div>
@@ -22,28 +25,19 @@
             <div><label for="fullName">Full name</label><input id="fullName" name="fullName" autocomplete="name" required></div>
             <div><label for="phone">Phone number</label><input id="phone" name="phone" type="tel" autocomplete="tel" required></div>
           </div>
-          <label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required>
+          <label for="email">Email address (optional)</label><input id="email" name="email" type="email" autocomplete="email" aria-describedby="email-help">
+          <small id="email-help" class="field-help">Optional. Add your email if you want Paystack to send a payment receipt by email.</small>
         </section>
-        <section class="panel">
-          <h2>Delivery address</h2>
-          <label for="address">Street address</label><input id="address" name="address" autocomplete="street-address" required>
-          <div class="field-row">
-            <div><label for="city">City / Town</label><input id="city" name="city" autocomplete="address-level2" required></div>
-            <div><label for="region">Region</label><input id="region" name="region" autocomplete="address-level1" required></div>
-          </div>
-          <label for="notes">Delivery notes (optional)</label><textarea id="notes" name="notes" rows="2"></textarea>
-        </section>
-        <p class="secure-note">Paystack will collect and process your selected payment details. Kay's Haven does not store card details.</p>
+        <p class="secure-note">Paystack will collect and process your selected payment details. <span class="kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></span> does not store card details.</p>
+        <p id="checkout-price-message" class="checkout-message" role="status" aria-live="polite"></p>
         <p id="checkout-message" class="checkout-message" role="alert" aria-live="polite"></p>
-        <p class="checkout-terms">By continuing, you agree to our <a href="../policies.html#terms">terms</a>, <a href="../policies.html#delivery">delivery information</a> and <a href="../policies.html#refunds">refund policy</a>.</p>
+        <p class="checkout-terms">By continuing, you agree to our <a href="../policies.html#terms">terms</a> and <a href="../policies.html#refunds">refund policy</a>.</p>
       </form>
     </div>
     <aside class="sticky-summary panel">
       <h2>Order summary</h2>
       <div id="order-items" class="order-items"></div>
-      <div class="summary-line"><span>Subtotal</span><span id="summary-subtotal">GHS 0.00</span></div>
-      <div class="summary-line"><span>Delivery</span><span id="summary-delivery">GHS 15.00</span></div>
-      <div class="summary-line total"><span>Total</span><span id="summary-total">GHS 0.00</span></div>
+      <div class="summary-line total"><span>Total</span><span id="summary-total">Checking prices…</span></div>
       <button type="submit" form="checkout-form" id="place-order-btn" class="place-order-btn">Pay securely with Paystack</button>
       <small>Secure payment processing by Paystack.</small>
     </aside>
@@ -52,9 +46,10 @@
     <div class="check-badge">✓</div><h2>Payment confirmed</h2>
     <p>Thank you, <span id="conf-name"></span>. Your paid order is being prepared.</p>
     <p id="conf-order-id" class="order-id"></p>
-    <a href="../index.html">Return to the shop</a>
+    <a href="../shop.html">Return to the shop</a>
   </section>
-  <script src="../api-config.js"></script>
+ <script src="../product-images.js?v=5"></script>
+ <script src="../api-config.js"></script>
   <script src="checkout.js"></script>
 </body>
 </html>

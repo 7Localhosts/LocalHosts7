@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png">
 
     <title>Product Details - Kay's Haven</title>
-    <meta name="api-base" content="http://localhost:8000">
+  <meta name="api-base" content="">
 
+    <link rel="stylesheet" href="../brand-system.css">
     <link rel="stylesheet" href="product.css">
 </head>
 
@@ -17,7 +19,8 @@
 
         <!-- BACK TO SHOP -->
 
-        <a href="../index.html" class="back-link">
+        <a class="kh-brand product-brand" href="../shop.html" aria-label="Kay's Haven shop"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
+        <a href="../shop.html" class="back-link">
             ← Back to shop
         </a>
 
@@ -41,9 +44,7 @@
 
             <div class="product-info">
 
-                <p class="product-category">
-                    KAY'S HAVEN
-                </p>
+                <p class="product-category kh-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></p>
 
                 <h1 id="product-name">
                     Product Name
@@ -59,30 +60,16 @@
 
                 <!-- SIZE -->
 
-                <div class="product-variant" hidden>
+                <div class="product-purchase-controls">
+
+                <div class="product-variant">
 
                     <label for="product-size">
                         Size
                     </label>
 
-                    <select id="product-size">
-
-                        <option value="S">
-                            Small
-                        </option>
-
-                        <option value="M">
-                            Medium
-                        </option>
-
-                        <option value="L">
-                            Large
-                        </option>
-
-                        <option value="XL">
-                            XL
-                        </option>
-
+                    <select id="product-size" aria-label="Choose a product size">
+                        <option value="">None / N/A</option>
                     </select>
 
                 </div>
@@ -91,7 +78,7 @@
 
                 <div class="quantity">
 
-                    <label>
+                        <label for="quantity">
                         Quantity
                     </label>
 
@@ -125,6 +112,8 @@
 
                 </div>
 
+                </div>
+
                 <!-- ADD TO CART -->
 
                 <button
@@ -142,7 +131,7 @@
 
     <!-- JAVASCRIPT -->
 
-    <script src="../product-images.js"></script>
+    <script src="../product-images.js?v=5"></script>
     <script src="../api-config.js"></script>
     <script src="product.js"></script>
 

@@ -1,18 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
 :root {
     --bg: #ffffff;
     --panel: #ffffff;
-    --soft: #faf7fc;
-    --pink: #f3e8f8;
-    --rose: #7a13aa;
-    --peach: #c99bdd;
-    --sage: #eee4f5;
-    --blue: #eee4f5;
+    --soft: #ffffff;
+    --kh-surface-muted: #f5f5f5;
+    --kh-primary: #7a13aa;
+
     --text: #27282a;
     --muted: #6b6670;
-    --line: #e5d9eb;
+    --line: #d5d5d5;
     --shadow: 0 12px 30px rgba(80, 35, 100, 0.08);
     --radius: 18px;
-    --error: #c0392b;
+    --error: #7a13aa;
 }
 
 
@@ -24,14 +23,17 @@
     box-sizing: border-box;
 }
 
+button { transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease; }
+button:not(:disabled):hover { filter: brightness(.94); }
+
 html {
     scroll-behavior: smooth;
 }
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: var(--bg);
+    font-family: "Montserrat", sans-serif;
+    background: #ffffff;
     color: var(--text);
     padding: 40px 20px 80px;
 }
@@ -46,12 +48,15 @@ body {
     margin: 0 auto 35px;
 }
 
+.checkout-brand { display: flex; width: max-content; margin-bottom: 9px; color: var(--kh-primary); font-size: 19px; }
+
 .page-title h1 {
     margin: 0 0 8px;
 
     color: var(--text);
 
-    font-size: 32px;
+    font-family: "Montserrat", sans-serif;
+    font-size: 38px;
     line-height: 1.2;
 }
 
@@ -102,7 +107,7 @@ body {
     background: var(--panel);
 
     border: 1px solid var(--line);
-    border-radius: var(--radius);
+    border-radius: var(--kh-radius-panel);
 
     box-shadow: var(--shadow);
 }
@@ -118,7 +123,8 @@ body {
 
     color: var(--text);
 
-    font-size: 18px;
+    font-family: "Montserrat", sans-serif;
+    font-size: 21px;
 }
 
 
@@ -137,7 +143,7 @@ body {
 
     border-radius: 50%;
 
-    background: var(--rose);
+    background: var(--kh-primary);
 
     color: #ffffff;
 
@@ -208,11 +214,11 @@ select:focus,
 textarea:focus {
     outline: none;
 
-    border-color: var(--rose);
+    border-color: var(--kh-primary);
 
     background: #ffffff;
 
-    box-shadow: 0 0 0 3px rgba(122, 19, 170, 0.10);
+    box-shadow: 0 0 0 3px rgba(66, 22, 83, 0.10);
 }
 
 
@@ -271,15 +277,15 @@ textarea:focus {
 }
 
 .payment-option:hover {
-    border-color: #cfa9dc;
+    border-color: #ffffff;
 }
 
 .payment-option:has(input:checked) {
-    border-color: var(--rose);
+    border-color: var(--kh-primary);
 
-    background: var(--pink);
+    background: var(--kh-surface-muted);
 
-    box-shadow: 0 4px 12px rgba(122, 19, 170, 0.06);
+    box-shadow: 0 4px 12px rgba(66, 22, 83, 0.06);
 }
 
 .payment-option input {
@@ -287,7 +293,7 @@ textarea:focus {
 
     margin: 0;
 
-    accent-color: var(--rose);
+    accent-color: var(--kh-primary);
 }
 
 .payment-option .label {
@@ -341,6 +347,22 @@ textarea:focus {
     border-bottom: 1px solid var(--line);
 
     font-size: 14px;
+}
+
+.field-help { display: block; margin: -8px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+.checkout-item-image {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.order-item-details {
+    flex: 1;
+    min-width: 0;
 }
 
 .order-item:last-child {
@@ -397,7 +419,7 @@ textarea:focus {
 }
 
 .summary-line.total span:last-child {
-    color: var(--rose);
+    color: var(--kh-primary);
 }
 
 
@@ -416,11 +438,11 @@ textarea:focus {
 
     border-radius: 11px;
 
-    background: var(--rose);
+    background: var(--kh-primary);
 
     color: #ffffff;
 
-    font-family: Arial, sans-serif;
+    font-family: "Montserrat", sans-serif;
 
     font-size: 16px;
     font-weight: 700;
@@ -434,9 +456,9 @@ textarea:focus {
 }
 
 .place-order-btn:hover {
-    background: #64108c;
+    background: #7a13aa;
 
-    box-shadow: 0 8px 20px rgba(122, 19, 170, 0.20);
+    box-shadow: 0 8px 20px rgba(66, 22, 83, 0.20);
 
     transform: translateY(-1px);
 }
@@ -472,8 +494,6 @@ textarea:focus {
 ========================= */
 
 #confirmation-view {
-    display: none;
-
     max-width: 640px;
 
     margin: 60px auto;
@@ -486,7 +506,7 @@ textarea:focus {
 
     border: 1px solid var(--line);
 
-    border-radius: var(--radius);
+    border-radius: var(--kh-radius-panel);
 
     box-shadow: var(--shadow);
 }
@@ -504,9 +524,9 @@ textarea:focus {
 
     border-radius: 50%;
 
-    background: var(--sage);
+    background: var(--kh-surface-muted);
 
-    color: var(--rose);
+    color: var(--kh-primary);
 
     font-size: 30px;
 }
@@ -538,7 +558,7 @@ textarea:focus {
 
     background: var(--soft);
 
-    color: var(--rose);
+    color: var(--kh-primary);
 
     font-weight: 700;
 
@@ -580,4 +600,29 @@ textarea:focus {
         padding: 40px 22px;
     }
 
+}
+.back-link, .back-link:hover { color: #7a13aa; text-decoration: none; }
+
+#confirmation-view[hidden] {
+    display: none;
+}
+
+#confirmation-view:not([hidden]) {
+    display: block;
+}
+
+input,
+select,
+textarea {
+    min-height: 46px;
+    border-radius: var(--kh-radius-control);
+}
+
+textarea {
+    min-height: 90px;
+}
+
+.place-order-btn {
+    min-height: 52px;
+    border-radius: var(--kh-radius-control);
 }

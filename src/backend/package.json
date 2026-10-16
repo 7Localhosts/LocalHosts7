@@ -5,6 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "node ../../tests/backend.test.js && node ../../tests/frontend.test.js",
+    "build:static": "node ../../deployment/build-static.js",
+    "dev:static": "node ../../deployment/serve-local.js",
     "start": "node server.js"
   },
   "keywords": [],

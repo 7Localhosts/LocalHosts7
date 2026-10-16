@@ -4,10 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../images/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png">
 
     <title>Your Cart - Kay's Haven</title>
 
+    <link rel="stylesheet" href="../brand-system.css">
     <link rel="stylesheet" href="cart.css">
+    <meta name="api-base" content="">
 </head>
 
 <body>
@@ -16,19 +19,15 @@
 
         <header class="cart-header">
 
-            <a href="../index.html" class="back-link">
-                ← Continue Shopping
+            <a href="../shop.html" class="back-link">
+                Continue Shopping
             </a>
 
             <div class="cart-title">
 
-                <p class="eyebrow">
-                    KAY'S HAVEN
-                </p>
+                <p class="eyebrow kh-brand cart-brand"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></p>
 
-                <h1>
-                    Your Cart
-                </h1>
+                <h1><svg class="cart-heading-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2l2.3 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 9H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Your Cart</h1>
 
                 <p>
                     Review your items before checkout.
@@ -48,6 +47,7 @@
                 </div>
 
                 <div id="cart-items"></div>
+                <p id="cart-message" role="status" aria-live="polite"></p>
 
             </div>
 
@@ -59,32 +59,6 @@
                     <h2>
                         Order Summary
                     </h2>
-
-                    <div class="summary-row">
-
-                        <span>
-                            Subtotal
-                        </span>
-
-                        <span id="cart-total">
-                            GH₵0.00
-                        </span>
-
-                    </div>
-
-                    <div class="summary-row">
-
-                        <span>
-                            Delivery
-                        </span>
-
-                        <span>
-                            Calculated at checkout
-                        </span>
-
-                    </div>
-
-                    <div class="summary-divider"></div>
 
                     <div class="summary-total">
 
@@ -114,6 +88,8 @@
     </main>
 
 
+    <script src="../product-images.js?v=5"></script>
+    <script src="../api-config.js"></script>
     <script src="cart.js"></script>
 
 </body>
