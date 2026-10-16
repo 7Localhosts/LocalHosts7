@@ -35,3 +35,10 @@
 - **Reproduction:** Run `npm run build:static` from `src/backend` without `KAYS_HAVEN_API_URL`.
 - **Expected current behavior:** Build refuses to proceed until a public HTTPS API base is configured. Do not substitute a dummy URL into a distributable production build.
 - **Safe next step:** Configure the approved staging HTTPS backend URL in the build environment, then produce and inspect the production build.
+
+## KH-PATH-CASE-001 — Product and site asset paths collided with legacy Images folder casing
+
+- **Status:** Resolved in the October 16 integration checkpoint.
+- **Cause:** The repository already tracks a capitalized `src/frontend/Images` directory on a case-insensitive Windows workspace. The new local code/assets had been committed under lowercase `src/frontend/images`, creating case-only folder paths that can be ambiguous on Windows checkouts.
+- **Fix:** Product photographs now use the distinct `src/frontend/product-images` directory; the landing background and emblem use `src/frontend/site-assets`. Frontend, admin, and static-build references were updated. The original local image files were copied into these directories and were not deleted from the working tree.
+- **Verification:** The automated frontend suite's static-preview checks passed after updating its former path assertions. A browser refresh showed the product grid photos, product ID 4 detail image, and admin login page/background loading from the new locations.

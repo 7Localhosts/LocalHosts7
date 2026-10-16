@@ -2,7 +2,7 @@
 
 ## First major integration test — 2026-10-16
 
-The local API and storefront were inspected read-only. The browser showed 76 image-verified catalogue cards from 192 product rows; 116 products without a resolved image reference were not rendered. Product-detail pages for IDs 4 and 119 rendered their catalogue names, prices, and images; ID 119 showed None / N/A and Small, Medium, Large, and Extra Large options with quantity controls. The initial ID 4 browser snapshot occurred before the asynchronous product/image check completed and showed the HTML placeholder; a later snapshot showed the correct product. See [major integration test output](major-integration-test-output-2026-10-16.md) and the bug log.
+The local API and storefront were inspected read-only. The browser showed 76 image-verified catalogue cards from 192 product rows; 116 products without a resolved image reference were not rendered. Product-detail pages for IDs 4 and 119 rendered their catalogue names, prices, and images; ID 119 showed None / N/A and Small, Medium, Large, and Extra Large options with quantity controls. The initial ID 4 browser snapshot occurred before asynchronous product/image validation completed and showed the HTML placeholder; a later refreshed view showed the correct product image. The follow-up moved local product/site assets to case-distinct folders and a refreshed browser confirmed the storefront, product detail, and admin login artwork. See [major integration test output](major-integration-test-output-2026-10-16.md) and the bug log.
 
 | Area / check | Result | Evidence / note |
 |---|---|---|

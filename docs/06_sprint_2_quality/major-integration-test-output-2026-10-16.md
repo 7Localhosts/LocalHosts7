@@ -66,3 +66,11 @@ No screenshot file, browser console export, or network-panel export was produced
 - `KH-DETAIL-001`: Product detail briefly displays template placeholder text before catalogue data resolves, then loads correctly.
 - `KH-IMG-MIGRATION-001`: One historical SQL migration references 41 PNG files absent from the current image directory. It was not applied; validate/retire it before any future execution.
 - 116 of 192 catalogue rows still lack a resolved image reference and are consequently not visible in the storefront. This count is based on the API/catalogue and browser rendering checks; no product records were changed.
+- `KH-PATH-CASE-001`: Resolved in the follow-up checkpoint. Product images now use `product-images/` and landing/admin artwork uses `site-assets/`, avoiding a case-only collision with the legacy `Images/` folder.
+
+## Follow-up verification — asset path casing correction
+
+- The first test run after the directory relocation failed because a few existing test assertions still expected the previous `images/` paths. The failure was in stale test expectations; those assertions were updated to the new paths.
+- A fresh `npm --prefix src/backend test` then exited 0: backend checks passed and frontend asset, checkout, path-resolution, and static-preview checks passed.
+- `node --check` passed for all 14 discovered JavaScript files, and `git diff --check` passed.
+- After refreshing the mobile-width browser tabs, the storefront displayed image-filled product cards, product ID 4 showed its correct Seba Med photo and GHS 85.00, and the `/admin/` sign-in form rendered over the expected background image.
