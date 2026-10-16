@@ -1,5 +1,31 @@
 # Test Results Matrix — 2026-10-16
 
+## First major integration test — 2026-10-16
+
+The local API and storefront were inspected read-only. The browser showed 76 image-verified catalogue cards from 192 product rows; 116 products without a resolved image reference were not rendered. Product-detail pages for IDs 4 and 119 rendered their catalogue names, prices, and images; ID 119 showed None / N/A and Small, Medium, Large, and Extra Large options with quantity controls. The initial ID 4 browser snapshot occurred before the asynchronous product/image check completed and showed the HTML placeholder; a later snapshot showed the correct product. See [major integration test output](major-integration-test-output-2026-10-16.md) and the bug log.
+
+| Area / check | Result | Evidence / note |
+|---|---|---|
+| Existing automated suite (npm test) | PASS | Fresh run recorded in major-integration-test-output-2026-10-16.md. |
+| JavaScript syntax checks | PASS | Fresh node --check run across discovered project JavaScript files; see major integration output. |
+| Git whitespace check (git diff --check) | PASS | Fresh check completed before checkpoint staging. |
+| Backend /api/health | PASS | HTTP 200, success true. |
+| Backend /api/products and Supabase read | PASS | Read-only query returned 192 rows; no raw product or customer data was written to the log. |
+| Product catalogue image visibility | PASS with catalogue gaps | Browser product grid showed 76 image-verified cards. 116 rows had no resolved image reference and remained hidden; no product rows were deleted. |
+| Product details and size controls | PASS for inspected products | ID 4 loaded an image and correct catalogue data with N/A size; ID 119 loaded an image and S/M/L/XL options plus quantity controls. The initial placeholder before async completion is logged as KH-DETAIL-001. |
+| Cart and checkout page rendering | PASS | Empty-cart routes loaded. Checkout displayed required name/phone and optional email; no delivery field appeared. No cart line was created or checkout submitted. |
+| Storefront Login navigation | PASS | Desktop/mobile click-through is recorded in browser-navigation-output-2026-10-16.txt; the current storefront link targets the existing admin page. |
+| Admin sign-in page rendering | PASS | Existing form loaded in the browser; no credentials were entered. |
+| Unauthenticated admin data access | PASS | GET /api/products?include_inactive=true and GET /api/orders each returned HTTP 401. |
+| Admin authentication, inventory writes/uploads, publish/hide/restore | BLOCKED | No authenticated staging admin session was available; the configured Supabase project is not identified as staging. No writes were sent. |
+| Synthetic order creation, completion, and history persistence | BLOCKED | Requires a designated staging database and authorized staff account; no database mutation was attempted. |
+| Paystack Test Mode initialization/verification | BLOCKED | PAYSTACK_SECRET_KEY is unset in the local backend configuration. No payment or order was created. |
+| Browser screenshots, JS console, and network panel capture | NOT RUN | Current browser UI returned accessible page state; screenshot and console/network export were not available in this run. |
+| Production static build | BLOCKED | No approved public HTTPS KAYS_HAVEN_API_URL is configured. |
+| D0–D10 document audit | PARTIAL | Folder-by-folder repository audit completed. The official course brief and WhatsApp-only copies were unavailable, so this is not an official rubric certification. See d0-d10-audit-2026-10-16.md. |
+
+No database migration, product upload, order write, Paystack transaction, merge, or deployment was performed in this test.
+
 ## Fresh local retest after the manual schema update
 
 Environment: existing Node API on `http://localhost:8000`; existing static source preview on `http://localhost:5502`. The project owner reports manually adding `products.is_active BOOLEAN NOT NULL DEFAULT TRUE`. The API's successful 192-row response is the read-only evidence recorded here; no migration was applied and no database write, upload, order, staff sign-in, or payment was performed.

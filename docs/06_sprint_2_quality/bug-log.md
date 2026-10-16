@@ -1,5 +1,22 @@
 # Bug Log — 2026-10-16
 
+## KH-DETAIL-001 — Product details briefly exposes template placeholder while loading
+
+- Status: Open; low severity.
+- Reproduction: Open http://localhost:5502/products/product.html?id=4 and inspect immediately, before the products API response and local image-load check complete.
+- Observed: The first browser accessibility snapshot showed the static Product Name / GHS 0.00 placeholder. After the asynchronous fetch/image check completed, the title, Seba Med Cleansing Bar image, category, and GHS 85.00 price appeared correctly.
+- Expected: Show an explicit loading state or hide the product form until validated catalogue data is ready.
+- Evidence/limits: A later browser snapshot confirmed correct data and image. No saved screenshot or browser console/network log was available. The API and page eventually succeeded; this was not a persistent product-load failure.
+- Suggested fix: Add a loading indicator that is replaced by product data or a clear unavailable state; do not display template product details as live data.
+
+## KH-IMG-MIGRATION-001 — One staged image-path migration references absent files
+
+- Status: Do not apply until corrected.
+- Reproduction: Compare the image filenames in src/frontend/images against paths in supabase/migrations/202610130001_verified_product_images.sql.
+- Observed: 41 referenced e-commerce PNG files are absent from the current folder. Later normalized path migrations use the ID-named files present in the current frontend image map.
+- Impact: Applying this migration can leave image paths referring to absent local assets for products it updates. No migration was run.
+- Suggested fix: Reconcile or retire the stale migration with the project owner, then validate all paths before any database application.
+
 ## KH-API-001 — Product API returned HTTP 500 before the manual schema update
 
 - **Status:** Resolved for the current local check; retain the initial failure as historical evidence.
