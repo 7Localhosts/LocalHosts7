@@ -199,6 +199,12 @@ const requestHandler = async (req, res) => {
           return;
         }
 
+        const paymentConfiguration = getPaystackConfiguration();
+        if (!paymentConfiguration.configured) {
+          sendJson(res, 503, { error: paymentConfiguration.error });
+          return;
+        }
+
         const productIds = [...new Set(body.items.map(item => item.product_id ?? item.id).filter(id => id !== undefined && id !== null))];
         const { data: products, error: productsError } = await supabaseAdmin
           .from("products").select("id, name, price, sizes, is_active").in("id", productIds);
@@ -232,8 +238,7 @@ const requestHandler = async (req, res) => {
         })));
         if (itemError) throw itemError;
 
-        const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
-        if (!callbackUrl || !/^https:\/\//i.test(callbackUrl)) throw new Error("Payment callback URL is not configured");
+        const callbackUrl = paymentConfiguration.callbackUrl;
         const paystackEmail = email || createGuestPaystackEmail(callbackUrl);
         const payment = await paystackRequest("/transaction/initialize", {
           email: paystackEmail,
@@ -246,7 +251,13 @@ const requestHandler = async (req, res) => {
         sendJson(res, 200, { authorization_url: payment.authorization_url, reference });
       } catch (error) {
         if (createdOrderId) {
-          await supabaseAdmin.from("orders").update({ payment_status: "failed", status: "Payment setup failed" }).eq("id", createdOrderId);
+          try {
+            const { error: updateError } = await supabaseAdmin.from("orders")
+              .update({ payment_status: "failed", status: "Payment setup failed" }).eq("id", createdOrderId);
+            if (updateError) console.error("Could not mark the unsuccessful checkout for payment review.");
+          } catch {
+            console.error("Could not mark the unsuccessful checkout for payment review.");
+          }
         }
         const status = /required|valid|stock|size|available|invalid price/i.test(error.message) ? 400 : 502;
         sendJson(res, status, { error: status === 400 ? error.message : "Payment could not be started. Please try again." });
@@ -927,6 +938,10 @@ if (req.method === "PATCH" && /^\/api\/orders\/[^/]+\/status$/.test(req.url)) {
       sendJson(res, 404, { error: "Order not found." });
       return;
     }
+    if (status === "Completed" && String(existing.payment_status || "").trim().toLowerCase() !== "paid") {
+      sendJson(res, 409, { error: "Payment must be verified as paid before completing this order." });
+      return;
+    }
     if (!canTransitionOrderStatus(existing.status, existing.payment_status, status)) {
       sendJson(res, 400, { error: "Choose Completed or Canceled." });
       return;
@@ -1075,4 +1090,16 @@ function createGuestPaystackEmail(callbackUrl) {
   return `checkout-${crypto.randomBytes(16).toString("hex")}@${callback.hostname.toLowerCase()}`;
 }
 
-module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
+function getPaystackConfiguration(secretKey = process.env.PAYSTACK_SECRET_KEY, callbackUrl = process.env.PAYSTACK_CALLBACK_URL) {
+  const unavailable = { configured: false, error: "Online payments are temporarily unavailable. Please try again later." };
+  if (!String(secretKey || "").trim()) return unavailable;
+  try {
+    const callback = new URL(String(callbackUrl || "").trim());
+    if (callback.protocol !== "https:" || !callback.hostname || callback.username || callback.password) return unavailable;
+    return { configured: true, callbackUrl: callback.toString() };
+  } catch {
+    return unavailable;
+  }
+}
+
+module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };

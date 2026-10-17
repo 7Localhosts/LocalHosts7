@@ -342,11 +342,24 @@
             <input id="orders-search-input" type="search" autocomplete="off" placeholder="Search name, email, phone or order number">
           </label>
           <section class="orders-bucket" aria-labelledby="active-orders-title">
-            <h2 id="active-orders-title">Active Orders</h2>
+            <div class="orders-bucket-heading">
+              <h2 id="active-orders-title">Active Orders</h2>
+              <button class="button button-secondary orders-toggle-all" type="button" data-orders-toggle-all="active" aria-controls="orders-active-rows" aria-expanded="false" aria-label="No active orders to expand" disabled>View All</button>
+            </div>
             <div class="orders-list" id="orders-active-rows" role="list" aria-label="Active orders grouped by customer"></div>
           </section>
+          <section class="orders-bucket" aria-labelledby="payment-review-title">
+            <div class="orders-bucket-heading">
+              <h2 id="payment-review-title">Payment Review</h2>
+              <button class="button button-secondary orders-toggle-all" type="button" data-orders-toggle-all="payment-issues" aria-controls="orders-payment-issues-rows" aria-expanded="false" aria-label="No payment review orders to expand" disabled>View All</button>
+            </div>
+            <div class="orders-list" id="orders-payment-issues-rows" role="list" aria-label="Orders requiring payment review"></div>
+          </section>
           <section class="orders-bucket" aria-labelledby="order-history-title">
-            <h2 id="order-history-title">Order History</h2>
+            <div class="orders-bucket-heading">
+              <h2 id="order-history-title">Order History</h2>
+              <button class="button button-secondary orders-toggle-all" type="button" data-orders-toggle-all="history" aria-controls="orders-history-rows" aria-expanded="false" aria-label="No order history to expand" disabled>View All</button>
+            </div>
             <div class="orders-list" id="orders-history-rows" role="list" aria-label="Completed and canceled orders grouped by customer"></div>
           </section>
         </section>

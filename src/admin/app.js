@@ -1083,7 +1083,7 @@ async function loadOrders() {
 
     updateOrderView();
     const navCount = document.querySelector("#orders-count");
-    if (navCount) navCount.textContent = String(orders.filter(order => !isHistoryOrder(order)).length);
+    if (navCount) navCount.textContent = String(orders.filter(isActiveFulfillmentOrder).length);
     lastOrdersRefreshAt = Date.now();
     const refreshedAt = document.querySelector("#orders-refreshed-at");
     if (refreshedAt) refreshedAt.textContent = `Updated ${new Date(lastOrdersRefreshAt).toLocaleString()}`;
@@ -1094,7 +1094,7 @@ async function loadOrders() {
       "Orders error:",
       error
     );
-    for (const rows of [ordersRows, document.querySelector("#orders-history-rows")]) {
+    for (const rows of [ordersRows, document.querySelector("#orders-payment-issues-rows"), document.querySelector("#orders-history-rows")]) {
       if (!rows) continue;
       rows.replaceChildren();
       const message = document.createElement("p");
@@ -1102,6 +1102,7 @@ async function loadOrders() {
       message.setAttribute("role", "status");
       message.textContent = error.message || "Failed to load orders.";
       rows.appendChild(message);
+      updateOrderSectionToggle(rows, rows.closest(".orders-bucket")?.querySelector("[data-orders-toggle-all]"));
     }
   }
 }
@@ -1164,9 +1165,10 @@ function updateOrderView() {
   if (count) {
     const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
     const visibleOrders = filterOrders(search);
-    const activeCount = visibleOrders.filter(order => !isHistoryOrder(order)).length;
-    const historyCount = visibleOrders.length - activeCount;
-    count.textContent = `${activeCount} active · ${historyCount} in history`;
+    const activeCount = visibleOrders.filter(isActiveFulfillmentOrder).length;
+    const paymentReviewCount = visibleOrders.filter(order => !isHistoryOrder(order) && isPaymentIssueOrder(order)).length;
+    const historyCount = visibleOrders.filter(isHistoryOrder).length;
+    count.textContent = `${activeCount} active · ${paymentReviewCount} payment review · ${historyCount} in history`;
   }
 }
 
@@ -1177,7 +1179,7 @@ function updateOrderMetrics() {
     return Number.isFinite(date.getTime()) && date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
   };
   const isProcessed = order => /processing|processed|sorted|complete|delivered|fulfilled|ready/i.test(String(order.status || ""));
-  const isFailed = order => /failed|cancel|refund/i.test(String(order.status || order.payment_status || ""));
+  const isFailed = order => /failed|cancel|refund/i.test(`${order.status || ""} ${order.payment_status || ""}`);
   const paidOrders = orders.filter(order => String(order.payment_status || "").toLowerCase() === "paid");
   const values = [
     ["#orders-today-count", orders.filter(order => isToday(order.created_at)).length],
@@ -1210,6 +1212,20 @@ function isHistoryOrder(order) {
   return ["completed", "canceled", "cancelled"].includes(String(order.status || "").trim().toLowerCase());
 }
 
+function isPaymentIssueOrder(order) {
+  const paymentStatus = String(order.payment_status || "").trim().toLowerCase();
+  const orderStatus = String(order.status || "").trim().toLowerCase();
+  return ["failed", "failure", "declined", "error"].includes(paymentStatus) || /^(?:payment setup failed|payment failed)$/.test(orderStatus);
+}
+
+function isActiveFulfillmentOrder(order) {
+  return !isHistoryOrder(order) && !isPaymentIssueOrder(order);
+}
+
+function canCompleteOrder(order) {
+  return String(order.payment_status || "").trim().toLowerCase() === "paid";
+}
+
 function toggleOrderCardDetails(card, button, details) {
   const expanded = card.dataset.expanded === "true";
   card.dataset.expanded = String(!expanded);
@@ -1217,6 +1233,33 @@ function toggleOrderCardDetails(card, button, details) {
   button.textContent = expanded ? "View" : "Hide";
   details.setAttribute("aria-hidden", String(expanded));
   details.inert = expanded;
+}
+
+function updateOrderSectionToggle(container, sectionToggle) {
+  if (!container || !sectionToggle) return;
+  const cards = [...container.querySelectorAll(".admin-order-card")];
+  const allExpanded = cards.length > 0 && cards.every(card => card.dataset.expanded === "true");
+  const sectionName = {
+    active: "active orders",
+    history: "order history",
+    "payment-issues": "payment review orders"
+  }[sectionToggle.dataset.ordersToggleAll] || "orders";
+  sectionToggle.disabled = cards.length === 0;
+  sectionToggle.textContent = allExpanded ? "Hide All" : "View All";
+  sectionToggle.setAttribute("aria-expanded", String(allExpanded));
+  sectionToggle.setAttribute("aria-label", cards.length ? `${allExpanded ? "Hide" : "View"} all ${sectionName}` : `No ${sectionName} to expand`);
+}
+
+function setOrderSectionExpanded(container, sectionToggle, expanded) {
+  if (!container || !sectionToggle) return;
+  container.querySelectorAll(".admin-order-card").forEach(card => {
+    const button = card.querySelector("[data-order-toggle]");
+    const details = card.querySelector("[data-order-details]");
+    if (button && details && (card.dataset.expanded === "true") !== expanded) {
+      toggleOrderCardDetails(card, button, details);
+    }
+  });
+  updateOrderSectionToggle(container, sectionToggle);
 }
 
 function appendField(container, label, value, className = "") {
@@ -1230,7 +1273,7 @@ function appendField(container, label, value, className = "") {
   container.appendChild(field);
 }
 
-function appendOrderCard(container, order, historical) {
+function appendOrderCard(container, order, historical, paymentReview = false) {
   const card = document.createElement("article");
   card.className = "admin-order-card";
   card.dataset.orderId = String(order.id ?? "");
@@ -1346,7 +1389,7 @@ function appendOrderCard(container, order, historical) {
   meta.className = "order-card-meta";
   if (order.payment_method) appendField(meta, "Payment method", order.payment_method);
   if (order.payment_reference) appendField(meta, "Payment reference", order.payment_reference);
-  if (historical) {
+  if (historical || paymentReview) {
     appendField(meta, "Order status", order.status || "Completed");
     const statusDate = order.completed_at || order.canceled_at || order.status_updated_at || order.updated_at;
     if (statusDate) appendField(meta, "Status date", formatDate(statusDate));
@@ -1355,7 +1398,10 @@ function appendOrderCard(container, order, historical) {
   if (!historical) {
     const actions = document.createElement("div");
     actions.className = "order-actions";
-    [["Completed", "Complete Order", "button-primary"], ["Canceled", "Cancel Order", "button-secondary"]].forEach(([status, label, style]) => {
+    const availableActions = [];
+    if (!paymentReview && canCompleteOrder(order)) availableActions.push(["Completed", "Complete Order", "button-primary"]);
+    availableActions.push(["Canceled", "Cancel Order", "button-secondary"]);
+    availableActions.forEach(([status, label, style]) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `button ${style}`;
@@ -1372,40 +1418,54 @@ function appendOrderCard(container, order, historical) {
   container.appendChild(card);
 }
 
-function renderOrderSection(container, ordersForSection, historical, hasAnyOrders) {
+function renderOrderSection(container, ordersForSection, historical, hasAnyOrders, paymentReview = false) {
   container.replaceChildren();
+  const sectionToggle = container.closest(".orders-bucket")?.querySelector("[data-orders-toggle-all]");
   if (!ordersForSection.length) {
     const empty = document.createElement("p");
     empty.className = "orders-empty";
     empty.setAttribute("role", "status");
-    empty.textContent = hasAnyOrders ? "No orders match your search." : historical ? "Completed and canceled orders will appear here." : "No active orders.";
+    empty.textContent = hasAnyOrders ? "No orders match your search." : paymentReview ? "Failed payment attempts will appear here for review." : historical ? "Completed and canceled orders will appear here." : "No active orders.";
     container.appendChild(empty);
+    updateOrderSectionToggle(container, sectionToggle);
     return;
   }
   [...ordersForSection]
     .sort((a, b) => Date.parse(b.created_at || "") - Date.parse(a.created_at || ""))
-    .forEach(order => appendOrderCard(container, order, historical));
+    .forEach(order => appendOrderCard(container, order, historical, paymentReview));
+  updateOrderSectionToggle(container, sectionToggle);
 }
 
 function renderOrders() {
   const activeRows = document.querySelector("#orders-active-rows");
+  const paymentIssueRows = document.querySelector("#orders-payment-issues-rows");
   const historyRows = document.querySelector("#orders-history-rows");
-  if (!activeRows || !historyRows) return;
+  if (!activeRows || !paymentIssueRows || !historyRows) return;
   const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
   const visibleOrders = filterOrders(search);
-  const activeOrders = visibleOrders.filter(order => !isHistoryOrder(order));
+  const activeOrders = visibleOrders.filter(isActiveFulfillmentOrder);
+  const paymentIssueOrders = visibleOrders.filter(order => !isHistoryOrder(order) && isPaymentIssueOrder(order));
   const historicalOrders = visibleOrders.filter(isHistoryOrder);
   renderOrderSection(activeRows, activeOrders, false, visibleOrders.length > 0);
+  renderOrderSection(paymentIssueRows, paymentIssueOrders, false, visibleOrders.length > 0, true);
   renderOrderSection(historyRows, historicalOrders, true, visibleOrders.length > 0);
 }
 
 document.addEventListener("click", async event => {
+  const sectionToggle = event.target.closest("[data-orders-toggle-all]");
+  if (sectionToggle) {
+    const rows = sectionToggle.closest(".orders-bucket")?.querySelector(".orders-list");
+    if (!rows) return;
+    setOrderSectionExpanded(rows, sectionToggle, sectionToggle.getAttribute("aria-expanded") !== "true");
+    return;
+  }
   const toggle = event.target.closest("[data-order-toggle]");
   if (toggle) {
     const card = toggle.closest(".admin-order-card");
     const details = card?.querySelector("[data-order-details]");
     if (!card || !details) return;
     toggleOrderCardDetails(card, toggle, details);
+    updateOrderSectionToggle(card.closest(".orders-list"), card.closest(".orders-bucket")?.querySelector("[data-orders-toggle-all]"));
     return;
   }
   const button = event.target.closest("[data-order-action]");
@@ -1425,7 +1485,7 @@ document.addEventListener("click", async event => {
     updateOrderView();
     updateOrderMetrics();
     const navCount = document.querySelector("#orders-count");
-    if (navCount) navCount.textContent = String(orders.filter(order => !isHistoryOrder(order)).length);
+    if (navCount) navCount.textContent = String(orders.filter(isActiveFulfillmentOrder).length);
     if (feedback) feedback.textContent = `${result.order.order_number || `KH-${result.order.id}`} moved to Order History.`;
   } catch (error) {
     if (feedback) feedback.textContent = error.message || "Could not update this order.";

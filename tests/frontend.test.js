@@ -191,7 +191,11 @@ assert.doesNotMatch(adminPage, /<th>CURRENT STOCK<\/th>/);
 assert.match(adminPage, /Customer Orders/);
 assert.doesNotMatch(adminPage, /<p class="eyebrow">\s*ORDERS\s*<\/p>/);
 assert.match(adminPage, /id="orders-active-rows"[^>]*role="list"/);
+assert.match(adminPage, /id="orders-payment-issues-rows"[^>]*role="list"/);
 assert.match(adminPage, /id="orders-history-rows"[^>]*role="list"/);
+assert.match(adminPage, /data-orders-toggle-all="active"[^>]*aria-controls="orders-active-rows"[^>]*aria-expanded="false"/);
+assert.match(adminPage, /data-orders-toggle-all="payment-issues"[^>]*aria-controls="orders-payment-issues-rows"[^>]*aria-expanded="false"/);
+assert.match(adminPage, /data-orders-toggle-all="history"[^>]*aria-controls="orders-history-rows"[^>]*aria-expanded="false"/);
 assert.match(adminPage, /id="orders-search-input"[^>]*type="search"/);
 assert.doesNotMatch(adminPage, /<th>DELIVERY<\/th>|<th>PAYMENT<\/th>|<th>FULFILLMENT<\/th>/);
 assert.match(adminPage, /href="\.\.\/shop\.html"/);
@@ -214,7 +218,7 @@ const toggleStart = adminScript.indexOf("function toggleOrderCardDetails(");
 const toggleEnd = adminScript.indexOf("\nfunction appendField", toggleStart);
 assert.ok(toggleStart >= 0 && toggleEnd > toggleStart, "order detail toggle helper is defined");
 const toggleContext = {};
-vm.runInNewContext(`${adminScript.slice(toggleStart, toggleEnd)}\nglobalThis.toggle = toggleOrderCardDetails;`, toggleContext);
+vm.runInNewContext(`${adminScript.slice(toggleStart, toggleEnd)}\nglobalThis.toggle = toggleOrderCardDetails; globalThis.updateSection = updateOrderSectionToggle; globalThis.setSection = setOrderSectionExpanded;`, toggleContext);
 function fakeOrderCard() {
   return {
     card: { dataset: { expanded: "false" } },
@@ -236,7 +240,73 @@ assert.equal(firstOrderCard.button.textContent, "View");
 assert.equal(firstOrderCard.details.inert, true);
 const refreshedOrderCard = fakeOrderCard();
 assert.equal(refreshedOrderCard.card.dataset.expanded, "false", "freshly rendered orders remain collapsed after refresh");
+function makeOrdersSection(cards, kind) {
+  const container = {
+    querySelectorAll(selector) { return selector === ".admin-order-card" ? cards.map(entry => entry.card) : []; }
+  };
+  const sectionToggle = {
+    dataset: { ordersToggleAll: kind },
+    textContent: "View All",
+    disabled: true,
+    attributes: { "aria-expanded": "false" },
+    setAttribute(name, value) { this.attributes[name] = value; }
+  };
+  for (const entry of cards) {
+    entry.card.querySelector = selector => selector === "[data-order-toggle]" ? entry.button : selector === "[data-order-details]" ? entry.details : null;
+  }
+  return { container, sectionToggle };
+}
+const activeOne = fakeOrderCard();
+const activeTwo = fakeOrderCard();
+const historyOne = fakeOrderCard();
+const activeSection = makeOrdersSection([activeOne, activeTwo], "active");
+const historySection = makeOrdersSection([historyOne], "history");
+toggleContext.updateSection(activeSection.container, activeSection.sectionToggle);
+toggleContext.updateSection(historySection.container, historySection.sectionToggle);
+assert.equal(activeSection.sectionToggle.disabled, false, "nonempty sections enable their own bulk toggle");
+assert.equal(historySection.sectionToggle.attributes["aria-expanded"], "false");
+toggleContext.setSection(activeSection.container, activeSection.sectionToggle, true);
+assert.equal(activeOne.card.dataset.expanded, "true");
+assert.equal(activeTwo.card.dataset.expanded, "true");
+assert.equal(historyOne.card.dataset.expanded, "false", "expanding Active Orders does not change History");
+assert.equal(activeSection.sectionToggle.textContent, "Hide All");
+assert.equal(activeSection.sectionToggle.attributes["aria-expanded"], "true");
+toggleContext.setSection(activeSection.container, activeSection.sectionToggle, false);
+assert.equal(activeOne.card.dataset.expanded, "false");
+assert.equal(activeTwo.card.dataset.expanded, "false");
+assert.equal(activeSection.sectionToggle.textContent, "View All");
+toggleContext.toggle(activeOne.card, activeOne.button, activeOne.details);
+toggleContext.updateSection(activeSection.container, activeSection.sectionToggle);
+assert.equal(activeSection.sectionToggle.textContent, "View All", "mixed individual states retain a View All action");
+const emptySection = makeOrdersSection([], "history");
+toggleContext.updateSection(emptySection.container, emptySection.sectionToggle);
+assert.equal(emptySection.sectionToggle.disabled, true, "empty sections disable the bulk control");
+assert.equal(emptySection.sectionToggle.attributes["aria-label"], "No order history to expand");
+const paymentReviewSection = makeOrdersSection([fakeOrderCard()], "payment-issues");
+toggleContext.updateSection(paymentReviewSection.container, paymentReviewSection.sectionToggle);
+assert.equal(paymentReviewSection.sectionToggle.attributes["aria-label"], "View all payment review orders");
+const classificationStart = adminScript.indexOf("function isHistoryOrder(");
+const classificationEnd = adminScript.indexOf("\nfunction toggleOrderCardDetails(", classificationStart);
+const classificationContext = {};
+assert.ok(classificationStart >= 0 && classificationEnd > classificationStart, "order section classification helpers are defined");
+vm.runInNewContext(`${adminScript.slice(classificationStart, classificationEnd)}\nglobalThis.isHistory = isHistoryOrder; globalThis.isPaymentIssue = isPaymentIssueOrder; globalThis.isActiveFulfillment = isActiveFulfillmentOrder; globalThis.canComplete = canCompleteOrder;`, classificationContext);
+const pendingUnpaidOrder = { status: "Pending", payment_status: "pending" };
+const paymentFailedOrder = { status: "Payment setup failed", payment_status: "failed" };
+const completedOrder = { status: "Completed", payment_status: "paid" };
+const canceledOrder = { status: "Canceled", payment_status: "failed" };
+assert.equal(classificationContext.isActiveFulfillment(pendingUnpaidOrder), true, "pending orders remain in Active Orders");
+assert.equal(classificationContext.isPaymentIssue(paymentFailedOrder), true, "failed payment attempts are routed for admin review");
+assert.equal(classificationContext.isActiveFulfillment(paymentFailedOrder), false, "failed payments are excluded from active fulfilment");
+assert.equal(classificationContext.isHistory(completedOrder), true, "completed orders remain in history");
+assert.equal(classificationContext.isHistory(canceledOrder), true, "canceled unpaid orders remain in history");
+assert.equal(classificationContext.canComplete(pendingUnpaidOrder), false, "the UI cannot offer completion for an unpaid order");
+assert.equal(classificationContext.canComplete({ status: "Pending", payment_status: "PAID" }), true, "verified paid orders may be completed");
 assert.match(adminScript, /function isHistoryOrder\(order\)/);
+assert.match(adminScript, /function isPaymentIssueOrder\(order\)/);
+assert.match(adminScript, /function isActiveFulfillmentOrder\(order\)/);
+assert.match(adminScript, /function canCompleteOrder\(order\)/);
+assert.match(adminScript, /if \(!paymentReview && canCompleteOrder\(order\)\) availableActions\.push\(\["Completed", "Complete Order", "button-primary"\]\)/);
+assert.match(adminScript, /availableActions\.push\(\["Canceled", "Cancel Order", "button-secondary"\]\)/);
 assert.match(adminScript, /appendField\(customerFields, "Phone", order\.phone\)/);
 assert.match(adminScript, /appendField\(expandedCustomer, "Customer email", order\.email\)/);
 assert.match(adminScript, /appendField\(customerFields, "Order number"/);
@@ -264,6 +334,7 @@ assert.match(adminScript, /method: "DELETE"/);
 assert.match(adminScript, /JSON\.stringify\(\{ is_active: isActive \}\)/);
 assert.match(adminScript, /include_inactive=true/);
 assert.match(adminScript, /orders-active-rows/);
+assert.match(adminScript, /orders-payment-issues-rows/);
 assert.match(adminScript, /orders-history-rows/);
 assert.match(adminScript, /updates\.image = image/);
 assert.doesNotMatch(adminScript, /data-product-image=|formData\.get\("image"\)/);

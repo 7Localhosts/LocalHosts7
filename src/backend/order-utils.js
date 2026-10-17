@@ -35,9 +35,9 @@ function buildPricedItems(requested, products) {
 
 function canTransitionOrderStatus(currentStatus, paymentStatus, nextStatus) {
   const next = String(nextStatus || "").trim();
-  // Statuses are explicit fulfillment actions. Historical labels and payment
-  // status are intentionally left untouched unless an admin saves a choice.
-  return new Set(["Completed", "Canceled"]).has(next);
+  if (next === "Canceled") return true;
+  if (next !== "Completed") return false;
+  return String(paymentStatus || "").trim().toLowerCase() === "paid";
 }
 
 module.exports = { buildPricedItems, canTransitionOrderStatus, productSizeOptions };

@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
+const { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -16,6 +16,10 @@ async function main() {
   assert.equal(isValidCheckoutContact("Buyer Example", "", ""), false, "phone remains required");
   const guestPaymentEmail = createGuestPaystackEmail("https://shop.example.co.gh/checkout/return");
   assert.match(guestPaymentEmail, /^checkout-[a-f0-9]{32}@shop\.example\.co\.gh$/, "Paystack receives a non-personal alias based on the HTTPS callback domain");
+  assert.equal(getPaystackConfiguration("", "https://shop.example.co.gh/checkout/return").configured, false, "missing Paystack secret disables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", "http://localhost/return").configured, false, "non-HTTPS callback disables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return").configured, true, "complete secure Paystack configuration enables checkout");
+  assert.doesNotMatch(JSON.stringify(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return")), /sk_test_example/, "payment configuration never returns the secret");
 
   console.log("Check server prices, sizes, and product visibility");
   const projectOrigin = new URL(process.env.SUPABASE_URL).origin;
@@ -56,8 +60,13 @@ async function main() {
   assert.throws(() => buildPricedItems([{ id: 7, quantity: 1 }], [{ id: 7, name: "Hidden product", price: 10, stock: 5, sizes: [], is_active: false }]), /no longer available/i, "inactive products cannot be purchased");
 
   console.log("Check selectable fulfillment transitions");
-  for (const [current, payment] of [["Pending", "pending"], ["Pending", "paid"], ["Paid", "paid"], ["Processing", "unpaid"], ["Completed", "paid"], ["Cancelled", "unpaid"], ["Legacy status", "unknown"]]) {
+  for (const [current, payment] of [["Pending", "paid"], ["Paid", "paid"], ["Processing", "paid"], ["Completed", "paid"]]) {
     assert.equal(canTransitionOrderStatus(current, payment, "Completed"), true, `${current}/${payment} can be explicitly marked completed`);
+  }
+  for (const [current, payment] of [["Pending", "pending"], ["Pending", "unpaid"], ["Pending", "failed"], ["Processing", "unpaid"], ["Legacy status", "unknown"]]) {
+    assert.equal(canTransitionOrderStatus(current, payment, "Completed"), false, `${current}/${payment} cannot be completed before verified payment`);
+  }
+  for (const [current, payment] of [["Pending", "pending"], ["Pending", "failed"], ["Processing", "unpaid"], ["Legacy status", "unknown"]]) {
     assert.equal(canTransitionOrderStatus(current, payment, "Canceled"), true, `${current}/${payment} can be explicitly canceled`);
   }
   for (const unsupported of ["Processing", "Cancelled", "Pending", "Paid", "completed", "canceled"]) {
@@ -83,6 +92,33 @@ async function main() {
     assert.deepEqual(await response.json(), { success: true, message: "Backend is running" });
     const removedDeliveryConfig = await fetch(`${baseUrl}/api/checkout/config`);
     assert.equal(removedDeliveryConfig.status, 404, "checkout no longer exposes delivery-fee configuration");
+
+    const previousPaystackKey = process.env.PAYSTACK_SECRET_KEY;
+    const previousCallbackUrl = process.env.PAYSTACK_CALLBACK_URL;
+    delete process.env.PAYSTACK_SECRET_KEY;
+    delete process.env.PAYSTACK_CALLBACK_URL;
+    try {
+      const unconfiguredPayment = await fetch(`${baseUrl}/api/payments/initialize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: "Synthetic Configuration Test",
+          email: "",
+          phone: "+233000000000",
+          expected_total: 1,
+          items: [{ product_id: "__PAYSTACK_CONFIG_TEST__", quantity: 1 }]
+        })
+      });
+      assert.equal(unconfiguredPayment.status, 503, "missing Paystack configuration is rejected before checkout database work");
+      const unconfiguredBody = await unconfiguredPayment.json();
+      assert.match(unconfiguredBody.error, /temporarily unavailable/i);
+      assert.doesNotMatch(JSON.stringify(unconfiguredBody), /secret|sk_(?:test|live)_/i, "configuration errors do not expose credentials");
+    } finally {
+      if (previousPaystackKey === undefined) delete process.env.PAYSTACK_SECRET_KEY;
+      else process.env.PAYSTACK_SECRET_KEY = previousPaystackKey;
+      if (previousCallbackUrl === undefined) delete process.env.PAYSTACK_CALLBACK_URL;
+      else process.env.PAYSTACK_CALLBACK_URL = previousCallbackUrl;
+    }
 
     const badPaymentRequest = await fetch(`${baseUrl}/api/payments/initialize`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({})
