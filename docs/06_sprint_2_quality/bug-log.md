@@ -2,12 +2,18 @@
 
 ## KH-DETAIL-001 — Product details briefly exposes template placeholder while loading
 
-- Status: Open; low severity.
+- Status: Resolved in the current working tree on 2026-10-17; low severity. The initial observation below is retained as historical evidence.
 - Reproduction: Open http://localhost:5502/products/product.html?id=4 and inspect immediately, before the products API response and local image-load check complete.
 - Observed: The first browser accessibility snapshot showed the static Product Name / GHS 0.00 placeholder. After the asynchronous fetch/image check completed, the title, Seba Med Cleansing Bar image, category, and GHS 85.00 price appeared correctly.
 - Expected: Show an explicit loading state or hide the product form until validated catalogue data is ready.
 - Evidence/limits: A later browser snapshot confirmed correct data and image. No saved screenshot or browser console/network log was available. The API and page eventually succeeded; this was not a persistent product-load failure.
 - Suggested fix: Add a loading indicator that is replaced by product data or a clear unavailable state; do not display template product details as live data.
+
+### Resolution record — 2026-10-17
+
+- Change: `src/frontend/products/product.html` starts with an accessible loading status and hidden product details; `product.js` reveals details only after the product and image checks succeed; `product.css` styles the loading state and honors reduced-motion preference.
+- Verification: the frontend regression checks assert the initial busy/loading state, hidden detail section, and successful reveal. `npm test` passed after this change (`All backend checks passed`; `Frontend assets and checkout wiring passed`).
+- Limits: this verification is automated source/build coverage. No new browser screenshot or viewport/console capture was produced in this run. The page's data-unavailable path remains the existing error state.
 
 ## KH-IMG-MIGRATION-001 — One staged image-path migration references absent files
 

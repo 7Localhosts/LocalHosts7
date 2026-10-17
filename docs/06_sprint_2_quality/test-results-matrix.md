@@ -50,6 +50,21 @@ Environment: existing Node API on `http://localhost:8000`; existing static sourc
 | Production static build | BLOCKED | Requires an approved public HTTPS `KAYS_HAVEN_API_URL`; none is documented in the workspace. |
 | Approved GitHub submission destination | UNVERIFIED | Configured origin is public `7Localhosts/LocalHosts7`; no department approval evidence was found. No push was made. |
 
+## Repository and product-detail follow-up — 2026-10-17
+
+| Area / check | Result | Evidence / note |
+|---|---|---|
+| Backend health | PASS | Read-only local `GET /api/health` returned `success: true`. |
+| Supabase-backed product read | PASS | Read-only local `GET /api/products` returned 189 products. This does not confirm the remote migration ledger. |
+| Automated backend/frontend suite | PASS | `npm test` from `src/backend`; output ended with `All backend checks passed` and `Frontend assets and checkout wiring passed`. No live data writes or payment transactions were part of this command. |
+| Product-detail initial loading state | PASS — automated regression assertion | Source tests verify the page begins busy, shows the loading status, hides placeholder details, and reveals details after asynchronous product/image checks succeed. |
+| Product image resolution | PARTIAL | A local read-only URL probe resolved 73 products to working images; 116 had no resolved image assignment and must remain unmatched until verified. |
+| Browser visual/mobile/console review | NOT RUN | No new screenshot, real-browser viewport check, or console/network capture was produced in this follow-up. |
+| GitHub branch freshness | BLOCKED | `git fetch origin` could not connect through the local proxy; branch comparison uses cached refs only. |
+| Production build | BLOCKED | No `KAYS_HAVEN_API_URL` is configured; the build also replaces the existing `dist/` directory. |
+
+The October 16 test entries above remain historical evidence and have not been rewritten. The broader repository audit and cached branch comparison are recorded in [`repository-audit-and-branch-plan-2026-10-17.md`](../repository-audit-and-branch-plan-2026-10-17.md).
+
 The original failure table below is retained as historical evidence from before the owner manually added the visibility column.
 
 ## Initial audit record (pre-manual schema update; preserved)

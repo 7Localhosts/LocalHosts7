@@ -15,7 +15,7 @@
 
 <body>
 
-    <main class="product-page">
+    <main class="product-page" aria-busy="true">
 
         <!-- BACK TO SHOP -->
 
@@ -24,9 +24,14 @@
             ← Back to shop
         </a>
 
+        <div id="product-loading" class="product-loading" role="status" aria-live="polite">
+            <span class="product-loading-spinner" aria-hidden="true"></span>
+            <p>Loading product…</p>
+        </div>
+
         <!-- PRODUCT DETAILS -->
 
-        <section class="product-details">
+        <section class="product-details" hidden>
 
             <!-- PRODUCT IMAGE -->
 

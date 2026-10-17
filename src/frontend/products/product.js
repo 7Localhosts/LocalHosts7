@@ -5,6 +5,8 @@ const money = value => `GHS ${Number(value || 0).toFixed(2)}`;
 
 async function loadProduct() {
   const page = document.querySelector(".product-page");
+  const loading = document.getElementById("product-loading");
+  const details = document.querySelector(".product-details");
   try {
     const response = await fetch(API_URL);
     if (!response.ok) throw new Error("Products are temporarily unavailable.");
@@ -99,8 +101,12 @@ async function loadProduct() {
       localStorage.setItem("kayshaven-cart", JSON.stringify(cart));
       window.location.href = "../shop.html";
     };
+    details.hidden = false;
+    loading.hidden = true;
+    page.setAttribute("aria-busy", "false");
   } catch (error) {
     console.error("Product loading error:", error);
+    page.setAttribute("aria-busy", "false");
     page.innerHTML = `<h1>Product unavailable</h1><p>${escapeProductText(error.message)}</p><a href="../shop.html#shop">Back to shop</a>`;
   }
 }
