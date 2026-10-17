@@ -345,7 +345,10 @@ td {
 .orders-panel { padding: 0; border: 0; background: transparent; }
 .orders-list { display: grid; gap: 8px; }
 .orders-bucket { display: grid; gap: 8px; margin-top: 16px; }
-.orders-bucket > h2 { margin: 0; color: var(--charcoal); font: 700 13px "Montserrat", sans-serif; }
+.orders-bucket-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.orders-bucket-heading h2 { margin: 0; color: var(--charcoal); font: 700 13px "Montserrat", sans-serif; }
+.orders-toggle-all { min-height: 34px; padding: 0 13px; white-space: nowrap; font: 600 10px "Montserrat", sans-serif; }
+.orders-toggle-all:disabled { opacity: .55; cursor: not-allowed; }
 .admin-customer-card { min-width: 0; overflow: hidden; border: 1px solid #e8e1ee; border-radius: 13px; background: #ffffff; box-shadow: 0 5px 18px rgba(34, 20, 48, .045); font-family: "Montserrat", sans-serif; }
 .customer-group-header { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(110px, .9fr) minmax(150px, 1.4fr) minmax(100px, .8fr); gap: 9px 16px; padding: 12px 14px; border-bottom: 1px solid #eee8f3; background: #fcfaff; }
 .customer-group-header > div, .customer-order-header > div, .customer-order-footer .order-card-meta > div { display: grid; gap: 4px; min-width: 0; }
@@ -743,6 +746,8 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
 .inventory-delete-button:hover { border-color: #dcaabb; background: #fff8fa; }
 #inventory-rows td:last-child { min-width: 220px; }
 @media (max-width: 640px) {
+  .orders-bucket-heading { align-items: flex-start; }
+  .orders-toggle-all { min-height: 32px; padding: 0 11px; }
   .orders-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .admin-order-card { max-width: none; min-height: 0; aspect-ratio: auto; }
   .admin-order-card-header { min-height: 116px; padding: 16px; }
