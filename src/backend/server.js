@@ -168,7 +168,7 @@ const requestHandler = async (req, res) => {
 
     if (
       req.method === "GET" &&
-      req.url === "/api/health"
+      new URL(req.url, "http://localhost").pathname.replace(/\/+$/, "") === "/api/health"
     ) {
       sendJson(res, 200, {
         success: true,
