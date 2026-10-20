@@ -90,6 +90,11 @@ async function main() {
     const response = await fetch(`${baseUrl}/api/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { success: true, message: "Backend is running" });
+    for (const path of ["/api/health/", "/api/health?probe=render"]) {
+      const normalizedHealth = await fetch(`${baseUrl}${path}`);
+      assert.equal(normalizedHealth.status, 200, `${path} is accepted as a health check`);
+      assert.deepEqual(await normalizedHealth.json(), { success: true, message: "Backend is running" });
+    }
     const removedDeliveryConfig = await fetch(`${baseUrl}/api/checkout/config`);
     assert.equal(removedDeliveryConfig.status, 404, "checkout no longer exposes delivery-fee configuration");
 
