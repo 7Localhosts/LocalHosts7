@@ -46,10 +46,12 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseAdmin = (process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+  : null) || supabase;
 
 // -------------------------
 // HELPERS
@@ -234,7 +236,7 @@ const requestHandler = async (req, res) => {
           return;
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
           .from("reviews")
           .insert({ product_id: productId, name, rating, comment })
           .select("id, product_id, name, rating, comment, created_at")
@@ -255,6 +257,73 @@ const requestHandler = async (req, res) => {
       } catch (error) {
         console.error("Reviews POST error:", error);
         sendJson(res, 500, { error: "Could not save review. Please try again." });
+      }
+      return;
+    }
+
+    // -------------------------
+    // CONTACT FORM
+    // -------------------------
+
+    if (req.method === "POST" && req.url === "/api/contact") {
+      try {
+        const body = await readBody(req);
+        const name = String(body.name || "").trim();
+        const email = String(body.email || "").trim();
+        const phone = String(body.phone || "").trim();
+        const subject = String(body.subject || "Contact Form Enquiry").trim();
+        const message = String(body.message || "").trim();
+        const details = [];
+
+        if (!name) details.push("name is required.");
+        if (!validEmail(email)) details.push("A valid email address is required.");
+        if (!message) details.push("message is required.");
+        else if (message.length > 2000) details.push("message must be 2000 characters or fewer.");
+
+        if (details.length) {
+          sendJson(res, 422, { error: "Validation failed.", details });
+          return;
+        }
+
+        const submission = { name, email, phone, subject, message };
+        console.log("[Contact form submission]", { ...submission, createdAt: new Date().toISOString() });
+
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from("contact_submissions").insert({
+              name,
+              email,
+              phone: phone || null,
+              subject: subject || null,
+              message
+            });
+          } catch (dbErr) {
+            console.warn("[Contact] Supabase save warning:", dbErr.message);
+          }
+        }
+
+        sendJson(res, 200, {
+          status: "success",
+          message: "Thank you for reaching out! We'll get back to you within 24 hours."
+        });
+      } catch (error) {
+        console.error("Contact POST error:", error);
+        sendJson(res, 500, { error: "Could not submit contact form. Please try again." });
+      }
+      return;
+    }
+
+    // -------------------------
+    // DELIVERY INFO
+    // -------------------------
+
+    if (req.method === "GET" && req.url === "/api/delivery") {
+      try {
+        const deliveryConfig = require("./config/delivery");
+        sendJson(res, 200, { status: "success", data: deliveryConfig });
+      } catch (error) {
+        console.error("Delivery GET error:", error);
+        sendJson(res, 500, { error: "Could not load delivery info." });
       }
       return;
     }
@@ -371,7 +440,17 @@ const requestHandler = async (req, res) => {
           const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
           if (finalizeError) throw finalizeError;
         }
-        sendJson(res, 200, { success: true, order_id: order.id, order_number: order.order_number, customer_name: order.customer_name });
+        sendJson(res, 200, {
+          success: true,
+          order_id: order.id,
+          order_number: order.order_number,
+          customer_name: order.customer_name,
+          data: {
+            paymentStatus: "success",
+            message: "Payment confirmed successfully",
+            reference
+          }
+        });
       } catch {
         console.error("Payment verification failed");
         sendJson(res, 502, { error: "Payment could not be verified right now. Please try again." });
