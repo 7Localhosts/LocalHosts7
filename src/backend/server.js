@@ -178,6 +178,87 @@ const requestHandler = async (req, res) => {
       return;
     }
 
+    const requestUrl = new URL(req.url, "http://localhost");
+    const reviewsPath = requestUrl.pathname.replace(/\/+$/, "");
+
+    if (req.method === "GET" && /^\/api\/reviews\/[^/]+$/.test(reviewsPath)) {
+      const productId = decodeURIComponent(reviewsPath.slice("/api/reviews/".length)).trim();
+      if (!productId) {
+        sendJson(res, 400, { error: "productId is required." });
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseAdmin
+          .from("reviews")
+          .select("id, product_id, name, rating, comment, created_at")
+          .eq("product_id", productId)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+
+        const reviews = (data || []).map(review => ({
+          id: review.id,
+          productId: review.product_id,
+          name: review.name,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: review.created_at
+        }));
+        const count = reviews.length;
+        const average = count
+          ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / count) * 10) / 10
+          : 0;
+        sendJson(res, 200, { status: "success", data: { productId, count, average, reviews } });
+      } catch (error) {
+        console.error("Reviews GET error:", error);
+        sendJson(res, 500, { error: "Could not load reviews. Please try again." });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && reviewsPath === "/api/reviews") {
+      try {
+        const body = await readBody(req);
+        const productId = String(body.productId || "").trim();
+        const name = String(body.name || "").trim();
+        const rating = Number(body.rating);
+        const comment = String(body.comment || "").trim();
+        const details = [];
+        if (!productId) details.push("productId is required.");
+        if (!name) details.push("name is required.");
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) details.push("rating must be a whole number between 1 and 5.");
+        if (!comment) details.push("comment is required.");
+        else if (comment.length > 1000) details.push("comment must be 1000 characters or fewer.");
+        if (details.length) {
+          sendJson(res, 422, { error: "Validation failed.", details });
+          return;
+        }
+
+        const { data, error } = await supabaseAdmin
+          .from("reviews")
+          .insert({ product_id: productId, name, rating, comment })
+          .select("id, product_id, name, rating, comment, created_at")
+          .single();
+        if (error) throw error;
+
+        sendJson(res, 201, {
+          status: "success",
+          data: {
+            id: data.id,
+            productId: data.product_id,
+            name: data.name,
+            rating: data.rating,
+            comment: data.comment,
+            createdAt: data.created_at
+          }
+        });
+      } catch (error) {
+        console.error("Reviews POST error:", error);
+        sendJson(res, 500, { error: "Could not save review. Please try again." });
+      }
+      return;
+    }
+
     if (req.method === "POST" && req.url === "/api/payments/initialize") {
       let createdOrderId;
       try {
