@@ -1,0 +1,13 @@
+cea9bfdc1214362c18796f27f595194371943f56 | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: add backend scaffold - Express server, API routes, delivery config, env template
+7670c013fe72370fee8c7c36f526d3be97f05793 | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: integrate Paystack payment gateway - initialize, server-side verify, HMAC webhook
+7d49378f74646948edd5279bc3a21c38b048d57d | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: add payment page with Paystack popup - success, failed, pending and abandoned states
+676e2dcf96ac5465bd2b23f0b391f734ebcce4ed | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: add Contact Us page with WhatsApp, phone, email and contact form backend
+d1502290af8915a649b029067f9c02dc8d69e78d | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: add customer reviews feature - star rating, submit, display and average
+d4a97ac621c6b7ef2916df6cf619c322eb2b89b8 | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: add delivery information page - zones, fees, pickup locations and notes from config
+c0e832e508505ee8e5c00f8e99b3dbe82db0678b | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | test: add API smoke tests - 43 assertions covering all endpoints and validation rules
+e2aff190d9baca8c5d4663503422bb2c3898561f | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | Create launch.json
+ae66a0c129ab1c3a633a9d94f06dbc8ba95acc18 | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | Update launch.json
+535cbfffafeba5b2cae0a8e34a32664457331640 | benedictboamahelikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: integrate MongoDB persistence, Railway config, upgraded CI, and dynamic frontend API configuration
+c088fce2a1108131ca89e098ead385368341c9b5 | Boamah Benedict Elikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: modernize UI tokens and integrate product/order models for seamless merge
+cfaa05b7ca3dacd02659ec0236b35fe495e59aab | Boamah Benedict Elikem <167909508+boamahbenedictelikem@users.noreply.github.com> | feat: complete paystack integration
+8036d3247f2b64c66e1b3f2cb9211565adcf3d77 | Boamah Benedict Elikem <167909508+boamahbenedictelikem@users.noreply.github.com> | complete storefront and validation fixes

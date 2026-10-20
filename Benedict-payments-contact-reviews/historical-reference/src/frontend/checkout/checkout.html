@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete your order at Kay's Haven Mothercare — quality UK &amp; USA baby, maternity, kids clothing and toys. Review your cart and proceed to payment.">
+    <title>Checkout | Kay's Haven Mothercare</title>
+    <link rel="stylesheet" href="checkout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wizard-container">
+        <div class="wizard-header">
+            <h2>Checkout</h2>
+            <div class="stepper">
+                <div class="step active" id="step1-indicator">1. Cart</div>
+                <div class="step" id="step2-indicator">2. Details</div>
+            </div>
+        </div>
+
+        <!-- Step 1: Cart -->
+        <div class="wizard-step active-step" id="step-1">
+            <div class="cart-items" id="cart-items">
+                <!-- JS populated -->
+            </div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">GH₵ 0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span id="delivery-fee">GH₵ 15.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span id="total">GH₵ 15.00</span>
+                </div>
+            </div>
+            <div class="wizard-actions">
+                <button type="button" class="btn-primary" id="btn-next">Next: Details</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Details -->
+        <div class="wizard-step" id="step-2">
+            <form id="checkout-form">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" placeholder="e.g. Kwame Mensah" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="e.g. kwame@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" placeholder="e.g. 0244 000 000" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Delivery Address</label>
+                    <textarea id="address" placeholder="Enter your full delivery address" rows="3" required></textarea>
+                </div>
+                <div class="wizard-actions split">
+                    <button type="button" class="btn-secondary" id="btn-back">Back</button>
+                    <button type="submit" class="btn-primary">Proceed to Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="brand-footer">
+        <p class="brand-name">Kay's Haven Mothercare</p>
+        <p class="brand-tagline">Quality UK &amp; USA Products — Baby · Maternity · Kids · Toys</p>
+        <div class="brand-contact">
+            <a href="https://wa.me/233595237037" target="_blank" rel="noopener" class="contact-link whatsapp-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                WhatsApp: 0595237037
+            </a>
+            <a href="tel:+233540987398" class="contact-link phone-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.66A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg>
+                +233 540 987 398
+            </a>
+        </div>
+        <p class="brand-hours">Open daily 7:00 AM – 8:00 PM</p>
+    </footer>
+
+    <script src="checkout.js"></script>
+</body>
+</html>
