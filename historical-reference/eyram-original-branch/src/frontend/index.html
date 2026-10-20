@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174d45">
+  <title>LocalHosts7 | Employee workspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="LocalHosts7 home">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span>LocalHosts<span class="brand-number">7</span></span>
+    </a>
+    <div class="topbar-right">
+      <span class="workspace-label">TEAM WORKSPACE</span>
+      <button class="button button-dark" id="open-login" type="button">Log in <span aria-hidden="true">&#8599;</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="welcome screen" id="home" aria-labelledby="welcome-title">
+      <div class="welcome-copy">
+        <p class="eyebrow"><span class="status-dot"></span> EMPLOYEE PORTAL</p>
+        <h1 id="welcome-title">Good work<br>starts <em>with care.</em></h1>
+        <p class="welcome-description">Your day, your team, and the details that keep every order moving. Sign in with your employee account to open the operations dashboard.</p>
+        <button class="button button-primary button-large" id="welcome-login" type="button">Log in <span aria-hidden="true">&#8594;</span></button>
+        <p class="welcome-note">A workspace for the people behind the care.</p>
+      </div>
+      <div class="welcome-visual" aria-label="Illustration of a cared-for package ready to ship">
+        <div class="sun-disc"></div>
+        <div class="leaf leaf-one"></div>
+        <div class="leaf leaf-two"></div>
+        <div class="package">
+          <div class="package-seal"></div>
+          <span class="package-wordmark">made with<br>care</span>
+          <span class="package-spark" aria-hidden="true">&#10022;</span>
+        </div>
+        <div class="visual-caption"><span>01 / 03</span><span>Thoughtful care, delivered.</span></div>
+      </div>
+    </section>
+
+    <section class="login screen is-hidden" id="login-screen" aria-labelledby="login-title" aria-hidden="true">
+      <div class="login-aside">
+        <p class="eyebrow"><span class="status-dot"></span> LOCALHOSTS7 / TEAM</p>
+        <h1>Make room<br>for <em>good work.</em></h1>
+        <p>Your employee account gives you access to order operations and inventory.</p>
+        <button class="text-button" id="back-home" type="button"><span aria-hidden="true">&#8592;</span> Back to home</button>
+      </div>
+      <div class="login-panel">
+        <p class="eyebrow">WELCOME BACK</p>
+        <h2 id="login-title">Log in to your account</h2>
+        <p class="form-intro">Use your employee email and password to continue.</p>
+        <form id="login-form" novalidate>
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="you@company.com" required>
+          <label for="password">Password</label>
+          <div class="password-wrap">
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button class="password-toggle" id="toggle-password" type="button" aria-label="Show password">SHOW</button>
+          </div>
+          <p class="form-error" id="login-error" role="alert" aria-live="polite"></p>
+          <button class="button button-primary submit-button" type="submit">Log in <span aria-hidden="true">&#8594;</span></button>
+        </form>
+        <details class="demo-access">
+          <summary>Demo accounts</summary>
+          <p>Employee: <code>employee@localhost.test</code> / <code>Welcome123!</code></p>
+          <p>Customer (dashboard access denied): <code>customer@localhost.test</code> / <code>Welcome123!</code></p>
+        </details>
+        <p class="security-note">Prototype only. Production access must be verified by a server-side identity provider.</p>
+      </div>
+    </section>
+
+    <section class="dashboard screen is-hidden" id="dashboard-screen" aria-labelledby="dashboard-title" aria-hidden="true">
+      <aside class="sidebar">
+        <div class="sidebar-heading">
+          <span class="sidebar-label">WORKSPACE</span>
+          <span class="store-name">LocalHosts7 <span class="store-caret" aria-hidden="true">&#9662;</span></span>
+        </div>
+        <nav class="side-nav" aria-label="Dashboard sections">
+          <button class="nav-item is-active" data-view="overview" type="button"><span class="nav-icon" aria-hidden="true">&#9638;</span> Overview</button>
+          <button class="nav-item" data-view="orders" type="button"><span class="nav-icon" aria-hidden="true">&#9776;</span> Orders <span class="nav-count">8</span></button>
+          <button class="nav-item" data-view="inventory" type="button"><span class="nav-icon" aria-hidden="true">&#9635;</span> Inventory</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="profile">
+            <span class="avatar" id="user-avatar">EM</span>
+            <span class="profile-details"><strong id="user-name">Employee</strong><small>Employee account</small></span>
+          </div>
+          <button class="logout-button" id="logout-button" type="button"><span aria-hidden="true">&#8599;</span> Log out</button>
+        </div>
+      </aside>
+
+      <div class="dashboard-main">
+        <div class="dashboard-topline">
+          <span class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="current-section">Overview</strong></span>
+          <span class="today-label" id="today-label"></span>
+        </div>
+        <section class="dashboard-view" id="view-overview" aria-labelledby="dashboard-title">
+          <div class="page-heading">
+            <div><p class="eyebrow">MONDAY, TEAM</p><h1 id="dashboard-title">Good morning, <span id="greeting-name">there</span>.</h1><p class="page-subtitle">Here’s what’s happening across your store today.</p></div>
+            <span class="live-pill"><span class="status-dot"></span> LIVE OVERVIEW</span>
+          </div>
+          <div class="metric-grid">
+            <article class="metric"><div class="metric-label">ORDERS TODAY <span class="metric-icon">&#8599;</span></div><strong>128</strong><p><span class="trend-up">+12.8%</span> <span>vs. last week</span></p><div class="sparkline spark-green" aria-hidden="true"><i style="height:30%"></i><i style="height:48%"></i><i style="height:38%"></i><i style="height:66%"></i><i style="height:52%"></i><i style="height:78%"></i><i style="height:61%"></i><i style="height:92%"></i></div></article>
+            <article class="metric"><div class="metric-label">TO FULFIL <span class="metric-icon">&#8599;</span></div><strong>24</strong><p><span class="metric-neutral">6 need attention</span></p><div class="metric-progress"><span style="width:72%"></span></div><small>72% of today’s orders packed</small></article>
+            <article class="metric"><div class="metric-label">GROSS SALES <span class="metric-icon">&#8599;</span></div><strong>$8,460</strong><p><span class="trend-up">+8.2%</span> <span>vs. last week</span></p><div class="sparkline spark-coral" aria-hidden="true"><i style="height:45%"></i><i style="height:32%"></i><i style="height:61%"></i><i style="height:50%"></i><i style="height:76%"></i><i style="height:56%"></i><i style="height:83%"></i><i style="height:95%"></i></div></article>
+          </div>
+          <div class="content-grid">
+            <section class="orders-panel" aria-labelledby="recent-orders-title">
+              <div class="section-heading"><div><p class="eyebrow">THE LATEST</p><h2 id="recent-orders-title">Recent orders</h2></div><button class="text-button view-orders" type="button">All orders <span aria-hidden="true">&#8594;</span></button></div>
+              <div class="table-scroll"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DATE</th><th>STATUS</th><th>TOTAL</th></tr></thead><tbody>
+                <tr><td class="order-number">#LH-2841</td><td>Maya Thompson</td><td>Today, 10:42</td><td><span class="order-status status-ready">Ready to ship</span></td><td>$84.00</td></tr>
+                <tr><td class="order-number">#LH-2840</td><td>Olivia Chen</td><td>Today, 10:18</td><td><span class="order-status status-packed">Packing</span></td><td>$126.50</td></tr>
+                <tr><td class="order-number">#LH-2839</td><td>Amara Johnson</td><td>Today, 09:56</td><td><span class="order-status status-new">New order</span></td><td>$42.00</td></tr>
+                <tr><td class="order-number">#LH-2838</td><td>Sofia Ramirez</td><td>Today, 09:31</td><td><span class="order-status status-ready">Ready to ship</span></td><td>$67.25</td></tr>
+              </tbody></table></div>
+            </section>
+            <section class="stock-panel" aria-labelledby="stock-title">
+              <div class="section-heading"><div><p class="eyebrow">STOCK CHECK</p><h2 id="stock-title">Running low</h2></div><button class="icon-button" type="button" aria-label="More stock options">&#8942;</button></div>
+              <ul class="stock-list">
+                <li><span class="stock-swatch swatch-one"></span><span class="stock-product"><strong>Cloud-soft wrap</strong><small>Newborn essentials</small></span><span class="stock-quantity"><strong>4 left</strong><small>Reorder soon</small></span></li>
+                <li><span class="stock-swatch swatch-two"></span><span class="stock-product"><strong>Calm balm duo</strong><small>Skin &amp; comfort</small></span><span class="stock-quantity"><strong>7 left</strong><small>Reorder soon</small></span></li>
+                <li><span class="stock-swatch swatch-three"></span><span class="stock-product"><strong>First days journal</strong><small>Gifts &amp; keepsakes</small></span><span class="stock-quantity"><strong>9 left</strong><small>Stock is low</small></span></li>
+              </ul>
+              <button class="stock-link" data-view="inventory" type="button">View inventory <span aria-hidden="true">&#8594;</span></button>
+            </section>
+          </div>
+          <footer class="dashboard-footer"><span>LOCALHOSTS7 / OPERATIONS</span><span>Made with care, run with care.</span></footer>
+        </section>
+
+        <section class="dashboard-view is-hidden" id="view-orders" aria-labelledby="orders-title">
+          <div class="page-heading"><div><p class="eyebrow">FULFILMENT</p><h1 id="orders-title">Orders</h1><p class="page-subtitle">Keep every thoughtful delivery moving.</p></div><span class="live-pill"><span class="status-dot"></span> 8 OPEN</span></div>
+          <div class="simple-panel"><div class="section-heading"><div><p class="eyebrow">TODAY</p><h2>Order queue</h2></div><span class="order-count">4 of 8 shown</span></div><div class="table-scroll"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DATE</th><th>STATUS</th><th>TOTAL</th></tr></thead><tbody>
+            <tr><td class="order-number">#LH-2841</td><td>Maya Thompson</td><td>Today, 10:42</td><td><span class="order-status status-ready">Ready to ship</span></td><td>$84.00</td></tr><tr><td class="order-number">#LH-2840</td><td>Olivia Chen</td><td>Today, 10:18</td><td><span class="order-status status-packed">Packing</span></td><td>$126.50</td></tr><tr><td class="order-number">#LH-2839</td><td>Amara Johnson</td><td>Today, 09:56</td><td><span class="order-status status-new">New order</span></td><td>$42.00</td></tr><tr><td class="order-number">#LH-2838</td><td>Sofia Ramirez</td><td>Today, 09:31</td><td><span class="order-status status-ready">Ready to ship</span></td><td>$67.25</td></tr>
+          </tbody></table></div></div>
+        </section>
+
+        <section class="dashboard-view is-hidden" id="view-inventory" aria-labelledby="inventory-title">
+          <div class="page-heading"><div><p class="eyebrow">PRODUCTS</p><h1 id="inventory-title">Inventory</h1><p class="page-subtitle">A little attention now keeps care in stock.</p></div><span class="live-pill inventory-alert"><span class="status-dot"></span> <span id="restock-count">3 NEED RESTOCK</span></span></div>
+          <section class="simple-panel inventory-entry" aria-labelledby="add-product-title">
+            <div class="section-heading"><div><p class="eyebrow">STOCK MANAGEMENT</p><h2 id="add-product-title">Add a product</h2></div></div>
+            <form class="inventory-form" id="inventory-form">
+              <label class="inventory-name-field" for="product-name">Product name<input id="product-name" name="name" maxlength="80" placeholder="e.g. Organic cotton blanket" required></label>
+              <label for="product-category">Category<select id="product-category" name="category"><option>Newborn essentials</option><option>Skin &amp; comfort</option><option>Feeding &amp; comfort</option><option>Gifts &amp; keepsakes</option><option>Other</option></select></label>
+              <label for="product-quantity">Quantity<input id="product-quantity" name="quantity" type="number" min="0" step="1" placeholder="0" required></label>
+              <label for="product-reorder">Reorder at<input id="product-reorder" name="reorderAt" type="number" min="0" step="1" value="10" required></label>
+              <button class="button button-primary inventory-submit" type="submit">Add product <span aria-hidden="true">&#43;</span></button>
+            </form>
+            <p class="inventory-feedback" id="inventory-feedback" role="status" aria-live="polite"></p>
+          </section>
+          <div class="simple-panel inventory-table"><div class="section-heading"><div><p class="eyebrow">STOCK CHECK</p><h2>Products to watch</h2></div><span class="order-count" id="product-count">4 products</span></div><div class="table-scroll"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>IN STOCK</th><th>STATUS</th></tr></thead><tbody id="inventory-rows"></tbody></table></div></div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

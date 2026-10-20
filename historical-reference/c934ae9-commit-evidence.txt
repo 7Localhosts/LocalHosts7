@@ -1,0 +1,13 @@
+commit c934ae9555e819972b9101df7a4254bccc2eae83
+Author:     Eyram Akuba Kudor <eakudor002@st.ug.edu.gh>
+AuthorDate: Fri Sep 25 18:58:06 2026 +0000
+Commit:     Eyram Akuba Kudor <eakudor002@st.ug.edu.gh>
+CommitDate: Fri Sep 25 18:58:06 2026 +0000
+
+    Commiting as 8-isuue7
+
+ src/frontend/app.js             | 164 +++++++++++++++++++++++++++
+ src/frontend/assets/Localh7.jpg | Bin 0 -> 29995 bytes
+ src/frontend/index.html         | 160 ++++++++++++++++++++++++++
+ src/frontend/styles.css         | 245 ++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 569 insertions(+)
