@@ -1,0 +1,188 @@
+/* ═══════════════════════════════════════════════════════
+   delivery.css — Kay's Haven Delivery Information Page
+   Design tokens aligned with storefront (styles.css)
+═══════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+:root {
+  --bg:     #ffffff;
+  --panel:  #ffffff;
+  --soft:   #f9f6fc;
+  --pink:   #f0e5fa;
+  --rose:   #7a13aa;
+  --peach:  #b078d3;
+  --sage:   #b078d3;
+  --text:   #111111;
+  --muted:  #887a99;
+  --line:   #eae0f2;
+  --shadow: 0 12px 36px rgba(0, 0, 0, 0.05);
+  --radius: 20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ── Top bar ─────────────────────────────────────────── */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 32px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.logo {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text); text-decoration: none;
+}
+.logo span { color: var(--rose); }
+.back-link  { font-size: 13px; color: var(--rose); text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+
+/* ── Hero ────────────────────────────────────────────── */
+.delivery-hero {
+  background: linear-gradient(135deg, #7a13aa 0%, var(--peach) 100%);
+  color: #fff;
+  padding: 56px 24px;
+  text-align: center;
+}
+.delivery-hero p.eyebrow {
+  font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; opacity: 0.8; margin-bottom: 10px;
+}
+.delivery-hero h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 40px; font-weight: 700; margin-bottom: 10px;
+}
+.delivery-hero p.sub {
+  font-size: 14px; opacity: 0.85;
+  max-width: 440px; margin: 0 auto; line-height: 1.6;
+}
+
+/* ── Content ─────────────────────────────────────────── */
+.delivery-content {
+  max-width: 900px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+}
+
+/* ── Panel ───────────────────────────────────────────── */
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+/* ── Zone cards ──────────────────────────────────────── */
+#zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.zone-card {
+  background: var(--soft);
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+}
+.zone-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+.zone-fee {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--rose);
+  margin-bottom: 4px;
+}
+.zone-eta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.zone-areas {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── Pickup locations ────────────────────────────────── */
+#pickups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.pickup-card {
+  background: var(--soft);
+  border-radius: 16px;
+  padding: 20px;
+}
+.pickup-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.pickup-card p  { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+.pickup-card a  { font-size: 12px; color: var(--rose); text-decoration: none; }
+.pickup-card a:hover { text-decoration: underline; }
+
+/* ── Notes list ──────────────────────────────────────── */
+.notes-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.notes-list li {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 14px; color: var(--muted); line-height: 1.6;
+}
+.notes-list li::before {
+  content: "✓";
+  color: var(--rose);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── CTA ─────────────────────────────────────────────── */
+.cta-row {
+  text-align: center;
+  margin-top: 10px;
+}
+.cta-wa {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 14px;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+.cta-wa:hover { filter: brightness(1.1); }
+
+/* ── Loading ─────────────────────────────────────────── */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+/* Modern polish */
+body {
+  background: var(--bg);
+}
+.panel { border: 1px solid rgba(221, 208, 238, 0.72); border-radius: 18px; }
+.zone-card { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+.zone-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--peach);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+.cta-wa { transition: filter 0.2s, transform 0.2s, box-shadow 0.2s; }
+.cta-wa:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(37, 211, 102, 0.22);
+}
