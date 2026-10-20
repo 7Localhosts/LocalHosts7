@@ -1,6 +1,6 @@
 # Kay's Haven
 
-Kay's Haven is a product catalogue and checkout website for mother-care, baby, children’s, and related products. The repository contains a static HTML/CSS/JavaScript frontend, a Node.js API, a Supabase-backed catalogue and orders, staff inventory tools, and server-side Paystack integration.
+Kay's Haven is a product catalogue and checkout website for mother-care, babies, children, and related products. The repository contains a static HTML/CSS/JavaScript frontend, a Node.js API, a Supabase-backed catalogue and orders, staff inventory tools, and server-side Paystack integration.
 
 ## Repository map
 
