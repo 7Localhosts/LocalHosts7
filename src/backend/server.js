@@ -1090,11 +1090,24 @@ function createGuestPaystackEmail(callbackUrl) {
   return `checkout-${crypto.randomBytes(16).toString("hex")}@${callback.hostname.toLowerCase()}`;
 }
 
-function getPaystackConfiguration(secretKey = process.env.PAYSTACK_SECRET_KEY, callbackUrl = process.env.PAYSTACK_CALLBACK_URL) {
+function getPaystackConfiguration(
+  secretKey = process.env.PAYSTACK_SECRET_KEY,
+  callbackUrl = process.env.PAYSTACK_CALLBACK_URL,
+  frontendOrigin = process.env.FRONTEND_ORIGIN
+) {
   const unavailable = { configured: false, error: "Online payments are temporarily unavailable. Please try again later." };
-  if (!String(secretKey || "").trim()) return unavailable;
+  // Keep this deployment explicitly in Paystack Test Mode. Never accept a live key here.
+  if (!/^sk_test_[A-Za-z0-9_-]+$/.test(String(secretKey || "").trim())) return unavailable;
   try {
-    const callback = new URL(String(callbackUrl || "").trim());
+    let callback;
+    if (String(callbackUrl || "").trim()) {
+      callback = new URL(String(callbackUrl).trim());
+    } else {
+      // A missing callback can safely be derived from the configured HTTPS storefront origin.
+      const origin = new URL(String(frontendOrigin || "").trim());
+      if (origin.protocol !== "https:" || !origin.hostname || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return unavailable;
+      callback = new URL("/checkout/checkout.html", origin.origin);
+    }
     if (callback.protocol !== "https:" || !callback.hostname || callback.username || callback.password) return unavailable;
     return { configured: true, callbackUrl: callback.toString() };
   } catch {
