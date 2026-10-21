@@ -85,6 +85,29 @@ assert.doesNotMatch(shop, /class="hero"|hero-mother-and-baby|id="landing-title"|
 for (const category of ["Baby", "Toddler", "Kids", "Teens", "Toys", "Accessories", "Back to School", "Clearance"]) {
   assert.match(shop, new RegExp(`data-category="${category}"`), `shop includes ${category} category`);
 }
+const renderProductsStart = storefrontScript.indexOf("function renderProducts() {");
+const renderProductsEnd = storefrontScript.indexOf("function saveCart()", renderProductsStart);
+assert.ok(renderProductsStart >= 0 && renderProductsEnd > renderProductsStart, "storefront product renderer is available for category regression checks");
+const categoryGrid = { innerHTML: "", querySelectorAll: () => [] };
+const categoryEmptyState = { textContent: "", style: {} };
+const categoryRenderContext = {
+  products: [
+    { id: "baby-item", name: "Baby item", category: "Baby", price: 20, _catalogImageUrl: "/baby.webp" },
+    { id: "kids-item", name: "Kids item", category: "Kids", price: 30, _catalogImageUrl: "/kids.webp" }
+  ],
+  productsLoading: false,
+  currentFilter: "Kids",
+  $: id => id === "productGrid" ? categoryGrid : categoryEmptyState,
+  escapeHtml: value => String(value ?? ""),
+  money: amount => `GHS ${Number(amount).toFixed(2)}`,
+  cartImageUrl: product => product._catalogImageUrl
+};
+vm.runInNewContext(`${storefrontScript.slice(renderProductsStart, renderProductsEnd)}; renderProducts();`, categoryRenderContext);
+assert.match(categoryGrid.innerHTML, /data-product-card="kids-item"/);
+assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="baby-item"/);
+vm.runInNewContext('currentFilter = "Baby"; renderProducts();', categoryRenderContext);
+assert.match(categoryGrid.innerHTML, /data-product-card="baby-item"/);
+assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="kids-item"/);
 assert.match(shop, /id="productGrid"/);
 assert.match(shop, /id="icon-baby"/);
 assert.match(shop, /id="icon-school"/);
@@ -446,7 +469,11 @@ function resolveApiBase(hostname, origin, configured = "") {
 assert.equal(resolveApiBase("localhost", "http://localhost:8080"), "http://localhost:8000");
 assert.equal(resolveApiBase("127.0.0.1", "http://127.0.0.1:5500"), "http://localhost:8000");
 assert.equal(resolveApiBase("", "null"), "http://localhost:8000");
-assert.equal(resolveApiBase("shop.example", "https://shop.example"), "https://shop.example");
+assert.equal(
+  resolveApiBase("radiant-croissant-02f4a0.netlify.app", "https://radiant-croissant-02f4a0.netlify.app"),
+  "https://kays-haven-backend.onrender.com",
+  "the deployed Netlify storefront defaults to the Render API"
+);
 assert.equal(resolveApiBase("shop.example", "https://shop.example", "https://api.example"), "https://api.example");
 const { groupOrdersByCustomer } = require("../src/admin/order-groups");
 const customerGroups = groupOrdersByCustomer([
