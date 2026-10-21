@@ -502,6 +502,10 @@ for (const relativePath of ["index.html", "cart/cart.html", "checkout/checkout.h
 }
 const { buildStaticSite } = require("../deployment/build-static");
 assert.throws(() => buildStaticSite(undefined, "http://localhost:8000"), /public HTTPS/);
+const netlifyConfig = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+assert.match(netlifyConfig, /base\s*=\s*"\."/);
+assert.match(netlifyConfig, /command\s*=\s*"cd src\/backend && npm ci && npm run build:static"/);
+assert.match(netlifyConfig, /publish\s*=\s*"dist"/);
 const previewRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kays-haven-build-test-"));
 const previewOutput = path.join(previewRoot, "site");
 try {
@@ -539,6 +543,32 @@ try {
   assert.throws(() => buildStaticPreview(previewOutput), /already exists/);
 } finally {
   fs.rmSync(previewRoot, { recursive: true, force: true });
+}
+
+const productionOutput = buildStaticSite(undefined, "https://kays-haven-backend.onrender.com");
+assert.equal(productionOutput, path.join(root, "dist"));
+const productionAdminFiles = [
+  "admin/index.html",
+  "admin/app.js",
+  "admin/styles.css",
+  "admin/order-groups.js",
+  "api-config.js",
+  "product-images.js",
+  "brand-system.css",
+  "site-assets/landing-mother-and-baby-clean.png",
+  "site-assets/Kay’s Haven Lavender Emblem.png",
+  "product-images/15-pink-baby-layette-bodysuit.png"
+];
+for (const required of productionAdminFiles) {
+  assert.equal(fs.existsSync(path.join(productionOutput, required)), true, `production dist includes ${required}`);
+}
+const productionAdmin = fs.readFileSync(path.join(productionOutput, "admin", "index.html"), "utf8");
+assert.match(productionAdmin, /<meta name="api-base" content="https:\/\/kays-haven-backend\.onrender\.com">/);
+for (const [, rawUrl] of productionAdmin.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
+  if (!rawUrl || /^(?:[a-z]+:|\/\/|#)/i.test(rawUrl)) continue;
+  const browserUrl = new URL(rawUrl, "https://shop.example/admin/index.html");
+  const localUrl = decodeURIComponent(browserUrl.pathname).replace(/^\/+/, "");
+  if (localUrl) assert.equal(fs.existsSync(path.join(productionOutput, localUrl)), true, `production admin reference resolves: ${rawUrl}`);
 }
 
 console.log("Frontend assets and checkout wiring passed");
