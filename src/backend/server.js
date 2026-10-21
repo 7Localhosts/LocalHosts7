@@ -66,6 +66,15 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
+async function checkSupabaseReadiness(client) {
+  try {
+    const { error } = await client.from("products").select("id").limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 function readBody(req, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -146,7 +155,7 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res) => {
+const requestHandler = async (req, res, healthClient = supabase) => {
 
     // CORS preflight
     if (req.method === "OPTIONS") {
@@ -175,6 +184,18 @@ const requestHandler = async (req, res) => {
         message: "Backend is running"
       });
 
+      return;
+    }
+
+    if (
+      req.method === "GET" &&
+      new URL(req.url, "http://localhost").pathname.replace(/\/+$/, "") === "/api/health/database"
+    ) {
+      const ready = await checkSupabaseReadiness(healthClient);
+      sendJson(res, ready ? 200 : 503, {
+        success: ready,
+        database: ready ? "connected" : "unavailable"
+      });
       return;
     }
 
@@ -1085,8 +1106,8 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer() {
-  return http.createServer(requestHandler);
+function createServer({ healthClient = supabase } = {}) {
+  return http.createServer((req, res) => requestHandler(req, res, healthClient));
 }
 
 function validEmail(value) {
@@ -1185,4 +1206,4 @@ function getPaystackConfiguration(
   }
 }
 
-module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
+module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
