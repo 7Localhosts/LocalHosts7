@@ -1,0 +1,4 @@
+[build]
+  base = "."
+  command = "cd src/backend && npm ci && npm run build:static"
+  publish = "dist"

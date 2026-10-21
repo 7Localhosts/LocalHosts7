@@ -4,6 +4,8 @@ This repository does not deploy automatically. Build the landing page, storefron
 
 From `src/backend`, set `KAYS_HAVEN_API_URL` to the public HTTPS backend base URL and run `npm run build:static`. The build rejects missing, insecure, or localhost API URLs. Configure the static host to publish the repository's generated `dist` directory. The dedicated landing page is at `/`, the actual storefront at `/shop.html`, and the admin at `/admin/`; the build rewrites the API base in app pages. Both UIs then share the same browser origin for the backend CORS allowlist. Do not publish `src` directly; it contains backend code and local configuration files. For local UI work, pages use `http://localhost:8000` only when served from localhost and no API base is configured. The `buildStaticPreview()` helper assembles a temporary package for local checks only and does not inject a production API URL.
 
+The root [`netlify.toml`](../netlify.toml) pins Netlify to the repository root, builds with `cd src/backend && npm ci && npm run build:static`, and publishes `dist`. Keep `KAYS_HAVEN_API_URL=https://kays-haven-backend.onrender.com` configured in the Netlify environment; it is intentionally not embedded in the deployment file.
+
 ## Database setup
 
 ## Local source preview
