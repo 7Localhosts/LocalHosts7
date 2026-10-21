@@ -438,7 +438,15 @@ assert.match(backendSource, /if \(!\["Completed", "Canceled"\]\.includes\(status
 assert.match(backendSource, /size\s*\n\s*\)/);
 assert.doesNotMatch(backendSource, /readDeliveryFee|DELIVERY_FEE_GHS|delivery_fee/i);
 assert.match(backendSource, /expected_total/);
-assert.match(backendSource, /amount: Math\.round\(priced\.total \* 100\)/);
+assert.match(backendSource, /buildPaystackInitializationPayload\(\{/);
+assert.match(backendSource, /amount: String\(Math\.round\(Number\(totalAmount\) \* 100\)\)/);
+assert.match(backendSource, /metadata: JSON\.stringify\(/);
+assert.match(backendSource, /failureStage = "product_lookup"/);
+assert.match(backendSource, /failureStage = "order_insert"/);
+assert.match(backendSource, /failureStage = "order_item_insert"/);
+assert.match(backendSource, /failureStage = "paystack_initialize"/);
+assert.match(backendSource, /formatPaymentInitializationFailure\(failureStage, error\)/);
+assert.doesNotMatch(backendSource, /console\.error\(error\.message\)|console\.error\(JSON\.stringify\(\{[^}]*customerName/);
 assert.match(staticBuild, /\.replace\("\.\.\/frontend\/site-assets\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png", "\.\.\/site-assets\/Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png"\)/);
 assert.match(staticBuild, /\.replace\("\.\.\/frontend\/site-assets\/landing-mother-and-baby-clean\.png", "\.\.\/site-assets\/landing-mother-and-baby-clean\.png"\)/);
 assert.match(staticBuild, /replaceAll\("\.\.\/frontend\/product-images\/", "\.\.\/product-images\/"\)/);
