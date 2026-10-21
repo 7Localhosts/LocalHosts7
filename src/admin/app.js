@@ -1226,6 +1226,14 @@ function canCompleteOrder(order) {
   return String(order.payment_status || "").trim().toLowerCase() === "paid";
 }
 
+function orderStatusActions(order, historical, paymentReview) {
+  if (historical) return [];
+  const actions = [];
+  if (!paymentReview && canCompleteOrder(order)) actions.push(["Completed", "Complete Order", "button-primary"]);
+  actions.push(["Canceled", "Cancel Order", "button-secondary"]);
+  return actions;
+}
+
 function toggleOrderCardDetails(card, button, details) {
   const expanded = card.dataset.expanded === "true";
   card.dataset.expanded = String(!expanded);
@@ -1398,9 +1406,7 @@ function appendOrderCard(container, order, historical, paymentReview = false) {
   if (!historical) {
     const actions = document.createElement("div");
     actions.className = "order-actions";
-    const availableActions = [];
-    if (!paymentReview && canCompleteOrder(order)) availableActions.push(["Completed", "Complete Order", "button-primary"]);
-    availableActions.push(["Canceled", "Cancel Order", "button-secondary"]);
+    const availableActions = orderStatusActions(order, historical, paymentReview);
     availableActions.forEach(([status, label, style]) => {
       const button = document.createElement("button");
       button.type = "button";
