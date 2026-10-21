@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
+const { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -24,6 +24,42 @@ async function main() {
   assert.equal(getPaystackConfiguration("sk_test_example", "", "http://shop.example.co.gh").configured, false, "callback fallback requires an HTTPS frontend origin");
   assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh/shop").configured, false, "callback fallback accepts an origin, not a path-bearing URL");
   assert.doesNotMatch(JSON.stringify(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return")), /sk_test_example/, "payment configuration never returns the secret");
+
+  console.log("Check Paystack Test Mode initialization payload and safe diagnostics");
+  const paystackPayload = buildPaystackInitializationPayload({
+    email: guestPaymentEmail,
+    totalAmount: 765.25,
+    reference: "KH-1792600000000-a1b2c3d4e5f6",
+    callbackUrl: "https://shop.example.co.gh/checkout/checkout.html",
+    orderId: "synthetic-order-id",
+    orderNumber: "KH-SYNTHETIC",
+    customerName: "Synthetic Buyer"
+  });
+  assert.equal(typeof paystackPayload.amount, "string", "Paystack receives the amount as a string in the currency subunit");
+  assert.equal(paystackPayload.amount, "76525", "GHS is converted to pesewas without changing the server-priced amount");
+  assert.equal(paystackPayload.currency, "GHS");
+  assert.equal(paystackPayload.email, guestPaymentEmail, "an optional customer email uses the existing non-personal alias");
+  assert.match(paystackPayload.reference, /^[A-Za-z0-9.=-]+$/, "payment reference uses Paystack-supported characters");
+  assert.equal(paystackPayload.callback_url, "https://shop.example.co.gh/checkout/checkout.html");
+  assert.equal(typeof paystackPayload.metadata, "string", "Paystack receives metadata as a JSON string");
+  assert.deepEqual(JSON.parse(paystackPayload.metadata), {
+    order_id: "synthetic-order-id",
+    order_number: "KH-SYNTHETIC",
+    customer_name: "Synthetic Buyer"
+  });
+
+  const sensitiveProviderError = Object.assign(new Error("buyer@example.com +233 20 000 0000 sk_test_do_not_log Bearer private-token https://checkout.paystack.com/private"), { code: "PAYSTACK_HTTP_401" });
+  const providerFailureLog = formatPaymentInitializationFailure("paystack_initialize", sensitiveProviderError);
+  assert.deepEqual(providerFailureLog, {
+    event: "payment_initialization_failed",
+    stage: "paystack_initialize",
+    code: "PAYSTACK_HTTP_401",
+    message: "Paystack transaction initialization failed."
+  }, "diagnostics include only stage, safe code, and fixed safe message");
+  assert.doesNotMatch(JSON.stringify(providerFailureLog), /buyer@example|\+233|sk_test|Bearer|checkout\.paystack\.com|private-token/i, "payment diagnostics never serialize customer data, credentials, or authorization URLs");
+  assert.equal(safePaymentErrorCode({ code: "PGRST204", message: "schema cache error" }), "PGRST204", "Supabase/PostgREST error codes remain useful to operators");
+  assert.equal(safePaymentErrorCode({ code: "customer@example.com", message: "sensitive" }), "UNCLASSIFIED", "untrusted error codes are not logged");
+  assert.equal(formatPaymentInitializationFailure("order_item_insert", { code: "23503", message: "details omitted" }).stage, "order_item_insert", "order-item failures are reported at their own stage");
 
   console.log("Check server prices, sizes, and product visibility");
   const projectOrigin = new URL(process.env.SUPABASE_URL).origin;

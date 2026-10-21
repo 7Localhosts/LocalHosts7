@@ -180,6 +180,7 @@ const requestHandler = async (req, res) => {
 
     if (req.method === "POST" && req.url === "/api/payments/initialize") {
       let createdOrderId;
+      let failureStage = "request_body";
       try {
         const body = await readBody(req);
         const customerName = String(body.customer_name || "").trim();
@@ -206,15 +207,18 @@ const requestHandler = async (req, res) => {
         }
 
         const productIds = [...new Set(body.items.map(item => item.product_id ?? item.id).filter(id => id !== undefined && id !== null))];
+        failureStage = "product_lookup";
         const { data: products, error: productsError } = await supabaseAdmin
           .from("products").select("id, name, price, sizes, is_active").in("id", productIds);
         if (productsError) throw productsError;
+        failureStage = "price_validation";
         const priced = buildPricedItems(body.items, products || []);
         if (Math.round(expectedTotal * 100) !== Math.round(priced.total * 100)) {
           sendJson(res, 409, { error: "Product prices changed. Refresh the checkout total before paying." });
           return;
         }
         const reference = `KH-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+        failureStage = "order_insert";
         const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert([{
           customer_name: customerName,
           email: email || null,
@@ -228,6 +232,7 @@ const requestHandler = async (req, res) => {
         if (orderError) throw orderError;
         createdOrderId = order.id;
 
+        failureStage = "order_item_insert";
         const { error: itemError } = await supabaseAdmin.from("order_items").insert(priced.items.map(item => ({
           order_id: order.id,
           product_id: item.product_id,
@@ -240,26 +245,33 @@ const requestHandler = async (req, res) => {
 
         const callbackUrl = paymentConfiguration.callbackUrl;
         const paystackEmail = email || createGuestPaystackEmail(callbackUrl);
-        const payment = await paystackRequest("/transaction/initialize", {
+        failureStage = "paystack_initialize";
+        const payment = await paystackRequest("/transaction/initialize", buildPaystackInitializationPayload({
           email: paystackEmail,
-          amount: Math.round(priced.total * 100),
-          currency: "GHS",
+          totalAmount: priced.total,
           reference,
-          callback_url: callbackUrl,
-          metadata: { order_id: order.id, order_number: order.order_number || String(order.id), customer_name: customerName }
-        });
+          callbackUrl,
+          orderId: order.id,
+          orderNumber: order.order_number || String(order.id),
+          customerName
+        }));
         sendJson(res, 200, { authorization_url: payment.authorization_url, reference });
       } catch (error) {
+        const status = /required|valid|stock|size|available|invalid price/i.test(error.message) ? 400 : 502;
+        if (status >= 500) {
+          console.error(JSON.stringify(formatPaymentInitializationFailure(failureStage, error)));
+        }
         if (createdOrderId) {
           try {
             const { error: updateError } = await supabaseAdmin.from("orders")
               .update({ payment_status: "failed", status: "Payment setup failed" }).eq("id", createdOrderId);
-            if (updateError) console.error("Could not mark the unsuccessful checkout for payment review.");
+            if (updateError) {
+              console.error(JSON.stringify(formatPaymentInitializationFailure("failure_cleanup", updateError)));
+            }
           } catch {
-            console.error("Could not mark the unsuccessful checkout for payment review.");
+            console.error(JSON.stringify(formatPaymentInitializationFailure("failure_cleanup", null)));
           }
         }
-        const status = /required|valid|stock|size|available|invalid price/i.test(error.message) ? 400 : 502;
         sendJson(res, status, { error: status === 400 ? error.message : "Payment could not be started. Please try again." });
       }
       return;
@@ -1060,7 +1072,16 @@ async function paystackRequest(endpoint, payload) {
     signal: AbortSignal.timeout(15000)
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || result.status !== true) throw new Error("Payment service could not complete the request");
+  if (!response.ok) {
+    const error = new Error("Paystack request was rejected");
+    error.code = `PAYSTACK_HTTP_${response.status}`;
+    throw error;
+  }
+  if (!result || typeof result !== "object" || result.status !== true || !result.data) {
+    const error = new Error("Paystack returned an unsuccessful or invalid response");
+    error.code = "PAYSTACK_REJECTED";
+    throw error;
+  }
   return result.data;
 }
 
@@ -1090,6 +1111,55 @@ function createGuestPaystackEmail(callbackUrl) {
   return `checkout-${crypto.randomBytes(16).toString("hex")}@${callback.hostname.toLowerCase()}`;
 }
 
+function buildPaystackInitializationPayload({ email, totalAmount, reference, callbackUrl, orderId, orderNumber, customerName }) {
+  return {
+    email,
+    // Paystack expects GHS amounts as a string in pesewas (the currency subunit).
+    amount: String(Math.round(Number(totalAmount) * 100)),
+    currency: "GHS",
+    reference,
+    callback_url: callbackUrl,
+    // The Transactions API defines metadata as a stringified JSON object.
+    metadata: JSON.stringify({
+      order_id: orderId,
+      order_number: orderNumber,
+      customer_name: customerName
+    })
+  };
+}
+
+const PAYMENT_FAILURE_MESSAGES = Object.freeze({
+  request_body: "Checkout request processing failed.",
+  product_lookup: "Supabase product lookup failed.",
+  price_validation: "Server-side checkout pricing failed.",
+  order_insert: "Supabase order insertion failed.",
+  order_item_insert: "Supabase order-item insertion failed.",
+  paystack_initialize: "Paystack transaction initialization failed.",
+  failure_cleanup: "Failed checkout could not be marked for review."
+});
+
+function safePaymentErrorCode(error) {
+  const candidate = String(error?.code || "");
+  if (/^(?:[0-9A-Z]{5}|PGRST\d{3}|PAYSTACK_HTTP_[45]\d{2}|PAYSTACK_REJECTED|PAYSTACK_INVALID_RESPONSE|ECONNRESET|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ABORT_ERR|UND_ERR_CONNECT_TIMEOUT)$/.test(candidate)) {
+    return candidate;
+  }
+  const status = Number(error?.status || error?.statusCode);
+  if (Number.isInteger(status) && status >= 400 && status <= 599) return `HTTP_${status}`;
+  if (error?.name === "TimeoutError" || error?.name === "AbortError") return "REQUEST_TIMEOUT";
+  if (error?.name === "TypeError") return "NETWORK_ERROR";
+  return "UNCLASSIFIED";
+}
+
+function formatPaymentInitializationFailure(stage, error) {
+  const safeStage = Object.prototype.hasOwnProperty.call(PAYMENT_FAILURE_MESSAGES, stage) ? stage : "request_body";
+  return {
+    event: "payment_initialization_failed",
+    stage: safeStage,
+    code: safePaymentErrorCode(error),
+    message: PAYMENT_FAILURE_MESSAGES[safeStage]
+  };
+}
+
 function getPaystackConfiguration(
   secretKey = process.env.PAYSTACK_SECRET_KEY,
   callbackUrl = process.env.PAYSTACK_CALLBACK_URL,
@@ -1115,4 +1185,4 @@ function getPaystackConfiguration(
   }
 }
 
-module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
+module.exports = { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
