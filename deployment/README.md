@@ -24,8 +24,8 @@ Copy `src/backend/.env.example` to an untracked `.env` for local use, or configu
 
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `KAYS_HAVEN_PRODUCT_BUCKET` (optional; defaults to `kays-haven-products`)
-- `PAYSTACK_SECRET_KEY` (use an `sk_test_...` key for Test Mode; switch to the live key only after the test transaction and website review)
-- `PAYSTACK_CALLBACK_URL` (the public HTTPS URL of `/checkout/checkout.html` on the built static site)
+- `PAYSTACK_SECRET_KEY` (must be an `sk_test_...` key; this backend rejects live keys and remains in Test Mode)
+- `PAYSTACK_CALLBACK_URL` (optional explicit public HTTPS callback URL for `/checkout/checkout.html`; if omitted, the backend derives it from `FRONTEND_ORIGIN`)
 - `FRONTEND_ORIGIN` (the exact HTTPS origin serving the built storefront and `/admin/`, without a path)
 - `PORT` (optional; defaults to `8000`)
 

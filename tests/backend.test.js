@@ -17,8 +17,12 @@ async function main() {
   const guestPaymentEmail = createGuestPaystackEmail("https://shop.example.co.gh/checkout/return");
   assert.match(guestPaymentEmail, /^checkout-[a-f0-9]{32}@shop\.example\.co\.gh$/, "Paystack receives a non-personal alias based on the HTTPS callback domain");
   assert.equal(getPaystackConfiguration("", "https://shop.example.co.gh/checkout/return").configured, false, "missing Paystack secret disables checkout");
+  assert.equal(getPaystackConfiguration("sk_live_example", "https://shop.example.co.gh/checkout/return").configured, false, "live Paystack keys are rejected while the integration is restricted to Test Mode");
   assert.equal(getPaystackConfiguration("sk_test_example", "http://localhost/return").configured, false, "non-HTTPS callback disables checkout");
   assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return").configured, true, "complete secure Paystack configuration enables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh").callbackUrl, "https://shop.example.co.gh/checkout/checkout.html", "an omitted callback derives the checkout URL from the secure frontend origin");
+  assert.equal(getPaystackConfiguration("sk_test_example", "", "http://shop.example.co.gh").configured, false, "callback fallback requires an HTTPS frontend origin");
+  assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh/shop").configured, false, "callback fallback accepts an origin, not a path-bearing URL");
   assert.doesNotMatch(JSON.stringify(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return")), /sk_test_example/, "payment configuration never returns the secret");
 
   console.log("Check server prices, sizes, and product visibility");
