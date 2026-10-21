@@ -426,17 +426,24 @@ function toast(message) {
    PRODUCT FILTER BUTTONS
 ========================= */
 
+function updateCategorySelection(category) {
+  currentFilter = category || "All";
+
+  document.querySelectorAll(".filter").forEach(item => {
+    const selected = item.dataset.filter === currentFilter;
+    item.classList.toggle("active", selected);
+    item.setAttribute("aria-pressed", String(selected));
+  });
+
+  document.querySelectorAll(".category-card").forEach(item => {
+    item.setAttribute("aria-pressed", String(item.dataset.category === currentFilter));
+  });
+}
+
 document.querySelectorAll(".filter").forEach(button => {
 
   button.addEventListener("click", () => {
-
-    document.querySelectorAll(".filter").forEach(item => {
-      item.classList.remove("active");
-    });
-
-    button.classList.add("active");
-
-    currentFilter = button.dataset.filter || "All";
+    updateCategorySelection(button.dataset.filter);
 
     renderProducts();
 
@@ -459,17 +466,7 @@ document.querySelectorAll(".filter").forEach(button => {
 document.querySelectorAll(".category-card").forEach(button => {
 
   button.addEventListener("click", () => {
-
-    currentFilter = button.dataset.category || "All";
-
-    document.querySelectorAll(".filter").forEach(item => {
-
-      item.classList.toggle(
-        "active",
-        item.dataset.filter === currentFilter
-      );
-
-    });
+    updateCategorySelection(button.dataset.category);
 
     renderProducts();
 

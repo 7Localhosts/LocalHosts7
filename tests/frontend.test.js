@@ -82,6 +82,8 @@ assert.match(fs.readFileSync(path.join(frontend, "landing.css"), "utf8"), /prefe
 assert.doesNotMatch(fs.readFileSync(path.join(frontend, "landing.css"), "utf8"), /Allura/);
 assert.doesNotMatch(landing, /<footer|social-links/);
 assert.doesNotMatch(shop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop|Growing with them, every step of the way|newsletterForm/);
+assert.match(shop, /class="filter active" data-filter="All" aria-pressed="true"/);
+assert.equal((shop.match(/class="category-card[^\"]*" data-category="[^"]+" aria-pressed="false"/g) || []).length, 8, "category buttons start unselected for assistive technology");
 for (const category of ["Baby", "Toddler", "Kids", "Teens", "Toys", "Accessories", "Back to School", "Clearance"]) {
   assert.match(shop, new RegExp(`data-category="${category}"`), `shop includes ${category} category`);
 }
@@ -111,6 +113,32 @@ assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="baby-item"/);
 vm.runInNewContext('currentFilter = "Baby"; renderProducts();', categoryRenderContext);
 assert.match(categoryGrid.innerHTML, /data-product-card="baby-item"/);
 assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="kids-item"/);
+const selectionHelper = storefrontScript.match(/function updateCategorySelection\(category\) \{[\s\S]*?^\}/m);
+assert.ok(selectionHelper, "category selection helper is defined");
+function fakeSelectionButton(dataset) {
+  return {
+    dataset,
+    attributes: {},
+    classes: new Set(),
+    classList: { toggle(name, selected) { selected ? this.owner.classes.add(name) : this.owner.classes.delete(name); } },
+    setAttribute(name, value) { this.attributes[name] = value; }
+  };
+}
+const filterButtons = ["All", "Baby", "Kids"].map(value => fakeSelectionButton({ filter: value }));
+const categoryButtons = ["Baby", "Kids"].map(value => fakeSelectionButton({ category: value }));
+for (const button of [...filterButtons, ...categoryButtons]) button.classList.owner = button;
+const selectionContext = {
+  currentFilter: "All",
+  document: { querySelectorAll(selector) { return selector === ".filter" ? filterButtons : categoryButtons; } }
+};
+vm.runInNewContext(`${selectionHelper[0]}; updateCategorySelection("Kids");`, selectionContext);
+assert.equal(selectionContext.currentFilter, "Kids");
+assert.equal(filterButtons[2].attributes["aria-pressed"], "true", "selected category filter exposes its pressed state");
+assert.equal(filterButtons[0].attributes["aria-pressed"], "false", "other filters expose an unselected state");
+assert.equal(categoryButtons[1].attributes["aria-pressed"], "true", "the category tile mirrors the selected filter");
+vm.runInNewContext("updateCategorySelection('All');", selectionContext);
+assert.equal(filterButtons[0].attributes["aria-pressed"], "true", "returning to All resets the accessible filter state");
+assert.equal(categoryButtons[1].attributes["aria-pressed"], "false");
 assert.match(shop, /id="productGrid"/);
 assert.match(shop, /id="icon-baby"/);
 assert.match(shop, /id="icon-school"/);
