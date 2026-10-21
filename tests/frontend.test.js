@@ -85,6 +85,9 @@ assert.doesNotMatch(shop, /class="hero"|hero-mother-and-baby|id="landing-title"|
 for (const category of ["Baby", "Toddler", "Kids", "Teens", "Toys", "Accessories", "Back to School", "Clearance"]) {
   assert.match(shop, new RegExp(`data-category="${category}"`), `shop includes ${category} category`);
 }
+const storefrontStyles = fs.readFileSync(path.join(frontend, "styles.css"), "utf8");
+assert.match(storefrontStyles, /\.category-card\s*\{[^}]*color:\s*var\(--ink\)/s, "category buttons explicitly override native browser text color on desktop and mobile");
+assert.doesNotMatch(storefrontStyles.match(/\.category-card\s*\{[^}]*\}/s)?.[0] || "", /color:\s*(?:blue|#(?:00f|0000ff))/i, "category names do not rely on a blue browser default");
 const renderProductsStart = storefrontScript.indexOf("function renderProducts() {");
 const renderProductsEnd = storefrontScript.indexOf("function saveCart()", renderProductsStart);
 assert.ok(renderProductsStart >= 0 && renderProductsEnd > renderProductsStart, "storefront product renderer is available for category regression checks");
@@ -318,7 +321,7 @@ const classificationStart = adminScript.indexOf("function isHistoryOrder(");
 const classificationEnd = adminScript.indexOf("\nfunction toggleOrderCardDetails(", classificationStart);
 const classificationContext = {};
 assert.ok(classificationStart >= 0 && classificationEnd > classificationStart, "order section classification helpers are defined");
-vm.runInNewContext(`${adminScript.slice(classificationStart, classificationEnd)}\nglobalThis.isHistory = isHistoryOrder; globalThis.isPaymentIssue = isPaymentIssueOrder; globalThis.isActiveFulfillment = isActiveFulfillmentOrder; globalThis.canComplete = canCompleteOrder;`, classificationContext);
+vm.runInNewContext(`${adminScript.slice(classificationStart, classificationEnd)}\nglobalThis.isHistory = isHistoryOrder; globalThis.isPaymentIssue = isPaymentIssueOrder; globalThis.isActiveFulfillment = isActiveFulfillmentOrder; globalThis.canComplete = canCompleteOrder; globalThis.orderStatusActions = orderStatusActions;`, classificationContext);
 const pendingUnpaidOrder = { status: "Pending", payment_status: "pending" };
 const paymentFailedOrder = { status: "Payment setup failed", payment_status: "failed" };
 const completedOrder = { status: "Completed", payment_status: "paid" };
@@ -329,13 +332,22 @@ assert.equal(classificationContext.isActiveFulfillment(paymentFailedOrder), fals
 assert.equal(classificationContext.isHistory(completedOrder), true, "completed orders remain in history");
 assert.equal(classificationContext.isHistory(canceledOrder), true, "canceled unpaid orders remain in history");
 assert.equal(classificationContext.canComplete(pendingUnpaidOrder), false, "the UI cannot offer completion for an unpaid order");
-assert.equal(classificationContext.canComplete({ status: "Pending", payment_status: "PAID" }), true, "verified paid orders may be completed");
+assert.equal(classificationContext.canComplete({ status: "Pending", payment_status: "PAID" }), true, "verified paid orders may be completed regardless of status casing");
+assert.equal(classificationContext.canComplete({ status: "Pending", payment_status: " paid " }), true, "whitespace around a verified paid status is normalized");
+for (const paymentStatus of ["pending", "unpaid", "failed", "success", "successful", "", null, undefined]) {
+  assert.equal(classificationContext.canComplete({ status: "Pending", payment_status: paymentStatus }), false, `${String(paymentStatus)} is not proof of verified payment`);
+}
+assert.equal(classificationContext.isPaymentIssue(paymentFailedOrder), true, "payment failures remain excluded from completion controls");
+assert.deepEqual(Array.from(classificationContext.orderStatusActions({ payment_status: "paid" }, false, false), action => action[1]), ["Complete Order", "Cancel Order"], "verified paid active orders display both completion and cancellation actions");
+assert.deepEqual(Array.from(classificationContext.orderStatusActions(pendingUnpaidOrder, false, false), action => action[1]), ["Cancel Order"], "unpaid active orders cannot be completed but remain cancelable");
+assert.deepEqual(Array.from(classificationContext.orderStatusActions({ payment_status: "paid" }, false, true), action => action[1]), ["Cancel Order"], "payment-review orders do not expose completion actions");
+assert.deepEqual(Array.from(classificationContext.orderStatusActions(completedOrder, true, false)), [], "history cards do not expose active-order controls");
 assert.match(adminScript, /function isHistoryOrder\(order\)/);
 assert.match(adminScript, /function isPaymentIssueOrder\(order\)/);
 assert.match(adminScript, /function isActiveFulfillmentOrder\(order\)/);
 assert.match(adminScript, /function canCompleteOrder\(order\)/);
-assert.match(adminScript, /if \(!paymentReview && canCompleteOrder\(order\)\) availableActions\.push\(\["Completed", "Complete Order", "button-primary"\]\)/);
-assert.match(adminScript, /availableActions\.push\(\["Canceled", "Cancel Order", "button-secondary"\]\)/);
+assert.match(adminScript, /function orderStatusActions\(order, historical, paymentReview\)/);
+assert.match(adminScript, /const availableActions = orderStatusActions\(order, historical, paymentReview\)/);
 assert.match(adminScript, /appendField\(customerFields, "Phone", order\.phone\)/);
 assert.match(adminScript, /appendField\(expandedCustomer, "Customer email", order\.email\)/);
 assert.match(adminScript, /appendField\(customerFields, "Order number"/);
