@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { createServer, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
+const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -134,6 +134,44 @@ async function main() {
       const normalizedHealth = await fetch(`${baseUrl}${path}`);
       assert.equal(normalizedHealth.status, 200, `${path} is accepted as a health check`);
       assert.deepEqual(await normalizedHealth.json(), { success: true, message: "Backend is running" });
+    }
+    console.log("Check Supabase readiness without exposing database errors");
+    const readinessClient = result => ({
+      from(table) {
+        assert.equal(table, "products", "readiness performs a read-only products probe");
+        return {
+          select(columns) {
+            assert.equal(columns, "id", "readiness selects only a minimal identifier");
+            return { limit: async count => {
+              assert.equal(count, 1, "readiness limits the probe to one record");
+              return result;
+            } };
+          }
+        };
+      }
+    });
+    assert.equal(await checkSupabaseReadiness(readinessClient({ data: [], error: null })), true);
+    assert.equal(await checkSupabaseReadiness(readinessClient({ data: null, error: { message: "private database detail" } })), false);
+    assert.equal(await checkSupabaseReadiness({ from() { throw new Error("private connection detail"); } }), false);
+    const readyServer = createServer({ healthClient: readinessClient({ data: [], error: null }) });
+    try {
+      await new Promise(resolve => readyServer.listen(0, "127.0.0.1", resolve));
+      const readinessResponse = await fetch(`http://127.0.0.1:${readyServer.address().port}/api/health/database`);
+      assert.equal(readinessResponse.status, 200);
+      assert.deepEqual(await readinessResponse.json(), { success: true, database: "connected" });
+    } finally {
+      await new Promise((resolve, reject) => readyServer.close(error => error ? reject(error) : resolve()));
+    }
+    const unavailableServer = createServer({ healthClient: readinessClient({ data: null, error: { message: "private database detail" } }) });
+    try {
+      await new Promise(resolve => unavailableServer.listen(0, "127.0.0.1", resolve));
+      const readinessResponse = await fetch(`http://127.0.0.1:${unavailableServer.address().port}/api/health/database`);
+      assert.equal(readinessResponse.status, 503);
+      const readinessBody = await readinessResponse.json();
+      assert.deepEqual(readinessBody, { success: false, database: "unavailable" });
+      assert.doesNotMatch(JSON.stringify(readinessBody), /private database detail/);
+    } finally {
+      await new Promise((resolve, reject) => unavailableServer.close(error => error ? reject(error) : resolve()));
     }
     const removedDeliveryConfig = await fetch(`${baseUrl}/api/checkout/config`);
     assert.equal(removedDeliveryConfig.status, 404, "checkout no longer exposes delivery-fee configuration");
