@@ -1,7 +1,10 @@
 const API_URL = `${window.KAYS_HAVEN_API_URL}/api`;
+const paymentButtonState = window.KaysHavenCheckoutPaymentButtonState;
 let checkoutProducts = new Map();
 let checkoutCatalogueReady = false;
 let checkoutCatalogueError = "";
+let checkoutPaymentState = "ready";
+let paymentVerificationPending = false;
 
 function readCart() {
   try {
@@ -47,6 +50,24 @@ function currentCartTotal(lines = getPricedLines()) {
   return Math.round((subtotal + Number.EPSILON) * 100) / 100;
 }
 
+function returnedPaymentReference() {
+  return new URLSearchParams(window.location.search).get("reference") || "";
+}
+
+function syncPaymentButton(canStartPayment) {
+  const button = document.getElementById("place-order-btn");
+  const presentation = paymentButtonState.buttonPresentation(checkoutPaymentState, canStartPayment);
+  button.disabled = presentation.disabled;
+  button.textContent = presentation.label;
+}
+
+function setCheckoutPaymentState(state) {
+  checkoutPaymentState = state;
+  const lines = getPricedLines();
+  const canStartPayment = Boolean(lines.length && checkoutCatalogueReady && !cartValidationError(lines));
+  syncPaymentButton(canStartPayment);
+}
+
 function renderOrderSummary() {
   const lines = getPricedLines();
   const container = document.getElementById("order-items");
@@ -73,7 +94,7 @@ function renderOrderSummary() {
   const validation = lines.length ? cartValidationError(lines) : "";
   message.textContent = validation;
   message.classList.toggle("is-error", Boolean(checkoutCatalogueError || (checkoutCatalogueReady && validation)));
-  document.getElementById("place-order-btn").disabled = !lines.length || !checkoutCatalogueReady || Boolean(validation);
+  syncPaymentButton(Boolean(lines.length && checkoutCatalogueReady && !validation));
 }
 
 async function loadCheckoutCatalogue() {
@@ -110,20 +131,24 @@ async function loadCheckoutCatalogue() {
   }
 }
 
-async function verifyReturnedPayment() {
-  const params = new URLSearchParams(window.location.search);
-  const reference = params.get("reference");
-  if (!reference) return;
-  const button = document.getElementById("place-order-btn");
-  button.disabled = true;
-  button.textContent = "Verifying payment…";
+async function verifyPaymentReference(reference) {
+  if (!reference || paymentVerificationPending) return;
+  paymentVerificationPending = true;
+  setCheckoutPaymentState("verifying");
+  const message = document.getElementById("checkout-message");
+  message.textContent = "";
+  message.classList.remove("is-error");
   try {
     const response = await fetch(`${API_URL}/payments/verify`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reference })
+      body: JSON.stringify({ reference }),
+      signal: AbortSignal.timeout(20000)
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Payment could not be verified.");
+    if (!response.ok || result.success !== true || result.payment_status !== "paid") {
+      throw new Error(result.error || "Payment is not confirmed yet.");
+    }
+    setCheckoutPaymentState("successful");
     document.getElementById("conf-name").textContent = result.customer_name || "";
     document.getElementById("conf-order-id").textContent = `Order #${result.order_number || result.order_id}`;
     document.getElementById("checkout-view").hidden = true;
@@ -131,16 +156,33 @@ async function verifyReturnedPayment() {
     localStorage.removeItem("kayshaven-cart");
     history.replaceState({}, "", window.location.pathname);
   } catch (error) {
-    const message = document.getElementById("checkout-message");
-    message.textContent = `${error.message} If you were charged, contact us with reference ${reference}.`;
+    setCheckoutPaymentState("verificationFailed");
+    const failure = error.name === "TimeoutError" || error.name === "AbortError"
+      ? "Payment verification timed out."
+      : error.message || "Payment could not be confirmed yet.";
+    message.textContent = `${failure} Select “Pay securely with Paystack” to retry verification for this payment. No new order will be created. If you were charged, contact us with reference ${reference}.`;
     message.classList.add("is-error");
-    button.disabled = false;
-    button.textContent = "Pay securely with Paystack";
+  } finally {
+    paymentVerificationPending = false;
   }
+}
+
+async function verifyReturnedPayment() {
+  const reference = returnedPaymentReference();
+  if (!reference) return;
+  // Returned-payment retries verify the existing reference and do not need form validation.
+  document.getElementById("checkout-form").noValidate = true;
+  await verifyPaymentReference(reference);
 }
 
 document.getElementById("checkout-form").addEventListener("submit", async event => {
   event.preventDefault();
+  const reference = returnedPaymentReference();
+  if (paymentButtonState.actionForReference(reference) === "verify") {
+    event.currentTarget.noValidate = true;
+    await verifyPaymentReference(reference);
+    return;
+  }
   const cart = readCart();
   if (!cart.length) {
     document.getElementById("checkout-message").textContent = "Your cart is empty.";
@@ -157,8 +199,7 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
   const values = Object.fromEntries(new FormData(form).entries());
   const button = document.getElementById("place-order-btn");
   const message = document.getElementById("checkout-message");
-  button.disabled = true;
-  button.textContent = "Connecting to Paystack…";
+  setCheckoutPaymentState("connecting");
   message.textContent = "";
   message.classList.remove("is-error");
   try {
@@ -176,8 +217,7 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
   } catch (error) {
     message.textContent = error.message;
     message.classList.add("is-error");
-    button.disabled = false;
-    button.textContent = "Pay securely with Paystack";
+    setCheckoutPaymentState("ready");
   }
 });
 

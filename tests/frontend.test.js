@@ -50,6 +50,7 @@ const landing = fs.readFileSync(path.join(frontend, "index.html"), "utf8");
 const shop = fs.readFileSync(path.join(frontend, "shop.html"), "utf8");
 const checkout = fs.readFileSync(path.join(frontend, "checkout", "checkout.html"), "utf8");
 const checkoutScript = fs.readFileSync(path.join(frontend, "checkout", "checkout.js"), "utf8");
+const checkoutPaymentButton = require(path.join(frontend, "checkout", "payment-button-state.js"));
 const productPage = fs.readFileSync(path.join(frontend, "products", "product.html"), "utf8");
 const cartPage = fs.readFileSync(path.join(frontend, "cart", "cart.html"), "utf8");
 const cartScript = fs.readFileSync(path.join(frontend, "cart", "cart.js"), "utf8");
@@ -147,9 +148,24 @@ assert.match(shop, /policies\.html#collection/);
 assert.match(shop, /policies\.html#feedback/);
 assert.doesNotMatch(shop, /checkoutModal|checkoutForm/);
 assert.match(checkout, /Pay securely with Paystack/);
+assert.match(checkout, /src="payment-button-state\.js"><\/script>\s*<script src="checkout\.js"><\/script>/);
+assert.deepEqual(checkoutPaymentButton.buttonPresentation("ready", true), { label: "Pay securely with Paystack", disabled: false });
+assert.deepEqual(checkoutPaymentButton.buttonPresentation("connecting", true), { label: "Connecting to Paystack…", disabled: true });
+assert.deepEqual(checkoutPaymentButton.buttonPresentation("verifying", true), { label: "Verifying payment…", disabled: true });
+assert.deepEqual(checkoutPaymentButton.buttonPresentation("successful", true), { label: "Payment successful", disabled: true });
+assert.deepEqual(checkoutPaymentButton.buttonPresentation("verificationFailed", false), { label: "Pay securely with Paystack", disabled: false });
+assert.equal(checkoutPaymentButton.actionForReference("KH-existing-reference"), "verify", "retrying a returned Paystack reference must verify the existing payment");
+assert.equal(checkoutPaymentButton.actionForReference(""), "initialize");
+assert.deepEqual([...new Set(Object.values(checkoutPaymentButton.labels))].sort(), ["Connecting to Paystack…", "Pay securely with Paystack", "Payment successful", "Verifying payment…"].sort());
+assert.doesNotMatch(Object.values(checkoutPaymentButton.labels).join(" "), /[✓✔☑]/, "the button does not duplicate the confirmation checkmark");
 assert.match(checkout, /product-images\.js/);
 assert.match(checkoutScript, /\/payments\/initialize/);
 assert.match(checkoutScript, /\/payments\/verify/);
+assert.match(checkoutScript, /result\.payment_status !== "paid"/);
+assert.match(checkoutScript, /AbortSignal\.timeout\(20000\)/);
+assert.match(checkoutScript, /\.noValidate = true/);
+assert.match(checkoutScript, /No new order will be created/);
+assert.ok(checkoutScript.indexOf('if (paymentButtonState.actionForReference(reference) === "verify")') < checkoutScript.indexOf('fetch(`${API_URL}/payments/initialize`'), "returned references route to verification before payment initialization");
 assert.match(checkoutScript, /class="checkout-item-image"/);
 assert.match(productPage, /product-images\.js/);
 assert.match(shop, /Kay%E2%80%99s%20Haven%20Lavender%20Emblem\.png/);
@@ -192,6 +208,7 @@ assert.match(checkout, /class="kh-brand checkout-brand"/);
 assert.match(checkout, /Customer information/);
 assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /\.panel h2\s*\{[\s\S]*?font-family: "Montserrat"/);
 assert.match(checkoutScript, /document\.getElementById\("confirmation-view"\)\.hidden = false/);
+assert.match(checkout, /<div class="check-badge">✓<\/div><h2>Payment confirmed<\/h2>/, "the existing confirmation checkmark/message remains unchanged below the button");
 assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /#confirmation-view:not\(\[hidden\]\)\s*\{\s*display:\s*block/);
 assert.match(adminPage, /id="refresh-orders"/);
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
@@ -440,6 +457,7 @@ assert.doesNotMatch(backendSource, /readDeliveryFee|DELIVERY_FEE_GHS|delivery_fe
 assert.match(backendSource, /expected_total/);
 assert.match(backendSource, /buildPaystackInitializationPayload\(\{/);
 assert.match(backendSource, /amount: String\(Math\.round\(Number\(totalAmount\) \* 100\)\)/);
+assert.match(backendSource, /payment_status: "paid", order_id: order\.id/);
 assert.match(backendSource, /metadata: JSON\.stringify\(/);
 assert.match(backendSource, /failureStage = "product_lookup"/);
 assert.match(backendSource, /failureStage = "order_insert"/);
@@ -519,7 +537,7 @@ const previewOutput = path.join(previewRoot, "site");
 try {
   const { buildStaticPreview } = require("../deployment/build-static");
   assert.equal(buildStaticPreview(previewOutput), previewOutput);
-  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"]) {
+  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "checkout/payment-button-state.js", "products/product.html", "policies.html", "admin/index.html"]) {
     assert.equal(fs.existsSync(path.join(previewOutput, required)), true, `built output includes ${required}`);
   }
   for (const [, filename] of verifiedImageEntries) {
@@ -528,12 +546,14 @@ try {
   const builtLanding = fs.readFileSync(path.join(previewOutput, "index.html"), "utf8");
   const builtShop = fs.readFileSync(path.join(previewOutput, "shop.html"), "utf8");
   const builtAdmin = fs.readFileSync(path.join(previewOutput, "admin", "index.html"), "utf8");
+  const builtCheckout = fs.readFileSync(path.join(previewOutput, "checkout", "checkout.html"), "utf8");
   assert.match(builtLanding, /href="shop\.html"[^>]*>Enter Shop/);
   assert.match(builtShop, /<span>Quality products<\/span>/);
   assert.equal((builtShop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "built desktop and mobile Login links target the sibling admin directory");
   assert.doesNotMatch(builtShop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop/);
   assert.match(builtAdmin, /href="\.\.\/shop\.html"/);
   assert.match(builtAdmin, /src="\.\.\/site-assets\/landing-mother-and-baby-clean\.png"/);
+  assert.match(builtCheckout, /src="payment-button-state\.js"><\/script>\s*<script src="checkout\.js"><\/script>/, "the production-style build includes the checkout state helper before checkout logic");
   assert.match(fs.readFileSync(path.join(previewOutput, "admin", "app.js"), "utf8"), /productImageUrl\(product, "\.\.\/product-images\/"\)/);
   const builtPages = ["index.html", "shop.html", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"];
   for (const relativePage of builtPages) {
@@ -579,4 +599,101 @@ for (const [, rawUrl] of productionAdmin.matchAll(/\b(?:href|src)="([^"]+)"/g)) 
   if (localUrl) assert.equal(fs.existsSync(path.join(productionOutput, localUrl)), true, `production admin reference resolves: ${rawUrl}`);
 }
 
-console.log("Frontend assets and checkout wiring passed");
+async function exercisePaymentVerification(responseFactory) {
+  const button = { textContent: "", disabled: false };
+  const message = { textContent: "", classList: { add() {}, remove() {} } };
+  const confirmation = { hidden: true };
+  const checkoutView = { hidden: false };
+  const confName = { textContent: "" };
+  const confOrderId = { textContent: "" };
+  const removed = [];
+  const replaced = [];
+  let observedWhilePending = "";
+  const context = {
+    API_URL: "https://api.example.test/api",
+    checkoutPaymentState: "ready",
+    paymentVerificationPending: false,
+    paymentButtonState: checkoutPaymentButton,
+    getPricedLines: () => [],
+    cartValidationError: () => "",
+    document: { getElementById(id) {
+      return ({
+        "place-order-btn": button,
+        "checkout-message": message,
+        "confirmation-view": confirmation,
+        "checkout-view": checkoutView,
+        "conf-name": confName,
+        "conf-order-id": confOrderId
+      })[id];
+    } },
+    AbortSignal: { timeout: () => "synthetic-timeout" },
+    fetch: async (...args) => {
+      observedWhilePending = button.textContent;
+      return responseFactory(...args);
+    },
+    localStorage: { removeItem: key => removed.push(key) },
+    history: { replaceState: (...args) => replaced.push(args) },
+    window: { location: { pathname: "/checkout/checkout.html" } }
+  };
+  const buttonHelpersStart = checkoutScript.indexOf("function syncPaymentButton(");
+  const buttonHelpersEnd = checkoutScript.indexOf("function renderOrderSummary(", buttonHelpersStart);
+  const verifyStart = checkoutScript.indexOf("async function verifyPaymentReference(");
+  const verifyEnd = checkoutScript.indexOf("\nasync function verifyReturnedPayment(", verifyStart);
+  assert.ok(buttonHelpersStart >= 0 && buttonHelpersEnd > buttonHelpersStart);
+  assert.ok(verifyStart >= 0 && verifyEnd > verifyStart);
+  vm.runInNewContext(`${checkoutScript.slice(buttonHelpersStart, buttonHelpersEnd)}\n${checkoutScript.slice(verifyStart, verifyEnd)}\nglobalThis.verifyPaymentReference = verifyPaymentReference;`, context);
+  button.textContent = checkoutPaymentButton.buttonPresentation("ready", true).label;
+  await context.verifyPaymentReference("KH-existing-reference");
+  return { button, message, confirmation, checkoutView, confName, confOrderId, removed, replaced, observedWhilePending, context };
+}
+
+async function testPaymentVerificationButtonStates() {
+  const pending = await exercisePaymentVerification(async () => ({
+    ok: true,
+    json: async () => ({ success: false, payment_status: "pending", error: "Payment is not confirmed yet." })
+  }));
+  assert.equal(pending.observedWhilePending, "Verifying payment…", "the button shows the pending verification state during the API request");
+  assert.equal(pending.button.textContent, "Pay securely with Paystack", "an unconfirmed payment returns to the retry label");
+  assert.equal(pending.button.disabled, false, "pending verification can be retried");
+  assert.match(pending.message.textContent, /No new order will be created/);
+  assert.deepEqual(pending.removed, [], "an unconfirmed payment does not clear the cart");
+
+  const successful = await exercisePaymentVerification(async () => ({
+    ok: true,
+    json: async () => ({ success: true, payment_status: "paid", order_number: "KH-TEST", customer_name: "Synthetic Buyer" })
+  }));
+  assert.equal(successful.observedWhilePending, "Verifying payment…");
+  assert.equal(successful.button.textContent, "Payment successful", "the success label requires backend confirmation as paid");
+  assert.equal(successful.button.disabled, true, "a successful payment cannot be submitted again");
+  assert.equal(successful.confirmation.hidden, false);
+  assert.equal(successful.checkoutView.hidden, true);
+  assert.equal(successful.confName.textContent, "Synthetic Buyer");
+  assert.equal(successful.confOrderId.textContent, "Order #KH-TEST");
+  assert.deepEqual(successful.removed, ["kayshaven-cart"]);
+  assert.equal(successful.replaced.length, 1);
+
+  const failed = await exercisePaymentVerification(async () => ({
+    ok: false,
+    json: async () => ({ error: "Payment could not be verified right now." })
+  }));
+  assert.equal(failed.observedWhilePending, "Verifying payment…");
+  assert.equal(failed.button.textContent, "Pay securely with Paystack");
+  assert.equal(failed.button.disabled, false, "failed verification leaves the same reference retryable");
+  assert.match(failed.message.textContent, /reference KH-existing-reference/);
+  assert.deepEqual(failed.removed, [], "failed verification preserves the cart");
+
+  const timeout = await exercisePaymentVerification(async () => {
+    const error = new Error("request timed out");
+    error.name = "TimeoutError";
+    throw error;
+  });
+  assert.match(timeout.message.textContent, /Payment verification timed out/);
+  assert.equal(timeout.button.disabled, false, "a verification timeout can be retried");
+}
+
+testPaymentVerificationButtonStates().then(() => {
+  console.log("Frontend assets, checkout wiring, and payment verification button states passed");
+}).catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

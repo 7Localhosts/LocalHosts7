@@ -302,7 +302,7 @@ const requestHandler = async (req, res) => {
           const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
           if (finalizeError) throw finalizeError;
         }
-        sendJson(res, 200, { success: true, order_id: order.id, order_number: order.order_number, customer_name: order.customer_name });
+        sendJson(res, 200, { success: true, payment_status: "paid", order_id: order.id, order_number: order.order_number, customer_name: order.customer_name });
       } catch {
         console.error("Payment verification failed");
         sendJson(res, 502, { error: "Payment could not be verified right now. Please try again." });
