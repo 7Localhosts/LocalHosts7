@@ -155,31 +155,34 @@ async function main() {
       assert.deepEqual(await normalizedHealth.json(), { success: true, message: "Backend is running" });
     }
 
-    console.log("Check CORS allows only the configured storefront origin");
-    const temporaryPagesOrigin = "https://kays-haven-temp.pages.dev";
-    const corsServer = createServer({ frontendOrigin: temporaryPagesOrigin });
+    console.log("Check CORS allows only explicitly configured storefront origins");
+    const temporaryPagesOrigin = "https://kays-haven-staging.pages.dev";
+    const productionOrigin = "https://kayshaven.live";
+    const corsServer = createServer({ frontendOrigins: `${productionOrigin}, ${temporaryPagesOrigin}` });
     try {
       await new Promise(resolve => corsServer.listen(0, "127.0.0.1", resolve));
       const corsUrl = `http://127.0.0.1:${corsServer.address().port}`;
-      const allowedOriginResponse = await fetch(`${corsUrl}/api/health`, {
-        headers: { Origin: temporaryPagesOrigin }
-      });
-      assert.equal(allowedOriginResponse.status, 200);
-      assert.equal(allowedOriginResponse.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
-      assert.match(allowedOriginResponse.headers.get("vary") || "", /origin/i);
+      for (const allowedOrigin of [productionOrigin, temporaryPagesOrigin]) {
+        const allowedOriginResponse = await fetch(`${corsUrl}/api/health`, {
+          headers: { Origin: allowedOrigin }
+        });
+        assert.equal(allowedOriginResponse.status, 200, `${allowedOrigin} can call the API`);
+        assert.equal(allowedOriginResponse.headers.get("access-control-allow-origin"), allowedOrigin);
+        assert.match(allowedOriginResponse.headers.get("vary") || "", /origin/i);
 
-      const allowedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
-        method: "OPTIONS",
-        headers: {
-          Origin: temporaryPagesOrigin,
-          "Access-Control-Request-Method": "POST",
-          "Access-Control-Request-Headers": "authorization,content-type"
-        }
-      });
-      assert.equal(allowedPreflight.status, 204);
-      assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
-      assert.equal(allowedPreflight.headers.get("access-control-allow-methods"), "GET, POST, PATCH, DELETE, OPTIONS");
-      assert.equal(allowedPreflight.headers.get("access-control-allow-headers"), "Content-Type, Authorization");
+        const allowedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
+          method: "OPTIONS",
+          headers: {
+            Origin: allowedOrigin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type"
+          }
+        });
+        assert.equal(allowedPreflight.status, 204, `${allowedOrigin} can preflight API calls`);
+        assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), allowedOrigin);
+        assert.equal(allowedPreflight.headers.get("access-control-allow-methods"), "GET, POST, PATCH, DELETE, OPTIONS");
+        assert.equal(allowedPreflight.headers.get("access-control-allow-headers"), "Content-Type, Authorization");
+      }
 
       const rejectedOrigin = await fetch(`${corsUrl}/api/health`, {
         headers: { Origin: "https://other-project.pages.dev" }
@@ -193,6 +196,25 @@ async function main() {
       });
       assert.equal(rejectedPreflight.status, 403);
       assert.equal(rejectedPreflight.headers.get("access-control-allow-origin"), null);
+
+      const wildcardOrigin = await fetch(`${corsUrl}/api/health`, {
+        headers: { Origin: "https://anything.pages.dev" }
+      });
+      assert.equal(wildcardOrigin.status, 403, "a Pages wildcard is never allowed");
+      assert.equal(wildcardOrigin.headers.get("access-control-allow-origin"), null);
+
+      const legacyServer = createServer({ frontendOrigin: temporaryPagesOrigin });
+      try {
+        await new Promise(resolve => legacyServer.listen(0, "127.0.0.1", resolve));
+        const legacyUrl = `http://127.0.0.1:${legacyServer.address().port}`;
+        const legacyOrigin = await fetch(`${legacyUrl}/api/health`, {
+          headers: { Origin: temporaryPagesOrigin }
+        });
+        assert.equal(legacyOrigin.status, 200, "the original single-origin configuration remains supported");
+        assert.equal(legacyOrigin.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
+      } finally {
+        await new Promise((resolve, reject) => legacyServer.close(error => error ? reject(error) : resolve()));
+      }
     } finally {
       await new Promise((resolve, reject) => corsServer.close(error => error ? reject(error) : resolve()));
     }

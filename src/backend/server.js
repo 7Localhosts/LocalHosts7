@@ -72,13 +72,19 @@ function normalizeFrontendOrigin(value) {
   }
 }
 
-function applyCors(req, res, frontendOrigin) {
+function normalizeFrontendOrigins(values) {
+  const candidates = Array.isArray(values) ? values : String(values || "").split(",");
+  return [...new Set(candidates.map(normalizeFrontendOrigin).filter(Boolean))];
+}
+
+function applyCors(req, res, frontendOrigins) {
   res.setHeader("Vary", "Origin");
   const requestOrigin = String(req.headers.origin || "");
   if (!requestOrigin) return true;
 
-  const allowedOrigin = normalizeFrontendOrigin(frontendOrigin);
-  if (!allowedOrigin || requestOrigin !== allowedOrigin) return false;
+  const allowedOrigins = normalizeFrontendOrigins(frontendOrigins);
+  const allowedOrigin = allowedOrigins.find(origin => requestOrigin === origin);
+  if (!allowedOrigin) return false;
 
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -232,9 +238,9 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN) => {
+const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigins = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN) => {
 
-    if (!applyCors(req, res, frontendOrigin)) {
+    if (!applyCors(req, res, frontendOrigins)) {
       res.writeHead(403, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Origin is not allowed." }));
       return;
@@ -1242,8 +1248,9 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN } = {}) {
-  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, frontendOrigin));
+function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN, frontendOrigins = process.env.FRONTEND_ORIGINS } = {}) {
+  const corsOrigins = frontendOrigins || frontendOrigin;
+  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, corsOrigins));
 }
 
 function validEmail(value) {
