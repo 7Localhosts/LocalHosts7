@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError } = require("../src/backend/server");
+const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -24,6 +24,15 @@ async function main() {
   assert.equal(getPaystackConfiguration("sk_test_example", "", "http://shop.example.co.gh").configured, false, "callback fallback requires an HTTPS frontend origin");
   assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh/shop").configured, false, "callback fallback accepts an origin, not a path-bearing URL");
   assert.doesNotMatch(JSON.stringify(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return")), /sk_test_example/, "payment configuration never returns the secret");
+
+  console.log("Check signed, paid-only customer receipt access");
+  const receiptSigningKey = "synthetic-receipt-signing-key-for-tests";
+  const receiptIssuedAt = Date.now();
+  const receiptToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey, receiptIssuedAt);
+  assert.equal(Boolean(verifyReceiptAccessToken(receiptToken, "receipt-order-42", receiptSigningKey, receiptIssuedAt)), true, "signed receipt access is valid for its order");
+  assert.equal(verifyReceiptAccessToken(receiptToken, "another-order", receiptSigningKey, receiptIssuedAt), null, "a receipt token cannot access another order");
+  assert.equal(verifyReceiptAccessToken(receiptToken, "receipt-order-42", "incorrect-signing-key", receiptIssuedAt), null, "receipt access requires the server signing key");
+  assert.equal(verifyReceiptAccessToken(receiptToken, "receipt-order-42", receiptSigningKey, receiptIssuedAt + 25 * 60 * 60 * 1000), null, "receipt access expires after its limited lifetime");
 
   console.log("Check Paystack Test Mode initialization payload and safe diagnostics");
   const paystackPayload = buildPaystackInitializationPayload({
@@ -237,6 +246,95 @@ async function main() {
     assert.equal(unverifiedOrderCreation.status, 410, "orders cannot be created through the legacy unverified endpoint");
   } finally {
     await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+
+  let receiptRecord = {
+    data: {
+      id: "receipt-order-42",
+      order_number: "KH-RECEIPT-42",
+      customer_name: "Synthetic Buyer",
+      email: "private@example.test",
+      phone: "+233000000042",
+      created_at: "2026-10-22T12:00:00.000Z",
+      total_amount: 42.5,
+      payment_status: "paid",
+      payment_method: "Paystack",
+      payment_reference: "KH-TEST-REFERENCE-42",
+      order_items: [
+        { product_name: "Cotton top", size: "M", quantity: 2, price: 20 },
+        { product_name: "Toy", size: null, quantity: 1, price: 2.5 }
+      ]
+    },
+    error: null
+  };
+  let receiptReadCount = 0;
+  const receiptClient = {
+    from(table) {
+      assert.equal(table, "orders", "receipt lookup reads the existing orders record");
+      return {
+        select(columns) {
+          assert.match(columns, /order_items/);
+          assert.doesNotMatch(columns, /email|phone/, "receipt lookup avoids unnecessary contact data");
+          return {
+            eq(field, id) {
+              assert.equal(field, "id");
+              assert.equal(id, "receipt-order-42");
+              return { async single() { receiptReadCount += 1; return receiptRecord; } };
+            }
+          };
+        }
+      };
+    }
+  };
+  const receiptServer = createServer({ receiptClient, receiptSigningKey });
+  try {
+    await new Promise(resolve => receiptServer.listen(0, "127.0.0.1", resolve));
+    const receiptUrl = `http://127.0.0.1:${receiptServer.address().port}/api/receipts/receipt-order-42`;
+    const noAccess = await fetch(receiptUrl);
+    assert.equal(noAccess.status, 401, "guessing the order ID alone cannot access its receipt");
+    assert.equal(receiptReadCount, 0, "unauthorized receipt requests do not query order data");
+
+    const accessToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey);
+    const successfulReceipt = await fetch(receiptUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    assert.equal(successfulReceipt.status, 200, "a signed token can access a verified paid receipt");
+    assert.equal(successfulReceipt.headers.get("cache-control"), "private, no-store", "customer receipt data is not cached by shared intermediaries");
+    const successfulReceiptBody = await successfulReceipt.json();
+    assert.deepEqual(successfulReceiptBody.receipt, {
+      order_number: "KH-RECEIPT-42",
+      purchase_date: "2026-10-22T12:00:00.000Z",
+      customer_name: "Synthetic Buyer",
+      items: [
+        { product_name: "Cotton top", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
+        { product_name: "Toy", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
+      ],
+      total_amount: 42.5,
+      payment_status: "Paid",
+      payment_method: "Paystack",
+      payment_reference: "KH-TEST-REFERENCE-42"
+    });
+    assert.doesNotMatch(JSON.stringify(successfulReceiptBody), /private@example|\+233000000042/, "receipt responses do not include customer email or phone");
+
+    receiptRecord = { data: null, error: { code: "PGRST116" } };
+    const missingToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey);
+    const missingReceipt = await fetch(receiptUrl, { headers: { Authorization: `Bearer ${missingToken}` } });
+    assert.equal(missingReceipt.status, 404, "a receipt for a missing order returns not found");
+
+    receiptRecord = {
+      data: {
+        ...successfulReceiptBody.receipt,
+        id: "receipt-order-42",
+        payment_status: "failed",
+        payment_reference: "KH-TEST-REFERENCE-42",
+        order_items: [{ product_name: "Cotton top", size: "M", quantity: 2, price: 20 }]
+      },
+      error: null
+    };
+    const failedPaymentToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey);
+    const failedPaymentReceipt = await fetch(receiptUrl, { headers: { Authorization: `Bearer ${failedPaymentToken}` } });
+    assert.equal(failedPaymentReceipt.status, 409, "failed payments cannot receive a paid receipt");
+    assert.match((await failedPaymentReceipt.json()).error, /only after payment is verified/i);
+  } finally {
+    await new Promise((resolve, reject) => receiptServer.close(error => error ? reject(error) : resolve()));
   }
   console.log("All backend checks passed");
 }

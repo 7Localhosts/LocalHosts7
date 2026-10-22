@@ -66,6 +66,57 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
+function sendReceiptJson(res, status, data) {
+  res.writeHead(status, {
+    "Content-Type": "application/json",
+    "Cache-Control": "private, no-store",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
+  });
+  res.end(JSON.stringify(data));
+}
+
+const RECEIPT_ACCESS_TOKEN_TTL_SECONDS = 24 * 60 * 60;
+
+function getReceiptSigningKey() {
+  return String(process.env.RECEIPT_ACCESS_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+}
+
+function receiptReferenceHash(reference) {
+  return crypto.createHash("sha256").update(String(reference || "")).digest("hex");
+}
+
+function createReceiptAccessToken(orderId, reference, signingKey = getReceiptSigningKey(), now = Date.now()) {
+  const key = String(signingKey || "");
+  const normalizedReference = String(reference || "");
+  if (!key || orderId == null || !normalizedReference) throw new Error("Receipt access cannot be created.");
+  const payload = Buffer.from(JSON.stringify({
+    order_id: String(orderId),
+    reference_hash: receiptReferenceHash(normalizedReference),
+    expires_at: Math.floor(now / 1000) + RECEIPT_ACCESS_TOKEN_TTL_SECONDS
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", key).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifyReceiptAccessToken(token, orderId, signingKey = getReceiptSigningKey(), now = Date.now()) {
+  const key = String(signingKey || "");
+  const parts = String(token || "").split(".");
+  if (!key || parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  try {
+    const expected = crypto.createHmac("sha256", key).update(parts[0]).digest();
+    const supplied = Buffer.from(parts[1], "base64url");
+    if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) return null;
+    const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
+    if (payload.order_id !== String(orderId) || !Number.isInteger(payload.expires_at) || payload.expires_at <= Math.floor(now / 1000)) return null;
+    if (!/^[0-9a-f]{64}$/.test(String(payload.reference_hash || ""))) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 async function checkSupabaseReadiness(client) {
   try {
     const { error } = await client.from("products").select("id").limit(1);
@@ -155,7 +206,7 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res, healthClient = supabase) => {
+const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey()) => {
 
     // CORS preflight
     if (req.method === "OPTIONS") {
@@ -323,10 +374,70 @@ const requestHandler = async (req, res, healthClient = supabase) => {
           const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
           if (finalizeError) throw finalizeError;
         }
-        sendJson(res, 200, { success: true, order_id: order.id, order_number: order.order_number, customer_name: order.customer_name });
+        const receiptAccessToken = createReceiptAccessToken(order.id, reference, receiptSigningKey);
+        sendJson(res, 200, { success: true, payment_status: "paid", order_id: order.id, order_number: order.order_number, customer_name: order.customer_name, receipt_access_token: receiptAccessToken });
       } catch {
         console.error("Payment verification failed");
         sendJson(res, 502, { error: "Payment could not be verified right now. Please try again." });
+      }
+      return;
+    }
+
+    const receiptUrl = new URL(req.url, "http://localhost");
+    const receiptPathMatch = receiptUrl.pathname.match(/^\/api\/receipts\/([^/]+)\/?$/);
+    if (req.method === "GET" && receiptPathMatch) {
+      try {
+        const orderId = decodeURIComponent(receiptPathMatch[1]);
+        const authorization = String(req.headers.authorization || "");
+        const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+        const claims = verifyReceiptAccessToken(token, orderId, receiptSigningKey);
+        if (!claims) {
+          sendReceiptJson(res, 401, { error: "Receipt access is invalid or expired." });
+          return;
+        }
+
+        const { data: order, error } = await receiptClient.from("orders")
+          .select("id, order_number, customer_name, created_at, total_amount, payment_status, payment_method, payment_reference, order_items ( product_name, size, quantity, price )")
+          .eq("id", orderId).single();
+        if (error || !order) {
+          sendReceiptJson(res, 404, { error: "Receipt order was not found." });
+          return;
+        }
+        if (String(order.payment_status || "").trim().toLowerCase() !== "paid") {
+          sendReceiptJson(res, 409, { error: "A receipt is available only after payment is verified." });
+          return;
+        }
+        const actualReferenceHash = receiptReferenceHash(order.payment_reference);
+        if (claims.reference_hash !== actualReferenceHash) {
+          sendReceiptJson(res, 401, { error: "Receipt access is invalid or expired." });
+          return;
+        }
+
+        const items = Array.isArray(order.order_items) ? order.order_items.map(item => ({
+          product_name: String(item.product_name || "Product"),
+          size: String(item.size || "N/A"),
+          quantity: Number(item.quantity),
+          unit_price: Number(item.price),
+          line_total: Number(item.price) * Number(item.quantity)
+        })) : [];
+        if (!Number.isFinite(Number(order.total_amount)) || items.some(item => !Number.isFinite(item.quantity) || !Number.isFinite(item.unit_price) || !Number.isFinite(item.line_total))) {
+          sendReceiptJson(res, 500, { error: "Receipt details are unavailable." });
+          return;
+        }
+        sendReceiptJson(res, 200, {
+          receipt: {
+            order_number: String(order.order_number || `KH-${order.id}`),
+            purchase_date: order.created_at,
+            customer_name: String(order.customer_name || "Customer"),
+            items,
+            total_amount: Number(order.total_amount),
+            payment_status: "Paid",
+            payment_method: String(order.payment_method || "Paystack"),
+            payment_reference: String(order.payment_reference || "")
+          }
+        });
+      } catch {
+        sendReceiptJson(res, 500, { error: "Receipt details are unavailable." });
       }
       return;
     }
@@ -1106,8 +1217,8 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer({ healthClient = supabase } = {}) {
-  return http.createServer((req, res) => requestHandler(req, res, healthClient));
+function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey() } = {}) {
+  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey));
 }
 
 function validEmail(value) {
@@ -1206,4 +1317,4 @@ function getPaystackConfiguration(
   }
 }
 
-module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError };
+module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken };

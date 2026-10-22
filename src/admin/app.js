@@ -1094,7 +1094,7 @@ async function loadOrders() {
       "Orders error:",
       error
     );
-    for (const rows of [ordersRows, document.querySelector("#orders-payment-issues-rows"), document.querySelector("#orders-history-rows")]) {
+    for (const rows of [ordersRows, document.querySelector("#orders-history-rows")]) {
       if (!rows) continue;
       rows.replaceChildren();
       const message = document.createElement("p");
@@ -1166,9 +1166,8 @@ function updateOrderView() {
     const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
     const visibleOrders = filterOrders(search);
     const activeCount = visibleOrders.filter(isActiveFulfillmentOrder).length;
-    const paymentReviewCount = visibleOrders.filter(order => !isHistoryOrder(order) && isPaymentIssueOrder(order)).length;
     const historyCount = visibleOrders.filter(isHistoryOrder).length;
-    count.textContent = `${activeCount} active · ${paymentReviewCount} payment review · ${historyCount} in history`;
+    count.textContent = `${activeCount} active · ${historyCount} in history`;
   }
 }
 
@@ -1209,7 +1208,7 @@ function filterOrders(query) {
 }
 
 function isHistoryOrder(order) {
-  return ["completed", "canceled", "cancelled"].includes(String(order.status || "").trim().toLowerCase());
+  return ["completed", "canceled", "cancelled"].includes(String(order.status || "").trim().toLowerCase()) || isPaymentIssueOrder(order);
 }
 
 function isPaymentIssueOrder(order) {
@@ -1219,19 +1218,30 @@ function isPaymentIssueOrder(order) {
 }
 
 function isActiveFulfillmentOrder(order) {
-  return !isHistoryOrder(order) && !isPaymentIssueOrder(order);
+  return !isHistoryOrder(order);
 }
 
 function canCompleteOrder(order) {
   return String(order.payment_status || "").trim().toLowerCase() === "paid";
 }
 
-function orderStatusActions(order, historical, paymentReview) {
+function orderStatusActions(order, historical) {
   if (historical) return [];
   const actions = [];
-  if (!paymentReview && canCompleteOrder(order)) actions.push(["Completed", "Complete Order", "button-primary"]);
+  if (canCompleteOrder(order)) actions.push(["Completed", "Complete Order", "button-primary"]);
   actions.push(["Canceled", "Cancel Order", "button-secondary"]);
   return actions;
+}
+
+function orderHistoryStatus(order) {
+  const status = String(order.status || "").trim();
+  const normalizedStatus = status.toLowerCase();
+  if (["completed", "canceled", "cancelled"].includes(normalizedStatus)) return status;
+  if (isPaymentIssueOrder(order)) {
+    if (/failed|failure|declined|error/i.test(status)) return status;
+    return String(order.payment_status || status || "Failed payment").trim();
+  }
+  return status || "Completed";
 }
 
 function toggleOrderCardDetails(card, button, details) {
@@ -1249,8 +1259,7 @@ function updateOrderSectionToggle(container, sectionToggle) {
   const allExpanded = cards.length > 0 && cards.every(card => card.dataset.expanded === "true");
   const sectionName = {
     active: "active orders",
-    history: "order history",
-    "payment-issues": "payment review orders"
+    history: "order history"
   }[sectionToggle.dataset.ordersToggleAll] || "orders";
   sectionToggle.disabled = cards.length === 0;
   sectionToggle.textContent = allExpanded ? "Hide All" : "View All";
@@ -1281,7 +1290,7 @@ function appendField(container, label, value, className = "") {
   container.appendChild(field);
 }
 
-function appendOrderCard(container, order, historical, paymentReview = false) {
+function appendOrderCard(container, order, historical) {
   const card = document.createElement("article");
   card.className = "admin-order-card";
   card.dataset.orderId = String(order.id ?? "");
@@ -1397,8 +1406,8 @@ function appendOrderCard(container, order, historical, paymentReview = false) {
   meta.className = "order-card-meta";
   if (order.payment_method) appendField(meta, "Payment method", order.payment_method);
   if (order.payment_reference) appendField(meta, "Payment reference", order.payment_reference);
-  if (historical || paymentReview) {
-    appendField(meta, "Order status", order.status || "Completed");
+  if (historical) {
+    appendField(meta, "Order status", orderHistoryStatus(order));
     const statusDate = order.completed_at || order.canceled_at || order.status_updated_at || order.updated_at;
     if (statusDate) appendField(meta, "Status date", formatDate(statusDate));
   }
@@ -1406,7 +1415,7 @@ function appendOrderCard(container, order, historical, paymentReview = false) {
   if (!historical) {
     const actions = document.createElement("div");
     actions.className = "order-actions";
-    const availableActions = orderStatusActions(order, historical, paymentReview);
+    const availableActions = orderStatusActions(order, historical);
     availableActions.forEach(([status, label, style]) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -1424,36 +1433,33 @@ function appendOrderCard(container, order, historical, paymentReview = false) {
   container.appendChild(card);
 }
 
-function renderOrderSection(container, ordersForSection, historical, hasAnyOrders, paymentReview = false) {
+function renderOrderSection(container, ordersForSection, historical, hasAnyOrders) {
   container.replaceChildren();
   const sectionToggle = container.closest(".orders-bucket")?.querySelector("[data-orders-toggle-all]");
   if (!ordersForSection.length) {
     const empty = document.createElement("p");
     empty.className = "orders-empty";
     empty.setAttribute("role", "status");
-    empty.textContent = hasAnyOrders ? "No orders match your search." : paymentReview ? "Failed payment attempts will appear here for review." : historical ? "Completed and canceled orders will appear here." : "No active orders.";
+    empty.textContent = hasAnyOrders ? "No orders match your search." : historical ? "Completed, canceled, and failed-payment orders will appear here." : "No active orders.";
     container.appendChild(empty);
     updateOrderSectionToggle(container, sectionToggle);
     return;
   }
   [...ordersForSection]
     .sort((a, b) => Date.parse(b.created_at || "") - Date.parse(a.created_at || ""))
-    .forEach(order => appendOrderCard(container, order, historical, paymentReview));
+    .forEach(order => appendOrderCard(container, order, historical));
   updateOrderSectionToggle(container, sectionToggle);
 }
 
 function renderOrders() {
   const activeRows = document.querySelector("#orders-active-rows");
-  const paymentIssueRows = document.querySelector("#orders-payment-issues-rows");
   const historyRows = document.querySelector("#orders-history-rows");
-  if (!activeRows || !paymentIssueRows || !historyRows) return;
+  if (!activeRows || !historyRows) return;
   const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
   const visibleOrders = filterOrders(search);
   const activeOrders = visibleOrders.filter(isActiveFulfillmentOrder);
-  const paymentIssueOrders = visibleOrders.filter(order => !isHistoryOrder(order) && isPaymentIssueOrder(order));
   const historicalOrders = visibleOrders.filter(isHistoryOrder);
   renderOrderSection(activeRows, activeOrders, false, visibleOrders.length > 0);
-  renderOrderSection(paymentIssueRows, paymentIssueOrders, false, visibleOrders.length > 0, true);
   renderOrderSection(historyRows, historicalOrders, true, visibleOrders.length > 0);
 }
 
