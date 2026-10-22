@@ -48,6 +48,7 @@ for (const [product, prefix, base] of [
 
 const landing = fs.readFileSync(path.join(frontend, "index.html"), "utf8");
 const shop = fs.readFileSync(path.join(frontend, "shop.html"), "utf8");
+const storefrontStyles = fs.readFileSync(path.join(frontend, "styles.css"), "utf8");
 const checkout = fs.readFileSync(path.join(frontend, "checkout", "checkout.html"), "utf8");
 const checkoutScript = fs.readFileSync(path.join(frontend, "checkout", "checkout.js"), "utf8");
 const productPage = fs.readFileSync(path.join(frontend, "products", "product.html"), "utf8");
@@ -87,7 +88,6 @@ assert.equal((shop.match(/class="category-card[^\"]*" data-category="[^"]+" aria
 for (const category of ["Baby", "Toddler", "Kids", "Teens", "Toys", "Accessories", "Back to School", "Clearance"]) {
   assert.match(shop, new RegExp(`data-category="${category}"`), `shop includes ${category} category`);
 }
-const storefrontStyles = fs.readFileSync(path.join(frontend, "styles.css"), "utf8");
 assert.match(storefrontStyles, /\.category-card\s*\{[^}]*color:\s*var\(--ink\)/s, "category buttons explicitly override native browser text color on desktop and mobile");
 assert.doesNotMatch(storefrontStyles.match(/\.category-card\s*\{[^}]*\}/s)?.[0] || "", /color:\s*(?:blue|#(?:00f|0000ff))/i, "category names do not rely on a blue browser default");
 const renderProductsStart = storefrontScript.indexOf("function renderProducts() {");
@@ -140,6 +140,9 @@ vm.runInNewContext("updateCategorySelection('All');", selectionContext);
 assert.equal(filterButtons[0].attributes["aria-pressed"], "true", "returning to All resets the accessible filter state");
 assert.equal(categoryButtons[1].attributes["aria-pressed"], "false");
 assert.match(shop, /id="productGrid"/);
+assert.match(shop, /<a class="skip-link" href="#main-content">Skip to main content<\/a>/, "keyboard users can skip repeated storefront navigation");
+assert.match(shop, /<main id="main-content" tabindex="-1">/, "the skip link targets a focusable main landmark");
+assert.match(storefrontStyles, /\.skip-link:focus\s*\{[^}]*transform:\s*translateY\(0\)/s, "the skip link becomes visible when keyboard-focused");
 assert.match(shop, /id="icon-baby"/);
 assert.match(shop, /id="icon-school"/);
 assert.match(shop, /aria-label="Open shopping cart, 0 items"/);
