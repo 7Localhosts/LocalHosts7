@@ -5,6 +5,7 @@ let checkoutCatalogueReady = false;
 let checkoutCatalogueError = "";
 let checkoutPaymentState = "ready";
 let paymentVerificationPending = false;
+let verifiedReceipt = null;
 
 function readCart() {
   try {
@@ -67,6 +68,105 @@ function setCheckoutPaymentState(state) {
   const canStartPayment = Boolean(lines.length && checkoutCatalogueReady && !cartValidationError(lines));
   syncPaymentButton(canStartPayment);
 }
+
+function formatReceiptDate(value) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? date.toLocaleString("en-GH", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Accra" })
+    : "Date unavailable";
+}
+
+function renderVerifiedReceipt(receipt) {
+  if (!receipt || String(receipt.payment_status || "").trim().toLowerCase() !== "paid") {
+    throw new Error("A receipt is available only after payment is verified.");
+  }
+  if (!Array.isArray(receipt.items) || !receipt.items.length) throw new Error("Receipt items are unavailable.");
+  verifiedReceipt = receipt;
+  document.getElementById("receipt-order-number").textContent = String(receipt.order_number || "Unavailable");
+  document.getElementById("receipt-purchase-date").textContent = formatReceiptDate(receipt.purchase_date);
+  document.getElementById("receipt-customer-name").textContent = String(receipt.customer_name || "Customer");
+  document.getElementById("receipt-payment-status").textContent = "Paid";
+  document.getElementById("receipt-total-amount").textContent = money(receipt.total_amount);
+
+  const methodRow = document.getElementById("receipt-method-row");
+  methodRow.hidden = !receipt.payment_method;
+  if (receipt.payment_method) document.getElementById("receipt-payment-method").textContent = String(receipt.payment_method);
+  const referenceRow = document.getElementById("receipt-reference-row");
+  referenceRow.hidden = !receipt.payment_reference;
+  if (receipt.payment_reference) document.getElementById("receipt-payment-reference").textContent = String(receipt.payment_reference);
+
+  const itemsContainer = document.getElementById("receipt-items");
+  itemsContainer.replaceChildren();
+  receipt.items.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "receipt-item";
+    const name = document.createElement("span");
+    name.className = "receipt-item-name";
+    name.textContent = String(item.product_name || "Product");
+    const quantity = Number(item.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) throw new Error("Receipt quantity is invalid.");
+    const quantityLabel = document.createElement("span");
+    quantityLabel.className = "receipt-item-quantity";
+    quantityLabel.textContent = `×${quantity}`;
+    const size = document.createElement("span");
+    size.className = "receipt-item-size";
+    size.textContent = `Size: ${String(item.size || "N/A")}`;
+    const prices = document.createElement("div");
+    prices.className = "receipt-item-prices";
+    const unitPrice = document.createElement("span");
+    unitPrice.textContent = `Unit price: ${money(item.unit_price)}`;
+    const lineTotal = document.createElement("strong");
+    lineTotal.textContent = `Line total: ${money(item.line_total)}`;
+    prices.append(unitPrice, lineTotal);
+    row.append(name, quantityLabel, size, prices);
+    itemsContainer.appendChild(row);
+  });
+
+  document.getElementById("receipt-message").textContent = "Your verified receipt is ready.";
+  document.getElementById("receipt-view").hidden = false;
+  document.getElementById("download-receipt").disabled = false;
+  document.getElementById("print-receipt").disabled = false;
+}
+
+async function loadVerifiedReceipt(orderId, accessToken) {
+  const message = document.getElementById("receipt-message");
+  document.getElementById("receipt-view").hidden = false;
+  if (!orderId || !accessToken) {
+    message.textContent = "Payment is confirmed, but secure receipt access could not be created. Contact Kay's Haven with your order number.";
+    return;
+  }
+  try {
+    const response = await fetch(`${API_URL}/receipts/${encodeURIComponent(orderId)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const result = await response.json();
+    if (!response.ok || !result.receipt || String(result.receipt.payment_status || "").toLowerCase() !== "paid") {
+      throw new Error(result.error || "The verified receipt is not available yet.");
+    }
+    renderVerifiedReceipt(result.receipt);
+  } catch (error) {
+    message.textContent = `${error.message || "The receipt could not be loaded."} Your payment confirmation is still valid.`;
+  }
+}
+
+document.getElementById("download-receipt").addEventListener("click", () => {
+  if (!verifiedReceipt) return;
+  try {
+    const blob = window.KaysHavenReceiptPdf.createReceiptPdf(verifiedReceipt);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `kays-haven-${String(verifiedReceipt.order_number || "receipt").replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    document.getElementById("receipt-message").textContent = error.message || "Receipt PDF could not be generated.";
+  }
+});
+
+document.getElementById("print-receipt").addEventListener("click", () => {
+  if (verifiedReceipt) window.print();
+});
 
 function renderOrderSummary() {
   const lines = getPricedLines();
@@ -155,6 +255,7 @@ async function verifyPaymentReference(reference) {
     document.getElementById("confirmation-view").hidden = false;
     localStorage.removeItem("kayshaven-cart");
     history.replaceState({}, "", window.location.pathname);
+    await loadVerifiedReceipt(result.order_id, result.receipt_access_token);
   } catch (error) {
     setCheckoutPaymentState("verificationFailed");
     const failure = error.name === "TimeoutError" || error.name === "AbortError"

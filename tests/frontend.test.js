@@ -51,6 +51,7 @@ const shop = fs.readFileSync(path.join(frontend, "shop.html"), "utf8");
 const checkout = fs.readFileSync(path.join(frontend, "checkout", "checkout.html"), "utf8");
 const checkoutScript = fs.readFileSync(path.join(frontend, "checkout", "checkout.js"), "utf8");
 const checkoutPaymentButton = require(path.join(frontend, "checkout", "payment-button-state.js"));
+const receiptPdf = require(path.join(frontend, "checkout", "receipt-pdf.js"));
 const productPage = fs.readFileSync(path.join(frontend, "products", "product.html"), "utf8");
 const cartPage = fs.readFileSync(path.join(frontend, "cart", "cart.html"), "utf8");
 const cartScript = fs.readFileSync(path.join(frontend, "cart", "cart.js"), "utf8");
@@ -179,7 +180,16 @@ assert.match(shop, /policies\.html#collection/);
 assert.match(shop, /policies\.html#feedback/);
 assert.doesNotMatch(shop, /checkoutModal|checkoutForm/);
 assert.match(checkout, /Pay securely with Paystack/);
-assert.match(checkout, /src="payment-button-state\.js"><\/script>\s*<script src="checkout\.js"><\/script>/);
+assert.match(checkout, /src="payment-button-state\.js"><\/script>\s*<script src="receipt-pdf\.js"><\/script>\s*<script src="checkout\.js"><\/script>/);
+assert.match(checkout, /src="receipt-pdf\.js"><\/script>/);
+assert.match(checkout, /id="receipt-view"[^>]*hidden/);
+assert.match(checkout, /id="download-receipt"[^>]*>Download Receipt/);
+assert.match(checkout, /id="print-receipt"[^>]*>Print Receipt/);
+assert.match(checkoutScript, /fetch\(`\$\{API_URL\}\/receipts\/\$\{encodeURIComponent\(orderId\)\}`/);
+assert.match(checkoutScript, /Authorization: `Bearer \$\{accessToken\}`/);
+assert.match(checkoutScript, /loadVerifiedReceipt\(result\.order_id, result\.receipt_access_token\)/);
+assert.match(checkoutScript, /String\(receipt\.payment_status \|\| ""\)\.trim\(\)\.toLowerCase\(\) !== "paid"/);
+assert.doesNotMatch(checkoutScript.slice(checkoutScript.indexOf("function renderVerifiedReceipt"), checkoutScript.indexOf("async function loadVerifiedReceipt")), /localStorage|readCart|window\.location\.search/);
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("ready", true), { label: "Pay securely with Paystack", disabled: false });
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("connecting", true), { label: "Connecting to Paystack…", disabled: true });
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("verifying", true), { label: "Verifying payment…", disabled: true });
@@ -580,7 +590,7 @@ const previewOutput = path.join(previewRoot, "site");
 try {
   const { buildStaticPreview } = require("../deployment/build-static");
   assert.equal(buildStaticPreview(previewOutput), previewOutput);
-  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "checkout/payment-button-state.js", "products/product.html", "policies.html", "admin/index.html"]) {
+  for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "checkout/payment-button-state.js", "checkout/receipt-pdf.js", "products/product.html", "policies.html", "admin/index.html"]) {
     assert.equal(fs.existsSync(path.join(previewOutput, required)), true, `built output includes ${required}`);
   }
   for (const [, filename] of verifiedImageEntries) {
@@ -596,7 +606,7 @@ try {
   assert.doesNotMatch(builtShop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop/);
   assert.match(builtAdmin, /href="\.\.\/shop\.html"/);
   assert.match(builtAdmin, /src="\.\.\/site-assets\/landing-mother-and-baby-clean\.png"/);
-  assert.match(builtCheckout, /src="payment-button-state\.js"><\/script>\s*<script src="checkout\.js"><\/script>/, "the production-style build includes the checkout state helper before checkout logic");
+  assert.match(builtCheckout, /src="payment-button-state\.js"><\/script>\s*<script src="receipt-pdf\.js"><\/script>\s*<script src="checkout\.js"><\/script>/, "the production-style build includes checkout helpers before checkout logic");
   assert.match(fs.readFileSync(path.join(previewOutput, "admin", "app.js"), "utf8"), /productImageUrl\(product, "\.\.\/product-images\/"\)/);
   const builtPages = ["index.html", "shop.html", "cart/cart.html", "checkout/checkout.html", "products/product.html", "policies.html", "admin/index.html"];
   for (const relativePage of builtPages) {
@@ -618,7 +628,7 @@ try {
 
 const productionOutput = buildStaticSite(undefined, "https://kays-haven-backend.onrender.com");
 assert.equal(productionOutput, path.join(root, "dist"));
-const productionAdminFiles = [
+  const productionAdminFiles = [
   "admin/index.html",
   "admin/app.js",
   "admin/styles.css",
@@ -649,14 +659,17 @@ async function exercisePaymentVerification(responseFactory) {
   const checkoutView = { hidden: false };
   const confName = { textContent: "" };
   const confOrderId = { textContent: "" };
+  const receiptActions = { disabled: true, addEventListener() {} };
   const removed = [];
   const replaced = [];
+  const receiptLoads = [];
   let observedWhilePending = "";
   const context = {
     API_URL: "https://api.example.test/api",
     checkoutPaymentState: "ready",
     paymentVerificationPending: false,
     paymentButtonState: checkoutPaymentButton,
+    loadVerifiedReceipt: async (...args) => receiptLoads.push(args),
     getPricedLines: () => [],
     cartValidationError: () => "",
     document: { getElementById(id) {
@@ -666,7 +679,9 @@ async function exercisePaymentVerification(responseFactory) {
         "confirmation-view": confirmation,
         "checkout-view": checkoutView,
         "conf-name": confName,
-        "conf-order-id": confOrderId
+        "conf-order-id": confOrderId,
+        "download-receipt": receiptActions,
+        "print-receipt": receiptActions
       })[id];
     } },
     AbortSignal: { timeout: () => "synthetic-timeout" },
@@ -679,7 +694,7 @@ async function exercisePaymentVerification(responseFactory) {
     window: { location: { pathname: "/checkout/checkout.html" } }
   };
   const buttonHelpersStart = checkoutScript.indexOf("function syncPaymentButton(");
-  const buttonHelpersEnd = checkoutScript.indexOf("function renderOrderSummary(", buttonHelpersStart);
+  const buttonHelpersEnd = checkoutScript.indexOf("function formatReceiptDate(", buttonHelpersStart);
   const verifyStart = checkoutScript.indexOf("async function verifyPaymentReference(");
   const verifyEnd = checkoutScript.indexOf("\nasync function verifyReturnedPayment(", verifyStart);
   assert.ok(buttonHelpersStart >= 0 && buttonHelpersEnd > buttonHelpersStart);
@@ -687,7 +702,7 @@ async function exercisePaymentVerification(responseFactory) {
   vm.runInNewContext(`${checkoutScript.slice(buttonHelpersStart, buttonHelpersEnd)}\n${checkoutScript.slice(verifyStart, verifyEnd)}\nglobalThis.verifyPaymentReference = verifyPaymentReference;`, context);
   button.textContent = checkoutPaymentButton.buttonPresentation("ready", true).label;
   await context.verifyPaymentReference("KH-existing-reference");
-  return { button, message, confirmation, checkoutView, confName, confOrderId, removed, replaced, observedWhilePending, context };
+  return { button, message, confirmation, checkoutView, confName, confOrderId, removed, replaced, receiptLoads, observedWhilePending, context };
 }
 
 async function testPaymentVerificationButtonStates() {
@@ -703,7 +718,7 @@ async function testPaymentVerificationButtonStates() {
 
   const successful = await exercisePaymentVerification(async () => ({
     ok: true,
-    json: async () => ({ success: true, payment_status: "paid", order_number: "KH-TEST", customer_name: "Synthetic Buyer" })
+    json: async () => ({ success: true, payment_status: "paid", order_id: "synthetic-order-1", receipt_access_token: "synthetic-signed-token", order_number: "KH-TEST", customer_name: "Synthetic Buyer" })
   }));
   assert.equal(successful.observedWhilePending, "Verifying payment…");
   assert.equal(successful.button.textContent, "Payment successful", "the success label requires backend confirmation as paid");
@@ -712,6 +727,7 @@ async function testPaymentVerificationButtonStates() {
   assert.equal(successful.checkoutView.hidden, true);
   assert.equal(successful.confName.textContent, "Synthetic Buyer");
   assert.equal(successful.confOrderId.textContent, "Order #KH-TEST");
+  assert.deepEqual(successful.receiptLoads, [["synthetic-order-1", "synthetic-signed-token"]], "the receipt uses the order ID and access token returned only after backend verification");
   assert.deepEqual(successful.removed, ["kayshaven-cart"]);
   assert.equal(successful.replaced.length, 1);
 
@@ -734,8 +750,72 @@ async function testPaymentVerificationButtonStates() {
   assert.equal(timeout.button.disabled, false, "a verification timeout can be retried");
 }
 
-testPaymentVerificationButtonStates().then(() => {
-  console.log("Frontend assets, checkout wiring, and payment verification button states passed");
+async function testReceiptPdf() {
+  const paidReceipt = {
+    order_number: "KH-RECEIPT-1",
+    purchase_date: "2026-10-22T12:00:00.000Z",
+    customer_name: "Synthetic Buyer",
+    payment_status: "Paid",
+    payment_method: "Paystack",
+    payment_reference: "KH-REFERENCE-1",
+    total_amount: 42.5,
+    email: "private@example.test",
+    phone: "+233000000000",
+    items: [{ product_name: "Cotton top", size: "M", quantity: 2, unit_price: 20, line_total: 40 }, { product_name: "Toy", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }]
+  };
+  const pdf = receiptPdf.createReceiptPdf(paidReceipt);
+  assert.equal(pdf.type, "application/pdf", "Download Receipt creates a PDF blob");
+  const pdfText = await pdf.text();
+  assert.match(pdfText, /^%PDF-1\.4/);
+  assert.match(pdfText, /0\.478 0\.075 0\.667 rg/, "the printable receipt uses Kay's Haven deep-purple branding");
+  const xrefOffset = Number(pdfText.match(/startxref\n(\d+)/)?.[1]);
+  assert.equal(pdfText.slice(xrefOffset, xrefOffset + 4), "xref", "the generated PDF has a valid cross-reference offset");
+  for (const detail of ["KAY'S HAVEN", "Quality products from crib to campus.", "KH-RECEIPT-1", "Cotton top", "Size: M", "Quantity: 2", "GHS 20.00", "GHS 40.00", "TOTAL PAID: GHS 42.50", "Payment status: Paid"]) {
+    assert.ok(pdfText.includes(detail), `receipt PDF contains backend receipt detail: ${detail}`);
+  }
+  assert.doesNotMatch(pdfText, /private@example|\+233000000000/, "receipt PDF omits unnecessary customer contact information");
+  assert.throws(() => receiptPdf.createReceiptPdf({ ...paidReceipt, payment_status: "failed" }), /confirmed paid order/i, "failed payments cannot produce a paid receipt PDF");
+
+  const receiptElements = new Map();
+  const makeElement = () => ({
+    textContent: "",
+    className: "",
+    hidden: false,
+    disabled: true,
+    children: [],
+    append(...children) { this.children.push(...children); },
+    appendChild(child) { this.children.push(child); },
+    replaceChildren(...children) { this.children = children; }
+  });
+  const renderContext = {
+    Date,
+    money: amount => `GHS ${Number(amount).toFixed(2)}`,
+    document: {
+      getElementById(id) {
+        if (!receiptElements.has(id)) receiptElements.set(id, makeElement());
+        return receiptElements.get(id);
+      },
+      createElement: makeElement
+    }
+  };
+  const renderStart = checkoutScript.indexOf("function formatReceiptDate(");
+  const renderEnd = checkoutScript.indexOf('\ndocument.getElementById("download-receipt").addEventListener', renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, "verified receipt renderer and retrieval helper are defined");
+  vm.runInNewContext(`${checkoutScript.slice(renderStart, renderEnd)}\nglobalThis.renderReceipt = renderVerifiedReceipt;`, renderContext);
+  renderContext.renderReceipt(paidReceipt);
+  assert.equal(receiptElements.get("receipt-view").hidden, false, "the verified receipt is shown after backend receipt data is rendered");
+  assert.equal(receiptElements.get("receipt-order-number").textContent, "KH-RECEIPT-1");
+  assert.equal(receiptElements.get("receipt-payment-status").textContent, "Paid");
+  assert.equal(receiptElements.get("receipt-total-amount").textContent, "GHS 42.50");
+  assert.equal(receiptElements.get("receipt-items").children.length, 2);
+  assert.equal(receiptElements.get("receipt-items").children[0].children[0].textContent, "Cotton top");
+  assert.equal(receiptElements.get("download-receipt").disabled, false);
+  assert.equal(receiptElements.get("print-receipt").disabled, false);
+  assert.throws(() => renderContext.renderReceipt({ ...paidReceipt, payment_status: "failed" }), /only after payment is verified/i, "failed payment data is rejected by the receipt renderer");
+}
+
+testPaymentVerificationButtonStates().then(testReceiptPdf).then(() => {
+  console.log("Frontend assets, checkout verification states, and receipt PDF checks passed");
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;

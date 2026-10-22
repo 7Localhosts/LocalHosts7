@@ -48,9 +48,33 @@
     <p id="conf-order-id" class="order-id"></p>
     <a href="../shop.html">Return to the shop</a>
   </section>
+  <section id="receipt-view" class="receipt-card" aria-labelledby="receipt-title" hidden>
+    <div class="receipt-paper" id="receipt-paper">
+      <a class="kh-brand receipt-brand" href="../shop.html" aria-label="Kay's Haven"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
+      <p class="receipt-slogan">Quality products from crib to campus.</p>
+      <h2 id="receipt-title">Purchase receipt</h2>
+      <p id="receipt-message" class="receipt-message" role="status" aria-live="polite">Loading your verified receipt…</p>
+      <dl class="receipt-meta">
+        <div><dt>Order number</dt><dd id="receipt-order-number">—</dd></div>
+        <div><dt>Purchase date</dt><dd id="receipt-purchase-date">—</dd></div>
+        <div><dt>Customer</dt><dd id="receipt-customer-name">—</dd></div>
+        <div><dt>Payment status</dt><dd id="receipt-payment-status">—</dd></div>
+        <div id="receipt-method-row" hidden><dt>Payment method</dt><dd id="receipt-payment-method"></dd></div>
+        <div id="receipt-reference-row" hidden><dt>Payment reference</dt><dd id="receipt-payment-reference"></dd></div>
+      </dl>
+      <h3>Items purchased</h3>
+      <div id="receipt-items" class="receipt-items"></div>
+      <div class="receipt-total"><span>Total paid</span><strong id="receipt-total-amount">—</strong></div>
+    </div>
+    <div class="receipt-actions">
+      <button class="button button-primary" id="download-receipt" type="button" disabled>Download Receipt</button>
+      <button class="button button-secondary" id="print-receipt" type="button" disabled>Print Receipt</button>
+    </div>
+  </section>
  <script src="../product-images.js?v=5"></script>
  <script src="../api-config.js"></script>
   <script src="payment-button-state.js"></script>
+  <script src="receipt-pdf.js"></script>
   <script src="checkout.js"></script>
 </body>
 </html>
