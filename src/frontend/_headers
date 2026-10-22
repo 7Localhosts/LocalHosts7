@@ -1,0 +1,4 @@
+/*
+  Access-Control-Allow-Origin: https://kayshaven.live
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

@@ -55,12 +55,41 @@ const supabaseAdmin = createClient(
 // HELPERS
 // -------------------------
 
+function normalizeFrontendOrigin(value) {
+  try {
+    const origin = new URL(String(value || "").trim());
+    if (
+      !["http:", "https:"].includes(origin.protocol) ||
+      origin.username ||
+      origin.password ||
+      origin.pathname !== "/" ||
+      origin.search ||
+      origin.hash
+    ) return "";
+    return origin.origin;
+  } catch {
+    return "";
+  }
+}
+
+function applyCors(req, res, frontendOrigin) {
+  res.setHeader("Vary", "Origin");
+  const requestOrigin = String(req.headers.origin || "");
+  if (!requestOrigin) return true;
+
+  const allowedOrigin = normalizeFrontendOrigin(frontendOrigin);
+  if (!allowedOrigin || requestOrigin !== allowedOrigin) return false;
+
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Max-Age", "600");
+  return true;
+}
+
 function sendJson(res, status, data) {
   res.writeHead(status, {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
+    "Content-Type": "application/json"
   });
 
   res.end(JSON.stringify(data));
@@ -69,10 +98,7 @@ function sendJson(res, status, data) {
 function sendReceiptJson(res, status, data) {
   res.writeHead(status, {
     "Content-Type": "application/json",
-    "Cache-Control": "private, no-store",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
+    "Cache-Control": "private, no-store"
   });
   res.end(JSON.stringify(data));
 }
@@ -206,18 +232,17 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey()) => {
+const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN) => {
+
+    if (!applyCors(req, res, frontendOrigin)) {
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Origin is not allowed." }));
+      return;
+    }
 
     // CORS preflight
     if (req.method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type, Authorization",
-        "Access-Control-Allow-Methods":
-          "GET, POST, PATCH, DELETE, OPTIONS"
-      });
-
+      res.writeHead(204);
       res.end();
       return;
     }
@@ -1217,8 +1242,8 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey() } = {}) {
-  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey));
+function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN } = {}) {
+  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, frontendOrigin));
 }
 
 function validEmail(value) {

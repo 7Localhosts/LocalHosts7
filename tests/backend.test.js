@@ -1,4 +1,14 @@
 const assert = require("node:assert/strict");
+
+// Keep this suite independent of account credentials and safe for CI/local runs.
+process.env.SUPABASE_URL = "https://unit-test.invalid.supabase.co";
+process.env.SUPABASE_ANON_KEY = "unit-test-anon-key";
+process.env.SUPABASE_SERVICE_ROLE_KEY = "unit-test-service-role-key";
+process.env.RECEIPT_ACCESS_TOKEN_SECRET = "unit-test-receipt-signing-key";
+process.env.FRONTEND_ORIGIN = "https://unit-test.invalid";
+delete process.env.PAYSTACK_SECRET_KEY;
+delete process.env.PAYSTACK_CALLBACK_URL;
+
 const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
@@ -144,6 +154,49 @@ async function main() {
       assert.equal(normalizedHealth.status, 200, `${path} is accepted as a health check`);
       assert.deepEqual(await normalizedHealth.json(), { success: true, message: "Backend is running" });
     }
+
+    console.log("Check CORS allows only the configured storefront origin");
+    const temporaryPagesOrigin = "https://kays-haven-temp.pages.dev";
+    const corsServer = createServer({ frontendOrigin: temporaryPagesOrigin });
+    try {
+      await new Promise(resolve => corsServer.listen(0, "127.0.0.1", resolve));
+      const corsUrl = `http://127.0.0.1:${corsServer.address().port}`;
+      const allowedOriginResponse = await fetch(`${corsUrl}/api/health`, {
+        headers: { Origin: temporaryPagesOrigin }
+      });
+      assert.equal(allowedOriginResponse.status, 200);
+      assert.equal(allowedOriginResponse.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
+      assert.match(allowedOriginResponse.headers.get("vary") || "", /origin/i);
+
+      const allowedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: temporaryPagesOrigin,
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "authorization,content-type"
+        }
+      });
+      assert.equal(allowedPreflight.status, 204);
+      assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
+      assert.equal(allowedPreflight.headers.get("access-control-allow-methods"), "GET, POST, PATCH, DELETE, OPTIONS");
+      assert.equal(allowedPreflight.headers.get("access-control-allow-headers"), "Content-Type, Authorization");
+
+      const rejectedOrigin = await fetch(`${corsUrl}/api/health`, {
+        headers: { Origin: "https://other-project.pages.dev" }
+      });
+      assert.equal(rejectedOrigin.status, 403);
+      assert.equal(rejectedOrigin.headers.get("access-control-allow-origin"), null);
+
+      const rejectedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
+        method: "OPTIONS",
+        headers: { Origin: "https://other-project.pages.dev", "Access-Control-Request-Method": "POST" }
+      });
+      assert.equal(rejectedPreflight.status, 403);
+      assert.equal(rejectedPreflight.headers.get("access-control-allow-origin"), null);
+    } finally {
+      await new Promise((resolve, reject) => corsServer.close(error => error ? reject(error) : resolve()));
+    }
+
     console.log("Check Supabase readiness without exposing database errors");
     const readinessClient = result => ({
       from(table) {

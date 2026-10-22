@@ -584,6 +584,8 @@ for (const relativePath of ["index.html", "cart/cart.html", "checkout/checkout.h
 }
 const { buildStaticSite } = require("../deployment/build-static");
 assert.throws(() => buildStaticSite(undefined, "http://localhost:8000"), /public HTTPS/);
+assert.throws(() => buildStaticSite(undefined, "https://api.example", "https://user:password@pages.example"), /exact public HTTPS origin/);
+assert.throws(() => buildStaticSite(undefined, "https://api.example", "https://pages.example/preview"), /exact public HTTPS origin/);
 const netlifyConfig = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
 assert.match(netlifyConfig, /base\s*=\s*"\."/);
 assert.match(netlifyConfig, /command\s*=\s*"cd src\/backend && npm ci && npm run build:static"/);
@@ -592,7 +594,11 @@ const previewRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kays-haven-build-test
 const previewOutput = path.join(previewRoot, "site");
 try {
   const { buildStaticPreview } = require("../deployment/build-static");
-  assert.equal(buildStaticPreview(previewOutput), previewOutput);
+  assert.equal(buildStaticPreview(previewOutput, "https://kays-haven-temp.pages.dev"), previewOutput);
+  const builtHeaders = fs.readFileSync(path.join(previewOutput, "_headers"), "utf8");
+  assert.match(builtHeaders, /Access-Control-Allow-Origin: https:\/\/kays-haven-temp\.pages\.dev/);
+  assert.doesNotMatch(builtHeaders, /Access-Control-Allow-Origin:\s*\*/);
+  assert.match(builtHeaders, /X-Frame-Options: DENY/);
   for (const required of ["index.html", "shop.html", "landing.css", "brand-system.css", "site-assets/landing-mother-and-baby-clean.png", "product-images/15-pink-baby-layette-bodysuit.png", "cart/cart.html", "checkout/checkout.html", "checkout/payment-button-state.js", "checkout/receipt-pdf.js", "products/product.html", "policies.html", "admin/index.html"]) {
     assert.equal(fs.existsSync(path.join(previewOutput, required)), true, `built output includes ${required}`);
   }
@@ -629,8 +635,10 @@ try {
   fs.rmSync(previewRoot, { recursive: true, force: true });
 }
 
-const productionOutput = buildStaticSite(undefined, "https://kays-haven-backend.onrender.com");
+const productionOutput = buildStaticSite(undefined, "https://kays-haven-backend.onrender.com", "https://kayshaven.live");
 assert.equal(productionOutput, path.join(root, "dist"));
+const productionHeaders = fs.readFileSync(path.join(productionOutput, "_headers"), "utf8");
+assert.match(productionHeaders, /Access-Control-Allow-Origin: https:\/\/kayshaven\.live/);
   const productionAdminFiles = [
   "admin/index.html",
   "admin/app.js",
