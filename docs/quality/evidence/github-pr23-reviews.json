@@ -1,0 +1,82 @@
+[
+  {
+    "id": 5614883615,
+    "node_id": "PRR_kwDOUNmsl88AAAABTqxTHw",
+    "user": {
+      "login": "copilot-pull-request-reviewer[bot]",
+      "id": 175728472,
+      "node_id": "BOT_kgDOCnlnWA",
+      "avatar_url": "https://avatars.githubusercontent.com/in/946600?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D",
+      "html_url": "https://github.com/apps/copilot-pull-request-reviewer",
+      "followers_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Copilot was unable to review this pull request because the user who requested the review has reached their quota limit.\n\nAn organization owner can choose the repository organization as the billing source for reviews requested by members with a paid Copilot license. [Learn about Copilot code review billing](https://docs.github.com/en/copilot/concepts/agents/code-review#code-review-usage).",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/7Localhosts/LocalHosts7/pull/23#pullrequestreview-5614883615",
+    "pull_request_url": "https://api.github.com/repos/7Localhosts/LocalHosts7/pulls/23",
+    "author_association": "CONTRIBUTOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/7Localhosts/LocalHosts7/pull/23#pullrequestreview-5614883615"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/7Localhosts/LocalHosts7/pulls/23"
+      }
+    },
+    "submitted_at": "2026-10-22T13:21:48Z",
+    "commit_id": "5d4f09195b228851e9e072ba809c0bdd4455d7a1"
+  },
+  {
+    "id": 5614961569,
+    "node_id": "PRR_kwDOUNmsl88AAAABTq2DoQ",
+    "user": {
+      "login": "Akuba002",
+      "id": 308121587,
+      "node_id": "U_kgDOEl2P8w",
+      "avatar_url": "https://avatars.githubusercontent.com/u/308121587?u=106210c3bf9b208dad131d1d08c4eba0511c825f&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Akuba002",
+      "html_url": "https://github.com/Akuba002",
+      "followers_url": "https://api.github.com/users/Akuba002/followers",
+      "following_url": "https://api.github.com/users/Akuba002/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Akuba002/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Akuba002/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Akuba002/subscriptions",
+      "organizations_url": "https://api.github.com/users/Akuba002/orgs",
+      "repos_url": "https://api.github.com/users/Akuba002/repos",
+      "events_url": "https://api.github.com/users/Akuba002/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Akuba002/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Good!",
+    "state": "APPROVED",
+    "html_url": "https://github.com/7Localhosts/LocalHosts7/pull/23#pullrequestreview-5614961569",
+    "pull_request_url": "https://api.github.com/repos/7Localhosts/LocalHosts7/pulls/23",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/7Localhosts/LocalHosts7/pull/23#pullrequestreview-5614961569"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/7Localhosts/LocalHosts7/pulls/23"
+      }
+    },
+    "submitted_at": "2026-10-22T13:27:23Z",
+    "commit_id": "5d4f09195b228851e9e072ba809c0bdd4455d7a1"
+  }
+]

@@ -1,0 +1,158 @@
+
+> backend@1.0.0 test:coverage
+> node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=**/src/backend/order-utils.js --test-coverage-lines=95 --test-coverage-branches=80 --test-coverage-functions=95 ../../tests/backend.test.js ../../tests/frontend.test.js ../../tests/order-validation.test.js
+
+TAP version 13
+# ◇ injected env (0) from .env
+# Check email validation
+# Check signed, paid-only customer receipt access
+# Check Paystack Test Mode initialization payload and safe diagnostics
+# Check server prices, sizes, and product visibility
+# Check selectable fulfillment transitions
+# Check required sizes with stale inventory counts
+# Check backend health endpoint
+# Check CORS allows only explicitly configured storefront origins
+# Check Supabase readiness without exposing database errors
+# Check payment initialization sends the production callback without returning secrets
+# Check payment verification rejects failed and mismatched transactions
+# Check public catalogue caching excludes private and inventory fields
+# All backend checks passed
+# Subtest: ..\\..\\tests\\backend.test.js
+ok 1 - ..\\..\\tests\\backend.test.js
+  ---
+  duration_ms: 1024.076
+  type: 'test'
+  ...
+# Frontend assets, checkout verification states, and receipt PDF checks passed
+# Subtest: ..\\..\\tests\\frontend.test.js
+ok 2 - ..\\..\\tests\\frontend.test.js
+  ---
+  duration_ms: 5632.4946
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity true
+ok 3 - reject malformed quantity true
+  ---
+  duration_ms: 23.5369
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity false
+ok 4 - reject malformed quantity false
+  ---
+  duration_ms: 3.7604
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity []
+ok 5 - reject malformed quantity []
+  ---
+  duration_ms: 2.0656
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity [2]
+ok 6 - reject malformed quantity [2]
+  ---
+  duration_ms: 1.5817
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity {}
+ok 7 - reject malformed quantity {}
+  ---
+  duration_ms: 2.968
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity null
+ok 8 - reject malformed quantity null
+  ---
+  duration_ms: 3.6989
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity ""
+ok 9 - reject malformed quantity ""
+  ---
+  duration_ms: 2.6442
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 0
+ok 10 - reject malformed quantity 0
+  ---
+  duration_ms: 0.7398
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity -1
+ok 11 - reject malformed quantity -1
+  ---
+  duration_ms: 5.7699
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 1.5
+ok 12 - reject malformed quantity 1.5
+  ---
+  duration_ms: 2.8204
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity null
+ok 13 - reject malformed quantity null
+  ---
+  duration_ms: 2.0554
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 9007199254740992
+ok 14 - reject malformed quantity 9007199254740992
+  ---
+  duration_ms: 1.3415
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item null
+ok 15 - reject malformed cart item null
+  ---
+  duration_ms: 1.11
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item false
+ok 16 - reject malformed cart item false
+  ---
+  duration_ms: 1.5177
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item "qa-toy"
+ok 17 - reject malformed cart item "qa-toy"
+  ---
+  duration_ms: 1.6839
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item 42
+ok 18 - reject malformed cart item 42
+  ---
+  duration_ms: 3.5887
+  type: 'test'
+  ...
+# Subtest: catalogue price wins over client price and totals preserve pesewas
+ok 19 - catalogue price wins over client price and totals preserve pesewas
+  ---
+  duration_ms: 6.7324
+  type: 'test'
+  ...
+# Subtest: hidden and missing products cannot be purchased
+ok 20 - hidden and missing products cannot be purchased
+  ---
+  duration_ms: 2.5964
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7406.6743
+# start of coverage report
+# ---------------------------------------------------------------
+# file           | line % | branch % | funcs % | uncovered lines
+# ---------------------------------------------------------------
+# order-utils.js | 100.00 |    88.71 |  100.00 | 
+# ---------------------------------------------------------------
+# all files      | 100.00 |    88.71 |  100.00 | 
+# ---------------------------------------------------------------
+# end of coverage report

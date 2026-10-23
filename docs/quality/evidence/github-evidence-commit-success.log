@@ -1,0 +1,580 @@
+﻿2026-10-23T13:26:38.9917937Z Current runner version: '2.338.0'
+2026-10-23T13:26:38.9947767Z ##[group]Runner Image Provisioner
+2026-10-23T13:26:38.9949086Z Hosted Compute Agent
+2026-10-23T13:26:38.9950241Z Version: 20261012.601
+2026-10-23T13:26:38.9951415Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-23T13:26:38.9952673Z Build Date: 2026-10-12T17:48:21Z
+2026-10-23T13:26:38.9953959Z Worker ID: {425868bc-bb8a-48eb-8355-db7f170eb751}
+2026-10-23T13:26:38.9955129Z Region: northcentralus
+2026-10-23T13:26:38.9957003Z Cloud: Azure
+2026-10-23T13:26:38.9957891Z ##[endgroup]
+2026-10-23T13:26:38.9960108Z ##[group]Operating System
+2026-10-23T13:26:38.9961246Z Ubuntu
+2026-10-23T13:26:38.9962049Z 24.04.5
+2026-10-23T13:26:38.9962950Z LTS
+2026-10-23T13:26:38.9963761Z ##[endgroup]
+2026-10-23T13:26:38.9964613Z ##[group]Runner Image
+2026-10-23T13:26:38.9965784Z Image: ubuntu-24.04
+2026-10-23T13:26:38.9967029Z Version: 20261012.334.1
+2026-10-23T13:26:38.9969051Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-23T13:26:38.9971827Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-23T13:26:38.9973754Z ##[endgroup]
+2026-10-23T13:26:38.9975826Z ##[group]GITHUB_TOKEN Permissions
+2026-10-23T13:26:38.9979116Z Contents: read
+2026-10-23T13:26:38.9980113Z Metadata: read
+2026-10-23T13:26:38.9981318Z ##[endgroup]
+2026-10-23T13:26:38.9984341Z Secret source: Actions
+2026-10-23T13:26:38.9985847Z Cache mode: write
+2026-10-23T13:26:38.9988162Z Prepare workflow directory
+2026-10-23T13:26:39.0349098Z Prepare all required actions
+2026-10-23T13:26:39.0399494Z Getting action download info
+2026-10-23T13:26:39.3659675Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-23T13:26:39.4607969Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-23T13:26:39.5975448Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-23T13:26:39.8110338Z Complete job name: ci
+2026-10-23T13:26:39.9005708Z ##[group]Run actions/checkout@v4
+2026-10-23T13:26:39.9006989Z with:
+2026-10-23T13:26:39.9007451Z   repository: 7Localhosts/LocalHosts7
+2026-10-23T13:26:39.9011185Z   token: ***
+2026-10-23T13:26:39.9011619Z   ssh-strict: true
+2026-10-23T13:26:39.9012055Z   ssh-user: git
+2026-10-23T13:26:39.9012498Z   persist-credentials: true
+2026-10-23T13:26:39.9012982Z   clean: true
+2026-10-23T13:26:39.9013426Z   sparse-checkout-cone-mode: true
+2026-10-23T13:26:39.9013936Z   fetch-depth: 1
+2026-10-23T13:26:39.9014362Z   fetch-tags: false
+2026-10-23T13:26:39.9014798Z   show-progress: true
+2026-10-23T13:26:39.9015260Z   lfs: false
+2026-10-23T13:26:39.9015671Z   submodules: false
+2026-10-23T13:26:39.9016110Z   set-safe-directory: true
+2026-10-23T13:26:39.9017057Z   allow-unsafe-pr-checkout: false
+2026-10-23T13:26:39.9017964Z ##[endgroup]
+2026-10-23T13:26:40.0111900Z Syncing repository: 7Localhosts/LocalHosts7
+2026-10-23T13:26:40.0114450Z ##[group]Getting Git version info
+2026-10-23T13:26:40.0115641Z Working directory is '/home/runner/work/LocalHosts7/LocalHosts7'
+2026-10-23T13:26:40.0117218Z [command]/usr/bin/git version
+2026-10-23T13:26:40.0167165Z git version 2.55.0
+2026-10-23T13:26:40.0191382Z ##[endgroup]
+2026-10-23T13:26:40.0210123Z Temporarily overriding HOME='/home/runner/work/_temp/ecc876de-beb3-4c83-b71a-6e4fb8d490f4' before making global git config changes
+2026-10-23T13:26:40.0212901Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-23T13:26:40.0218327Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LocalHosts7/LocalHosts7
+2026-10-23T13:26:40.0272208Z Deleting the contents of '/home/runner/work/LocalHosts7/LocalHosts7'
+2026-10-23T13:26:40.0279013Z ##[group]Initializing the repository
+2026-10-23T13:26:40.0284428Z [command]/usr/bin/git init /home/runner/work/LocalHosts7/LocalHosts7
+2026-10-23T13:26:40.0381871Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-23T13:26:40.0383976Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-23T13:26:40.0387193Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-23T13:26:40.0398421Z hint: call:
+2026-10-23T13:26:40.0399680Z hint:
+2026-10-23T13:26:40.0402048Z hint: 	git config --global init.defaultBranch <name>
+2026-10-23T13:26:40.0403842Z hint:
+2026-10-23T13:26:40.0405559Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-23T13:26:40.0407910Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-23T13:26:40.0409786Z hint:
+2026-10-23T13:26:40.0410737Z hint: 	git branch -m <name>
+2026-10-23T13:26:40.0411689Z hint:
+2026-10-23T13:26:40.0412888Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-23T13:26:40.0414796Z Initialized empty Git repository in /home/runner/work/LocalHosts7/LocalHosts7/.git/
+2026-10-23T13:26:40.0418813Z [command]/usr/bin/git remote add origin https://github.com/7Localhosts/LocalHosts7
+2026-10-23T13:26:40.0464754Z ##[endgroup]
+2026-10-23T13:26:40.0466620Z ##[group]Disabling automatic garbage collection
+2026-10-23T13:26:40.0480671Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-23T13:26:40.0521439Z ##[endgroup]
+2026-10-23T13:26:40.0523145Z ##[group]Setting up auth
+2026-10-23T13:26:40.0529883Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-23T13:26:40.0569685Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-23T13:26:40.0967686Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-23T13:26:40.1028840Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-23T13:26:40.1299196Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-23T13:26:40.1340889Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-23T13:26:40.1594571Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-23T13:26:40.1639574Z ##[endgroup]
+2026-10-23T13:26:40.1640601Z ##[group]Fetching the repository
+2026-10-23T13:26:40.1649781Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b6c8f9b0b7b0934ca408c40d5bfeda5a3a86aaaa:refs/remotes/origin/qa/current-d0-d10-20261023
+2026-10-23T13:26:42.4774234Z From https://github.com/7Localhosts/LocalHosts7
+2026-10-23T13:26:42.4794241Z  * [new ref]         b6c8f9b0b7b0934ca408c40d5bfeda5a3a86aaaa -> origin/qa/current-d0-d10-20261023
+2026-10-23T13:26:42.4798061Z ##[endgroup]
+2026-10-23T13:26:42.4798891Z ##[group]Determining the checkout info
+2026-10-23T13:26:42.4799758Z ##[endgroup]
+2026-10-23T13:26:42.4800286Z [command]/usr/bin/git sparse-checkout disable
+2026-10-23T13:26:42.4855226Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-23T13:26:42.4892762Z ##[group]Checking out the ref
+2026-10-23T13:26:42.4900133Z [command]/usr/bin/git checkout --progress --force -B qa/current-d0-d10-20261023 refs/remotes/origin/qa/current-d0-d10-20261023
+2026-10-23T13:26:43.1929606Z Switched to a new branch 'qa/current-d0-d10-20261023'
+2026-10-23T13:26:43.1931980Z branch 'qa/current-d0-d10-20261023' set up to track 'origin/qa/current-d0-d10-20261023'.
+2026-10-23T13:26:43.1955233Z ##[endgroup]
+2026-10-23T13:26:43.2004605Z [command]/usr/bin/git log -1 --format=%H
+2026-10-23T13:26:43.2033233Z b6c8f9b0b7b0934ca408c40d5bfeda5a3a86aaaa
+2026-10-23T13:26:43.2370311Z ##[group]Run actions/setup-node@v4
+2026-10-23T13:26:43.2370700Z with:
+2026-10-23T13:26:43.2371120Z   node-version: 22
+2026-10-23T13:26:43.2371395Z   always-auth: false
+2026-10-23T13:26:43.2371661Z   check-latest: false
+2026-10-23T13:26:43.2374231Z   token: ***
+2026-10-23T13:26:43.2374482Z ##[endgroup]
+2026-10-23T13:26:43.4031777Z Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+2026-10-23T13:26:43.4035986Z (node:2315) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-23T13:26:43.4037205Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-23T13:26:43.4040285Z ##[group]Environment details
+2026-10-23T13:26:46.5092101Z node: v22.23.3
+2026-10-23T13:26:46.5092570Z npm: 10.9.9
+2026-10-23T13:26:46.5092861Z yarn: 1.22.22
+2026-10-23T13:26:46.5094166Z ##[endgroup]
+2026-10-23T13:26:46.5228298Z ##[group]Run test -f README.md
+2026-10-23T13:26:46.5228734Z [36;1mtest -f README.md[0m
+2026-10-23T13:26:46.5229021Z [36;1mtest -f src/frontend/index.html[0m
+2026-10-23T13:26:46.5229325Z [36;1mtest -f src/admin/index.html[0m
+2026-10-23T13:26:46.5229626Z [36;1mtest -f src/backend/server.js[0m
+2026-10-23T13:26:46.5230021Z [36;1mtest -f supabase/migrations/202610070001_checkout_sizes_payments.sql[0m
+2026-10-23T13:26:46.5230420Z [36;1mtest -d tests[0m
+2026-10-23T13:26:46.5522630Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:46.5522952Z ##[endgroup]
+2026-10-23T13:26:46.5673000Z ##[group]Run make setup
+2026-10-23T13:26:46.5673297Z [36;1mmake setup[0m
+2026-10-23T13:26:46.5734511Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:46.5734794Z ##[endgroup]
+2026-10-23T13:26:46.6052249Z npm --prefix src/backend ci
+2026-10-23T13:26:49.0533846Z 
+2026-10-23T13:26:49.0534810Z added 10 packages, and audited 11 packages in 2s
+2026-10-23T13:26:49.0535708Z 
+2026-10-23T13:26:49.0536064Z 1 package is looking for funding
+2026-10-23T13:26:49.0536807Z   run `npm fund` for details
+2026-10-23T13:26:49.0545245Z 
+2026-10-23T13:26:49.0545970Z found 0 vulnerabilities
+2026-10-23T13:26:49.0972636Z ##[group]Run make test
+2026-10-23T13:26:49.0972940Z [36;1mmake test[0m
+2026-10-23T13:26:49.1039656Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:49.1039922Z ##[endgroup]
+2026-10-23T13:26:49.1138730Z npm --prefix src/backend test
+2026-10-23T13:26:49.2296571Z 
+2026-10-23T13:26:49.2297471Z > backend@1.0.0 test
+2026-10-23T13:26:49.2298656Z > node ../../tests/backend.test.js && node ../../tests/frontend.test.js && node ../../tests/order-validation.test.js && node ../../tests/quality-gate.test.js
+2026-10-23T13:26:49.2299400Z 
+2026-10-23T13:26:49.3116937Z ◇ injected env (0) from .env
+2026-10-23T13:26:49.3824514Z Check email validation
+2026-10-23T13:26:49.3833550Z Check signed, paid-only customer receipt access
+2026-10-23T13:26:49.3846225Z Check Paystack Test Mode initialization payload and safe diagnostics
+2026-10-23T13:26:49.3861477Z Check server prices, sizes, and product visibility
+2026-10-23T13:26:49.3894487Z Check selectable fulfillment transitions
+2026-10-23T13:26:49.3896167Z Check required sizes with stale inventory counts
+2026-10-23T13:26:49.3898495Z Check backend health endpoint
+2026-10-23T13:26:49.4603607Z Check CORS allows only explicitly configured storefront origins
+2026-10-23T13:26:49.4791073Z Check Supabase readiness without exposing database errors
+2026-10-23T13:26:49.5066984Z Check payment initialization sends the production callback without returning secrets
+2026-10-23T13:26:49.5107353Z Check payment verification rejects failed and mismatched transactions
+2026-10-23T13:26:49.5480736Z Check public catalogue caching excludes private and inventory fields
+2026-10-23T13:26:49.5504723Z All backend checks passed
+2026-10-23T13:26:50.4734453Z Frontend assets, checkout verification states, and receipt PDF checks passed
+2026-10-23T13:26:50.5224638Z TAP version 13
+2026-10-23T13:26:50.5241637Z # Subtest: reject malformed quantity true
+2026-10-23T13:26:50.5247121Z ok 1 - reject malformed quantity true
+2026-10-23T13:26:50.5256931Z   ---
+2026-10-23T13:26:50.5267502Z   duration_ms: 1.455791
+2026-10-23T13:26:50.5268011Z   type: 'test'
+2026-10-23T13:26:50.5268922Z   ...
+2026-10-23T13:26:50.5269808Z # Subtest: reject malformed quantity false
+2026-10-23T13:26:50.5270675Z ok 2 - reject malformed quantity false
+2026-10-23T13:26:50.5271378Z   ---
+2026-10-23T13:26:50.5271855Z   duration_ms: 0.18752
+2026-10-23T13:26:50.5272508Z   type: 'test'
+2026-10-23T13:26:50.5273058Z   ...
+2026-10-23T13:26:50.5273578Z # Subtest: reject malformed quantity []
+2026-10-23T13:26:50.5274247Z ok 3 - reject malformed quantity []
+2026-10-23T13:26:50.5274752Z   ---
+2026-10-23T13:26:50.5275140Z   duration_ms: 0.118502
+2026-10-23T13:26:50.5275582Z   type: 'test'
+2026-10-23T13:26:50.5275949Z   ...
+2026-10-23T13:26:50.5276668Z # Subtest: reject malformed quantity [2]
+2026-10-23T13:26:50.5277345Z ok 4 - reject malformed quantity [2]
+2026-10-23T13:26:50.5277850Z   ---
+2026-10-23T13:26:50.5278230Z   duration_ms: 0.787251
+2026-10-23T13:26:50.5278675Z   type: 'test'
+2026-10-23T13:26:50.5279045Z   ...
+2026-10-23T13:26:50.5279541Z # Subtest: reject malformed quantity {}
+2026-10-23T13:26:50.5280197Z ok 5 - reject malformed quantity {}
+2026-10-23T13:26:50.5280654Z   ---
+2026-10-23T13:26:50.5281014Z   duration_ms: 0.201577
+2026-10-23T13:26:50.5281418Z   type: 'test'
+2026-10-23T13:26:50.5281766Z   ...
+2026-10-23T13:26:50.5282273Z # Subtest: reject malformed quantity null
+2026-10-23T13:26:50.5283079Z ok 6 - reject malformed quantity null
+2026-10-23T13:26:50.5283637Z   ---
+2026-10-23T13:26:50.5284020Z   duration_ms: 0.116076
+2026-10-23T13:26:50.5284443Z   type: 'test'
+2026-10-23T13:26:50.5284809Z   ...
+2026-10-23T13:26:50.5285533Z # Subtest: reject malformed quantity ""
+2026-10-23T13:26:50.5286610Z ok 7 - reject malformed quantity ""
+2026-10-23T13:26:50.5287569Z   ---
+2026-10-23T13:26:50.5288336Z   duration_ms: 0.263793
+2026-10-23T13:26:50.5289098Z   type: 'test'
+2026-10-23T13:26:50.5289753Z   ...
+2026-10-23T13:26:50.5290575Z # Subtest: reject malformed quantity 0
+2026-10-23T13:26:50.5291545Z ok 8 - reject malformed quantity 0
+2026-10-23T13:26:50.5292795Z   ---
+2026-10-23T13:26:50.5293539Z   duration_ms: 0.123671
+2026-10-23T13:26:50.5294311Z   type: 'test'
+2026-10-23T13:26:50.5294979Z   ...
+2026-10-23T13:26:50.5295787Z # Subtest: reject malformed quantity -1
+2026-10-23T13:26:50.5297092Z ok 9 - reject malformed quantity -1
+2026-10-23T13:26:50.5297885Z   ---
+2026-10-23T13:26:50.5298558Z   duration_ms: 0.3372
+2026-10-23T13:26:50.5299270Z   type: 'test'
+2026-10-23T13:26:50.5300032Z   ...
+2026-10-23T13:26:50.5300823Z # Subtest: reject malformed quantity 1.5
+2026-10-23T13:26:50.5301789Z ok 10 - reject malformed quantity 1.5
+2026-10-23T13:26:50.5302587Z   ---
+2026-10-23T13:26:50.5303240Z   duration_ms: 0.40105
+2026-10-23T13:26:50.5303932Z   type: 'test'
+2026-10-23T13:26:50.5304585Z   ...
+2026-10-23T13:26:50.5305434Z # Subtest: reject malformed quantity null
+2026-10-23T13:26:50.5306657Z ok 11 - reject malformed quantity null
+2026-10-23T13:26:50.5307489Z   ---
+2026-10-23T13:26:50.5308153Z   duration_ms: 0.186959
+2026-10-23T13:26:50.5308893Z   type: 'test'
+2026-10-23T13:26:50.5309570Z   ...
+2026-10-23T13:26:50.5310422Z # Subtest: reject malformed quantity 9007199254740992
+2026-10-23T13:26:50.5311445Z ok 12 - reject malformed quantity 9007199254740992
+2026-10-23T13:26:50.5312312Z   ---
+2026-10-23T13:26:50.5312976Z   duration_ms: 0.115857
+2026-10-23T13:26:50.5313685Z   type: 'test'
+2026-10-23T13:26:50.5314329Z   ...
+2026-10-23T13:26:50.5315111Z # Subtest: reject malformed cart item null
+2026-10-23T13:26:50.5316090Z ok 13 - reject malformed cart item null
+2026-10-23T13:26:50.5317320Z   ---
+2026-10-23T13:26:50.5317997Z   duration_ms: 0.143608
+2026-10-23T13:26:50.5318716Z   type: 'test'
+2026-10-23T13:26:50.5319381Z   ...
+2026-10-23T13:26:50.5320160Z # Subtest: reject malformed cart item false
+2026-10-23T13:26:50.5321116Z ok 14 - reject malformed cart item false
+2026-10-23T13:26:50.5321940Z   ---
+2026-10-23T13:26:50.5322607Z   duration_ms: 0.082354
+2026-10-23T13:26:50.5323355Z   type: 'test'
+2026-10-23T13:26:50.5323993Z   ...
+2026-10-23T13:26:50.5324775Z # Subtest: reject malformed cart item "qa-toy"
+2026-10-23T13:26:50.5325653Z ok 15 - reject malformed cart item "qa-toy"
+2026-10-23T13:26:50.5326890Z   ---
+2026-10-23T13:26:50.5327432Z   duration_ms: 0.082664
+2026-10-23T13:26:50.5328018Z   type: 'test'
+2026-10-23T13:26:50.5328555Z   ...
+2026-10-23T13:26:50.5329298Z # Subtest: reject malformed cart item 42
+2026-10-23T13:26:50.5330272Z ok 16 - reject malformed cart item 42
+2026-10-23T13:26:50.5331084Z   ---
+2026-10-23T13:26:50.5331765Z   duration_ms: 0.077826
+2026-10-23T13:26:50.5332481Z   type: 'test'
+2026-10-23T13:26:50.5333192Z   ...
+2026-10-23T13:26:50.5334248Z # Subtest: catalogue price wins over client price and totals preserve pesewas
+2026-10-23T13:26:50.5335779Z ok 17 - catalogue price wins over client price and totals preserve pesewas
+2026-10-23T13:26:50.5337095Z   ---
+2026-10-23T13:26:50.5337768Z   duration_ms: 0.285434
+2026-10-23T13:26:50.5338490Z   type: 'test'
+2026-10-23T13:26:50.5339141Z   ...
+2026-10-23T13:26:50.5340066Z # Subtest: hidden and missing products cannot be purchased
+2026-10-23T13:26:50.5341275Z ok 18 - hidden and missing products cannot be purchased
+2026-10-23T13:26:50.5342288Z   ---
+2026-10-23T13:26:50.5342930Z   duration_ms: 0.186258
+2026-10-23T13:26:50.5343609Z   type: 'test'
+2026-10-23T13:26:50.5344241Z   ...
+2026-10-23T13:26:50.5344858Z 1..18
+2026-10-23T13:26:50.5345451Z # tests 18
+2026-10-23T13:26:50.5346017Z # suites 0
+2026-10-23T13:26:50.5346874Z # pass 18
+2026-10-23T13:26:50.5347479Z # fail 0
+2026-10-23T13:26:50.5348069Z # cancelled 0
+2026-10-23T13:26:50.5348694Z # skipped 0
+2026-10-23T13:26:50.5349292Z # todo 0
+2026-10-23T13:26:50.5349993Z # duration_ms 22.22677
+2026-10-23T13:26:50.6294697Z TAP version 13
+2026-10-23T13:26:50.6303500Z # Subtest: placeholder PR evidence is rejected
+2026-10-23T13:26:50.6310568Z ok 1 - placeholder PR evidence is rejected
+2026-10-23T13:26:50.6313067Z   ---
+2026-10-23T13:26:50.6313502Z   duration_ms: 27.712219
+2026-10-23T13:26:50.6313941Z   type: 'test'
+2026-10-23T13:26:50.6314347Z   ...
+2026-10-23T13:26:50.6318544Z # Subtest: explicit PR evidence fields are accepted for human review
+2026-10-23T13:26:50.6320748Z ok 2 - explicit PR evidence fields are accepted for human review
+2026-10-23T13:26:50.6321529Z   ---
+2026-10-23T13:26:50.6321907Z   duration_ms: 28.98644
+2026-10-23T13:26:50.6322324Z   type: 'test'
+2026-10-23T13:26:50.6322673Z   ...
+2026-10-23T13:26:50.6330990Z 1..2
+2026-10-23T13:26:50.6331914Z # tests 2
+2026-10-23T13:26:50.6334143Z # suites 0
+2026-10-23T13:26:50.6334898Z # pass 2
+2026-10-23T13:26:50.6335277Z # fail 0
+2026-10-23T13:26:50.6336165Z # cancelled 0
+2026-10-23T13:26:50.6342883Z # skipped 0
+2026-10-23T13:26:50.6343502Z # todo 0
+2026-10-23T13:26:50.6343885Z # duration_ms 65.05439
+2026-10-23T13:26:50.6487432Z ##[group]Run make lint
+2026-10-23T13:26:50.6487744Z [36;1mmake lint[0m
+2026-10-23T13:26:50.6551911Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:50.6552188Z ##[endgroup]
+2026-10-23T13:26:50.6650898Z node deployment/quality-gate.js lint
+2026-10-23T13:26:51.2723161Z PASS: JavaScript syntax lint for all 22 source, deployment and test files. No style lint claim.
+2026-10-23T13:26:51.2949941Z ##[group]Run timeout 20s make run > /tmp/kays-run.log 2>&1 &
+2026-10-23T13:26:51.2950688Z [36;1mtimeout 20s make run > /tmp/kays-run.log 2>&1 &[0m
+2026-10-23T13:26:51.2951238Z [36;1msmoke_pid=$![0m
+2026-10-23T13:26:51.2951706Z [36;1mtrap 'kill "$smoke_pid" 2>/dev/null || true' EXIT[0m
+2026-10-23T13:26:51.2952626Z [36;1mcurl --fail --retry 8 --retry-connrefused --retry-delay 1 http://127.0.0.1:18080/api/health[0m
+2026-10-23T13:26:51.3035815Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:51.3036180Z env:
+2026-10-23T13:26:51.3036779Z   SUPABASE_URL: https://unit-test.invalid.supabase.co
+2026-10-23T13:26:51.3037328Z   SUPABASE_ANON_KEY: unit-test-anon-key
+2026-10-23T13:26:51.3037848Z   SUPABASE_SERVICE_ROLE_KEY: unit-test-service-role-key
+2026-10-23T13:26:51.3038437Z   FRONTEND_ORIGIN: https://kayshaven.live
+2026-10-23T13:26:51.3039055Z   RECEIPT_ACCESS_TOKEN_SECRET: unit-test-receipt-signing-key
+2026-10-23T13:26:51.3039625Z   PORT: 18080
+2026-10-23T13:26:51.3039986Z ##[endgroup]
+2026-10-23T13:26:51.9385862Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026-10-23T13:26:51.9392726Z                                  Dload  Upload   Total   Spent    Left  Speed
+2026-10-23T13:26:51.9393230Z 
+2026-10-23T13:26:51.9393607Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-10-23T13:26:51.9394408Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-10-23T13:26:51.9395542Z curl: (7) Failed to connect to 127.0.0.1 port 18080 after 0 ms: Couldn't connect to server
+2026-10-23T13:26:51.9397178Z Warning: Problem : connection refused. Will retry in 1 seconds. 8 retries left.
+2026-10-23T13:26:52.9397249Z 
+2026-10-23T13:26:52.9462230Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-10-23T13:26:52.9463774Z 100    47    0    47    0     0   7240      0 --:--:-- --:--:-- --:--:--  7833
+2026-10-23T13:26:52.9478288Z {"success":true,"message":"Backend is running"}
+2026-10-23T13:26:52.9544724Z ##[group]Run make build
+2026-10-23T13:26:52.9544993Z [36;1mmake build[0m
+2026-10-23T13:26:52.9609042Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:52.9609299Z env:
+2026-10-23T13:26:52.9609594Z   KAYS_HAVEN_API_URL: https://kays-haven-backend.onrender.com
+2026-10-23T13:26:52.9610008Z   KAYS_HAVEN_FRONTEND_ORIGIN: https://kayshaven.live
+2026-10-23T13:26:52.9610312Z ##[endgroup]
+2026-10-23T13:26:52.9708410Z npm --prefix src/backend run build:static
+2026-10-23T13:26:53.0635381Z 
+2026-10-23T13:26:53.0635762Z > backend@1.0.0 build:static
+2026-10-23T13:26:53.0636729Z > node ../../deployment/build-static.js
+2026-10-23T13:26:53.0637166Z 
+2026-10-23T13:26:53.2113476Z Static site built at /home/runner/work/LocalHosts7/LocalHosts7/dist
+2026-10-23T13:26:53.2262877Z ##[group]Run npm run test:coverage
+2026-10-23T13:26:53.2263199Z [36;1mnpm run test:coverage[0m
+2026-10-23T13:26:53.2325733Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:26:53.2325998Z ##[endgroup]
+2026-10-23T13:26:53.3391463Z 
+2026-10-23T13:26:53.3392070Z > backend@1.0.0 test:coverage
+2026-10-23T13:26:53.3394131Z > node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=**/src/backend/order-utils.js --test-coverage-lines=95 --test-coverage-branches=80 --test-coverage-functions=95 ../../tests/backend.test.js ../../tests/frontend.test.js ../../tests/order-validation.test.js
+2026-10-23T13:26:53.3395597Z 
+2026-10-23T13:26:53.3890482Z TAP version 13
+2026-10-23T13:26:53.4813713Z # ◇ injected env (0) from .env
+2026-10-23T13:26:53.5079262Z # Check email validation
+2026-10-23T13:26:53.5086157Z # Check signed, paid-only customer receipt access
+2026-10-23T13:26:53.5096417Z # Check Paystack Test Mode initialization payload and safe diagnostics
+2026-10-23T13:26:53.5110038Z # Check server prices, sizes, and product visibility
+2026-10-23T13:26:53.5134335Z # Check selectable fulfillment transitions
+2026-10-23T13:26:53.5136871Z # Check required sizes with stale inventory counts
+2026-10-23T13:26:53.5138307Z # Check backend health endpoint
+2026-10-23T13:26:53.5537920Z # Check CORS allows only explicitly configured storefront origins
+2026-10-23T13:26:53.5690605Z # Check Supabase readiness without exposing database errors
+2026-10-23T13:26:53.5894828Z # Check payment initialization sends the production callback without returning secrets
+2026-10-23T13:26:53.5965672Z # Check payment verification rejects failed and mismatched transactions
+2026-10-23T13:26:53.6428165Z # Check public catalogue caching excludes private and inventory fields
+2026-10-23T13:26:53.6467354Z # All backend checks passed
+2026-10-23T13:26:53.6854411Z # Subtest: ../../tests/backend.test.js
+2026-10-23T13:26:53.6861698Z ok 1 - ../../tests/backend.test.js
+2026-10-23T13:26:53.6862398Z   ---
+2026-10-23T13:26:53.6862942Z   duration_ms: 299.483391
+2026-10-23T13:26:53.6863506Z   type: 'test'
+2026-10-23T13:26:53.6864505Z   ...
+2026-10-23T13:26:54.1732800Z # Frontend assets, checkout verification states, and receipt PDF checks passed
+2026-10-23T13:26:54.1864457Z # Subtest: ../../tests/frontend.test.js
+2026-10-23T13:26:54.1865872Z ok 2 - ../../tests/frontend.test.js
+2026-10-23T13:26:54.1866830Z   ---
+2026-10-23T13:26:54.1867355Z   duration_ms: 502.516401
+2026-10-23T13:26:54.1867728Z   type: 'test'
+2026-10-23T13:26:54.1867953Z   ...
+2026-10-23T13:26:54.2321261Z # Subtest: reject malformed quantity true
+2026-10-23T13:26:54.2323443Z ok 3 - reject malformed quantity true
+2026-10-23T13:26:54.2324006Z   ---
+2026-10-23T13:26:54.2324390Z   duration_ms: 2.68537
+2026-10-23T13:26:54.2324821Z   type: 'test'
+2026-10-23T13:26:54.2325181Z   ...
+2026-10-23T13:26:54.2331258Z # Subtest: reject malformed quantity false
+2026-10-23T13:26:54.2332384Z ok 4 - reject malformed quantity false
+2026-10-23T13:26:54.2333104Z   ---
+2026-10-23T13:26:54.2333518Z   duration_ms: 0.138394
+2026-10-23T13:26:54.2333948Z   type: 'test'
+2026-10-23T13:26:54.2334309Z   ...
+2026-10-23T13:26:54.2337242Z # Subtest: reject malformed quantity []
+2026-10-23T13:26:54.2338594Z ok 5 - reject malformed quantity []
+2026-10-23T13:26:54.2339858Z   ---
+2026-10-23T13:26:54.2340246Z   duration_ms: 0.105662
+2026-10-23T13:26:54.2340665Z   type: 'test'
+2026-10-23T13:26:54.2341026Z   ...
+2026-10-23T13:26:54.2341781Z # Subtest: reject malformed quantity [2]
+2026-10-23T13:26:54.2342679Z ok 6 - reject malformed quantity [2]
+2026-10-23T13:26:54.2343456Z   ---
+2026-10-23T13:26:54.2343854Z   duration_ms: 0.094981
+2026-10-23T13:26:54.2344283Z   type: 'test'
+2026-10-23T13:26:54.2344680Z   ...
+2026-10-23T13:26:54.2352324Z # Subtest: reject malformed quantity {}
+2026-10-23T13:26:54.2353187Z ok 7 - reject malformed quantity {}
+2026-10-23T13:26:54.2353634Z   ---
+2026-10-23T13:26:54.2353966Z   duration_ms: 0.164804
+2026-10-23T13:26:54.2354344Z   type: 'test'
+2026-10-23T13:26:54.2354694Z   ...
+2026-10-23T13:26:54.2362450Z # Subtest: reject malformed quantity null
+2026-10-23T13:26:54.2367398Z ok 8 - reject malformed quantity null
+2026-10-23T13:26:54.2377509Z   ---
+2026-10-23T13:26:54.2378048Z   duration_ms: 0.106122
+2026-10-23T13:26:54.2378740Z   type: 'test'
+2026-10-23T13:26:54.2379143Z   ...
+2026-10-23T13:26:54.2379629Z # Subtest: reject malformed quantity ""
+2026-10-23T13:26:54.2380265Z ok 9 - reject malformed quantity ""
+2026-10-23T13:26:54.2380742Z   ---
+2026-10-23T13:26:54.2381109Z   duration_ms: 0.143965
+2026-10-23T13:26:54.2381539Z   type: 'test'
+2026-10-23T13:26:54.2381902Z   ...
+2026-10-23T13:26:54.2382386Z # Subtest: reject malformed quantity 0
+2026-10-23T13:26:54.2383002Z ok 10 - reject malformed quantity 0
+2026-10-23T13:26:54.2383467Z   ---
+2026-10-23T13:26:54.2383830Z   duration_ms: 0.097014
+2026-10-23T13:26:54.2384241Z   type: 'test'
+2026-10-23T13:26:54.2384585Z   ...
+2026-10-23T13:26:54.2385069Z # Subtest: reject malformed quantity -1
+2026-10-23T13:26:54.2385802Z ok 11 - reject malformed quantity -1
+2026-10-23T13:26:54.2386529Z   ---
+2026-10-23T13:26:54.2386915Z   duration_ms: 0.093337
+2026-10-23T13:26:54.2387341Z   type: 'test'
+2026-10-23T13:26:54.2387690Z   ...
+2026-10-23T13:26:54.2388164Z # Subtest: reject malformed quantity 1.5
+2026-10-23T13:26:54.2388783Z ok 12 - reject malformed quantity 1.5
+2026-10-23T13:26:54.2389272Z   ---
+2026-10-23T13:26:54.2389623Z   duration_ms: 0.093488
+2026-10-23T13:26:54.2390038Z   type: 'test'
+2026-10-23T13:26:54.2390383Z   ...
+2026-10-23T13:26:54.2390868Z # Subtest: reject malformed quantity null
+2026-10-23T13:26:54.2391509Z ok 13 - reject malformed quantity null
+2026-10-23T13:26:54.2391994Z   ---
+2026-10-23T13:26:54.2392351Z   duration_ms: 0.086054
+2026-10-23T13:26:54.2392769Z   type: 'test'
+2026-10-23T13:26:54.2393136Z   ...
+2026-10-23T13:26:54.2393681Z # Subtest: reject malformed quantity 9007199254740992
+2026-10-23T13:26:54.2394427Z ok 14 - reject malformed quantity 9007199254740992
+2026-10-23T13:26:54.2394980Z   ---
+2026-10-23T13:26:54.2395318Z   duration_ms: 0.088489
+2026-10-23T13:26:54.2395728Z   type: 'test'
+2026-10-23T13:26:54.2396079Z   ...
+2026-10-23T13:26:54.2396846Z # Subtest: reject malformed cart item null
+2026-10-23T13:26:54.2397511Z ok 15 - reject malformed cart item null
+2026-10-23T13:26:54.2398004Z   ---
+2026-10-23T13:26:54.2398554Z   duration_ms: 0.192167
+2026-10-23T13:26:54.2398781Z   type: 'test'
+2026-10-23T13:26:54.2398981Z   ...
+2026-10-23T13:26:54.2399243Z # Subtest: reject malformed cart item false
+2026-10-23T13:26:54.2399591Z ok 16 - reject malformed cart item false
+2026-10-23T13:26:54.2399848Z   ---
+2026-10-23T13:26:54.2400033Z   duration_ms: 0.093438
+2026-10-23T13:26:54.2400248Z   type: 'test'
+2026-10-23T13:26:54.2400436Z   ...
+2026-10-23T13:26:54.2400704Z # Subtest: reject malformed cart item "qa-toy"
+2026-10-23T13:26:54.2401068Z ok 17 - reject malformed cart item "qa-toy"
+2026-10-23T13:26:54.2401333Z   ---
+2026-10-23T13:26:54.2401512Z   duration_ms: 0.088489
+2026-10-23T13:26:54.2401719Z   type: 'test'
+2026-10-23T13:26:54.2401904Z   ...
+2026-10-23T13:26:54.2409789Z # Subtest: reject malformed cart item 42
+2026-10-23T13:26:54.2411017Z ok 18 - reject malformed cart item 42
+2026-10-23T13:26:54.2411553Z   ---
+2026-10-23T13:26:54.2411928Z   duration_ms: 0.082367
+2026-10-23T13:26:54.2412349Z   type: 'test'
+2026-10-23T13:26:54.2412734Z   ...
+2026-10-23T13:26:54.2415546Z # Subtest: catalogue price wins over client price and totals preserve pesewas
+2026-10-23T13:26:54.2417270Z ok 19 - catalogue price wins over client price and totals preserve pesewas
+2026-10-23T13:26:54.2418389Z   ---
+2026-10-23T13:26:54.2418839Z   duration_ms: 0.357632
+2026-10-23T13:26:54.2419264Z   type: 'test'
+2026-10-23T13:26:54.2419755Z   ...
+2026-10-23T13:26:54.2421533Z # Subtest: hidden and missing products cannot be purchased
+2026-10-23T13:26:54.2423161Z ok 20 - hidden and missing products cannot be purchased
+2026-10-23T13:26:54.2423726Z   ---
+2026-10-23T13:26:54.2424219Z   duration_ms: 0.325951
+2026-10-23T13:26:54.2424730Z   type: 'test'
+2026-10-23T13:26:54.2425174Z   ...
+2026-10-23T13:26:54.2806759Z 1..20
+2026-10-23T13:26:54.2807225Z # tests 20
+2026-10-23T13:26:54.2807600Z # suites 0
+2026-10-23T13:26:54.2807944Z # pass 20
+2026-10-23T13:26:54.2808297Z # fail 0
+2026-10-23T13:26:54.2817246Z # cancelled 0
+2026-10-23T13:26:54.2817614Z # skipped 0
+2026-10-23T13:26:54.2817951Z # todo 0
+2026-10-23T13:26:54.2818292Z # duration_ms 885.410257
+2026-10-23T13:26:54.2818580Z # start of coverage report
+2026-10-23T13:26:54.2818986Z # ---------------------------------------------------------------
+2026-10-23T13:26:54.2819448Z # file           | line % | branch % | funcs % | uncovered lines
+2026-10-23T13:26:54.2819880Z # ---------------------------------------------------------------
+2026-10-23T13:26:54.2820271Z # order-utils.js | 100.00 |    88.71 |  100.00 | 
+2026-10-23T13:26:54.2820806Z # ---------------------------------------------------------------
+2026-10-23T13:26:54.2821194Z # all files      | 100.00 |    88.71 |  100.00 | 
+2026-10-23T13:26:54.2821601Z # ---------------------------------------------------------------
+2026-10-23T13:26:54.2821938Z # end of coverage report
+2026-10-23T13:26:54.3030355Z ##[group]Run actions/upload-artifact@v4
+2026-10-23T13:26:54.3030713Z with:
+2026-10-23T13:26:54.3030939Z   name: static-site
+2026-10-23T13:26:54.3031181Z   path: dist
+2026-10-23T13:26:54.3031431Z   if-no-files-found: warn
+2026-10-23T13:26:54.3031714Z   compression-level: 6
+2026-10-23T13:26:54.3031972Z   overwrite: false
+2026-10-23T13:26:54.3032226Z   include-hidden-files: false
+2026-10-23T13:26:54.3032509Z ##[endgroup]
+2026-10-23T13:26:54.4729254Z (node:2674) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-23T13:26:54.4730765Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-23T13:26:54.5174611Z With the provided path, there will be 205 files uploaded
+2026-10-23T13:26:54.5187770Z Artifact name is valid!
+2026-10-23T13:26:54.5188545Z Root directory input is valid!
+2026-10-23T13:26:54.7599592Z Beginning upload of artifact content to blob storage
+2026-10-23T13:26:55.1093524Z (node:2674) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-23T13:26:55.6850609Z Uploaded bytes 8388608
+2026-10-23T13:26:55.9115074Z Uploaded bytes 16777216
+2026-10-23T13:26:56.1560044Z Uploaded bytes 25165824
+2026-10-23T13:26:56.5790787Z Uploaded bytes 33554432
+2026-10-23T13:26:56.9129059Z Uploaded bytes 41943040
+2026-10-23T13:26:57.1529226Z Uploaded bytes 50331648
+2026-10-23T13:26:57.5017872Z Uploaded bytes 58720256
+2026-10-23T13:26:57.8262995Z Uploaded bytes 67108864
+2026-10-23T13:26:58.3416767Z Uploaded bytes 75497472
+2026-10-23T13:26:58.5407438Z Uploaded bytes 83886080
+2026-10-23T13:26:58.8159051Z Uploaded bytes 92274688
+2026-10-23T13:26:59.1152301Z Uploaded bytes 100663296
+2026-10-23T13:26:59.5237856Z Uploaded bytes 109051904
+2026-10-23T13:26:59.7760780Z Uploaded bytes 117440512
+2026-10-23T13:27:00.0698225Z Uploaded bytes 125829120
+2026-10-23T13:27:00.1619669Z Uploaded bytes 129015471
+2026-10-23T13:27:00.1961888Z Finished uploading artifact content to blob storage!
+2026-10-23T13:27:00.1965327Z SHA256 digest of uploaded artifact zip is 718ba3c46bc443d0326211c882db48d97ab4f0c6b759d0818e4884f3c9cd4610
+2026-10-23T13:27:00.1968059Z Finalizing artifact upload
+2026-10-23T13:27:00.6947067Z Artifact static-site.zip successfully finalized. Artifact ID 12505275719
+2026-10-23T13:27:00.6948500Z Artifact static-site has been successfully uploaded! Final size is 129015471 bytes. Artifact ID is 12505275719
+2026-10-23T13:27:00.6956178Z Artifact download URL: https://github.com/7Localhosts/LocalHosts7/actions/runs/39961231772/artifacts/12505275719
+2026-10-23T13:27:00.7108485Z ##[group]Run node --check src/backend/server.js
+2026-10-23T13:27:00.7108874Z [36;1mnode --check src/backend/server.js[0m
+2026-10-23T13:27:00.7109206Z [36;1mnode --check src/backend/order-utils.js[0m
+2026-10-23T13:27:00.7109524Z [36;1mnode --check src/admin/app.js[0m
+2026-10-23T13:27:00.7109822Z [36;1mnode --check src/frontend/script.js[0m
+2026-10-23T13:27:00.7110167Z [36;1mnode --check src/frontend/checkout/checkout.js[0m
+2026-10-23T13:27:00.7110534Z [36;1mnode --check src/frontend/products/product.js[0m
+2026-10-23T13:27:00.7173545Z shell: /usr/bin/bash -e {0}
+2026-10-23T13:27:00.7173806Z ##[endgroup]
+2026-10-23T13:27:00.8804914Z Post job cleanup.
+2026-10-23T13:27:01.0017990Z (node:2729) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-23T13:27:01.0019201Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-23T13:27:01.0206051Z Post job cleanup.
+2026-10-23T13:27:01.1106875Z [command]/usr/bin/git version
+2026-10-23T13:27:01.1150544Z git version 2.55.0
+2026-10-23T13:27:01.1190764Z Temporarily overriding HOME='/home/runner/work/_temp/de42b26a-066e-4f0f-8ba4-0c32935e5b62' before making global git config changes
+2026-10-23T13:27:01.1192388Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-23T13:27:01.1197193Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LocalHosts7/LocalHosts7
+2026-10-23T13:27:01.1237160Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-23T13:27:01.1276024Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-23T13:27:01.1530661Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-23T13:27:01.1559668Z http.https://github.com/.extraheader
+2026-10-23T13:27:01.1572030Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-23T13:27:01.1608526Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-23T13:27:01.1885831Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-23T13:27:01.1925189Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-23T13:27:01.2385511Z Cleaning up orphan processes
+2026-10-23T13:27:01.2814012Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

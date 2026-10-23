@@ -1,0 +1,159 @@
+
+> backend@1.0.0 test
+> node ../../tests/backend.test.js && node ../../tests/frontend.test.js && node ../../tests/order-validation.test.js && node ../../tests/quality-gate.test.js
+
+◇ injected env (0) from .env
+Check email validation
+Check signed, paid-only customer receipt access
+Check Paystack Test Mode initialization payload and safe diagnostics
+Check server prices, sizes, and product visibility
+Check selectable fulfillment transitions
+Check required sizes with stale inventory counts
+Check backend health endpoint
+Check CORS allows only explicitly configured storefront origins
+Check Supabase readiness without exposing database errors
+Check payment initialization sends the production callback without returning secrets
+Check payment verification rejects failed and mismatched transactions
+Check public catalogue caching excludes private and inventory fields
+All backend checks passed
+Frontend assets, checkout verification states, and receipt PDF checks passed
+TAP version 13
+# Subtest: reject malformed quantity true
+ok 1 - reject malformed quantity true
+  ---
+  duration_ms: 6.5506
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity false
+ok 2 - reject malformed quantity false
+  ---
+  duration_ms: 0.4466
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity []
+ok 3 - reject malformed quantity []
+  ---
+  duration_ms: 2.7219
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity [2]
+ok 4 - reject malformed quantity [2]
+  ---
+  duration_ms: 0.4175
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity {}
+ok 5 - reject malformed quantity {}
+  ---
+  duration_ms: 0.7151
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity null
+ok 6 - reject malformed quantity null
+  ---
+  duration_ms: 0.4188
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity ""
+ok 7 - reject malformed quantity ""
+  ---
+  duration_ms: 0.8196
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 0
+ok 8 - reject malformed quantity 0
+  ---
+  duration_ms: 0.7889
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity -1
+ok 9 - reject malformed quantity -1
+  ---
+  duration_ms: 1.3838
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 1.5
+ok 10 - reject malformed quantity 1.5
+  ---
+  duration_ms: 1.6934
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity null
+ok 11 - reject malformed quantity null
+  ---
+  duration_ms: 0.7566
+  type: 'test'
+  ...
+# Subtest: reject malformed quantity 9007199254740992
+ok 12 - reject malformed quantity 9007199254740992
+  ---
+  duration_ms: 0.4711
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item null
+ok 13 - reject malformed cart item null
+  ---
+  duration_ms: 0.7587
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item false
+ok 14 - reject malformed cart item false
+  ---
+  duration_ms: 0.4409
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item "qa-toy"
+ok 15 - reject malformed cart item "qa-toy"
+  ---
+  duration_ms: 0.2984
+  type: 'test'
+  ...
+# Subtest: reject malformed cart item 42
+ok 16 - reject malformed cart item 42
+  ---
+  duration_ms: 0.2425
+  type: 'test'
+  ...
+# Subtest: catalogue price wins over client price and totals preserve pesewas
+ok 17 - catalogue price wins over client price and totals preserve pesewas
+  ---
+  duration_ms: 0.8527
+  type: 'test'
+  ...
+# Subtest: hidden and missing products cannot be purchased
+ok 18 - hidden and missing products cannot be purchased
+  ---
+  duration_ms: 0.799
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.1839
+TAP version 13
+# Subtest: placeholder PR evidence is rejected
+ok 1 - placeholder PR evidence is rejected
+  ---
+  duration_ms: 163.1393
+  type: 'test'
+  ...
+# Subtest: explicit PR evidence fields are accepted for human review
+ok 2 - explicit PR evidence fields are accepted for human review
+  ---
+  duration_ms: 147.0836
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 334.8807

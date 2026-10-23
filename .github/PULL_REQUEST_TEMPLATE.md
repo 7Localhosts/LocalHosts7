@@ -10,6 +10,12 @@ Closes #
 - 
 
 ## Testing
+Test evidence: <exact commands, outcome, and dated log URL>
+
+Screenshots: <URL for UI changes, or N/A - explain why no UI changes>
+
+AI disclosure: <used - link AI_USAGE.md entry, or none>
+
 - [ ] Tested locally
 - [ ] Relevant tests added/updated
 - [ ] CI passes

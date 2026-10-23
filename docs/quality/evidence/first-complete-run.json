@@ -1,0 +1,79 @@
+[
+  {
+    "id": "node22-clean-install",
+    "started": "2026-10-23T10:11:49.2365565Z",
+    "finished": "2026-10-23T10:12:12.3676780Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js ci",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local\\src\\backend",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-clean-install.log"
+  },
+  {
+    "id": "node22-regression",
+    "started": "2026-10-23T10:12:13.4843328Z",
+    "finished": "2026-10-23T10:12:30.5016484Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js test",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local\\src\\backend",
+    "exitCode": 1,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-regression.log"
+  },
+  {
+    "id": "node22-coverage-critical",
+    "started": "2026-10-23T10:12:36.9361643Z",
+    "finished": "2026-10-23T10:13:15.4672951Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js run test:coverage",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local\\src\\backend",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-coverage-critical.log"
+  },
+  {
+    "id": "node22-coverage-all-loaded",
+    "started": "2026-10-23T10:13:15.6928863Z",
+    "finished": "2026-10-23T10:13:23.6964095Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=**/src/** --test-coverage-exclude=**/node_modules/** tests/backend.test.js tests/frontend.test.js tests/order-validation.test.js",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-coverage-all-loaded.log"
+  },
+  {
+    "id": "node22-lint",
+    "started": "2026-10-23T10:13:23.9286106Z",
+    "finished": "2026-10-23T10:13:29.2889124Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe deployment/quality-gate.js lint",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-lint.log"
+  },
+  {
+    "id": "node22-build-production",
+    "started": "2026-10-23T10:13:29.4577080Z",
+    "finished": "2026-10-23T10:13:31.4876801Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe deployment/build-static.js",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-build-production.log"
+  },
+  {
+    "id": "node22-audit",
+    "started": "2026-10-23T10:13:31.6684936Z",
+    "finished": "2026-10-23T10:13:43.3152210Z",
+    "node": "v22.23.4",
+    "command": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\.qa-npm-cache\\_npx\\52027bd8fc0022aa\\node_modules\\node\\bin\\node.exe C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js audit --json",
+    "cwd": "C:\\Users\\CONTROL C-TECH\\Desktop\\kays-haven-setup\\LocalHosts7-qa-local\\src\\backend",
+    "exitCode": 0,
+    "sourceSha": "093ea2e61b11cb1e2bcee5397f8ecb5c475a962a",
+    "log": "node22-audit.log"
+  }
+]

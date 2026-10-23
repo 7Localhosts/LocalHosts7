@@ -1,0 +1,22 @@
+
+> backend@1.0.0 test
+> node ../../tests/backend.test.js && node ../../tests/frontend.test.js
+
+◇ injected env (0) from .env
+C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-main\src\backend\node_modules\@supabase\supabase-js\dist\index.cjs:395
+	if (!trimmedUrl) throw new Error("supabaseUrl is required.");
+	                 ^
+
+Error: supabaseUrl is required.
+    at validateSupabaseUrl (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-main\src\backend\node_modules\@supabase\supabase-js\dist\index.cjs:395:25)
+    at new SupabaseClient (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-main\src\backend\node_modules\@supabase\supabase-js\dist\index.cjs:638:19)
+    at createClient (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-main\src\backend\node_modules\@supabase\supabase-js\dist\index.cjs:896:9)
+    at Object.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-main\src\backend\server.js:44:18)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1674:12)
+
+Node.js v24.21.0

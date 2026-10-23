@@ -1,0 +1,26 @@
+✔ reject malformed quantity true (2.6107ms)
+✔ reject malformed quantity false (1.6351ms)
+✔ reject malformed quantity [] (0.3017ms)
+✔ reject malformed quantity [2] (0.2312ms)
+✔ reject malformed quantity {} (0.2573ms)
+✔ reject malformed quantity null (0.2374ms)
+✔ reject malformed quantity "" (0.377ms)
+✔ reject malformed quantity 0 (0.4318ms)
+✔ reject malformed quantity -1 (0.5898ms)
+✔ reject malformed quantity 1.5 (0.4542ms)
+✔ reject malformed quantity null (0.248ms)
+✔ reject malformed quantity 9007199254740992 (0.2979ms)
+✔ reject malformed cart item null (0.3172ms)
+✔ reject malformed cart item false (0.204ms)
+✔ reject malformed cart item "qa-toy" (0.246ms)
+✔ reject malformed cart item 42 (0.2558ms)
+✔ catalogue price wins over client price and totals preserve pesewas (0.9898ms)
+✔ hidden and missing products cannot be purchased (0.7229ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29.1328
