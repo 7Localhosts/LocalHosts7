@@ -34,6 +34,19 @@ jobs:
         run: make test
       - name: Full JavaScript syntax lint
         run: make lint
+      - name: Run target health smoke with synthetic configuration
+        env:
+          SUPABASE_URL: https://unit-test.invalid.supabase.co
+          SUPABASE_ANON_KEY: unit-test-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: unit-test-service-role-key
+          FRONTEND_ORIGIN: https://kayshaven.live
+          RECEIPT_ACCESS_TOKEN_SECRET: unit-test-receipt-signing-key
+          PORT: 18080
+        run: |
+          timeout 20s make run > /tmp/kays-run.log 2>&1 &
+          smoke_pid=$!
+          trap 'kill "$smoke_pid" 2>/dev/null || true' EXIT
+          curl --fail --retry 8 --retry-connrefused --retry-delay 1 http://127.0.0.1:18080/api/health
       - name: Production static build
         run: make build
         env:
