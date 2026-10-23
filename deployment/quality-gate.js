@@ -23,9 +23,9 @@ if (mode === 'lint') {
   const body = event.pull_request?.body || '';
   const requirements = [
     ['linked issue', /(?:closes|fixes|refs)\s+(?:#[1-9]\d*|https:\/\/github\.com\/7Localhosts\/LocalHosts7\/issues\/\d+)/i],
-    ['test evidence', /Test evidence:\s*\S[^\n]{8,}/i],
-    ['screenshot evidence or reason', /Screenshots:\s*(?:https?:\/\/\S+|N\/A\s*-\s*[^\n]{10,})/i],
-    ['AI disclosure', /AI disclosure:\s*(?:used|none)\b/i]
+    ['test evidence', /Test evidence:[ \t]*[^\s<\r\n][^\r\n]{8,}/i],
+    ['screenshot evidence or reason', /Screenshots:[ \t]*(?:https?:\/\/\S+|N\/A[ \t]*-[ \t]*[^\r\n]{10,})/i],
+    ['AI disclosure', /AI disclosure:[ \t]*(?:used|none)\b/i]
   ];
   const missing = requirements.filter(([, regex]) => !regex.test(body)).map(([name]) => name);
   if (missing.length) { console.error(`Missing PR evidence: ${missing.join(', ')}`); process.exit(1); }
