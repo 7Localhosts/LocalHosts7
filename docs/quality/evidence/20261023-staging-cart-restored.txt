@@ -1,0 +1,16 @@
+2026-10-23T10:35:26.266Z
+Browser tab: 2, Title: "Kay's Haven | Quality products from crib to campus.", URL: "https://kays-haven-staging.pages.dev/shop".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 13, 656-671, 673
+~		12 button Description: Open shopping cart, 2 items, ID: cartBtn
++			1239 text 2
++			1240 image Seba med cleansing bar
++			1241 heading Seba med cleansing bar, Value: 4
++				1242 text Seba med cleansing bar
++			1243 text GHS 85.00
++			1244 button Decrease quantity
++			1245 text 2
++			1246 button Increase quantity
++			1247 button Remove Seba med cleansing bar from cart
++		1248 text GHS 170.00
+The focused UI element is 1 AXWebArea Kay's Haven | Quality products from crib to campus., URL: kays-haven-staging.…

@@ -1,0 +1,111 @@
+✖ reject malformed quantity true (3.0418ms)
+✔ reject malformed quantity false (2.0555ms)
+✔ reject malformed quantity [] (0.2517ms)
+✖ reject malformed quantity [2] (0.413ms)
+✔ reject malformed quantity {} (0.2538ms)
+✔ reject malformed quantity null (0.3632ms)
+✔ reject malformed quantity "" (0.3076ms)
+✔ reject malformed quantity 0 (0.2172ms)
+✔ reject malformed quantity -1 (0.3193ms)
+✔ reject malformed quantity 1.5 (0.3425ms)
+✔ reject malformed quantity null (0.2026ms)
+✖ reject malformed quantity 9007199254740992 (0.2743ms)
+✖ reject malformed cart item null (4.9599ms)
+✔ reject malformed cart item false (0.256ms)
+✔ reject malformed cart item "qa-toy" (0.1817ms)
+✔ reject malformed cart item 42 (0.1278ms)
+✔ catalogue price wins over client price and totals preserve pesewas (0.5183ms)
+✔ hidden and missing products cannot be purchased (0.5073ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 14
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 31.8319
+
+✖ failing tests:
+
+test at tests\order-validation.test.js:6:3
+✖ reject malformed quantity true (3.0418ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:7:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /positive whole-number quantity/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests\order-validation.test.js:6:3
+✖ reject malformed quantity [2] (0.413ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:7:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /positive whole-number quantity/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests\order-validation.test.js:6:3
+✖ reject malformed quantity 9007199254740992 (0.2743ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:7:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /positive whole-number quantity/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests\order-validation.test.js:11:3
+✖ reject malformed cart item null (4.9599ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Each item needs/. Input:
+  
+  "TypeError: Cannot read properties of null (reading 'product_id')"
+  
+      at TestContext.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:12:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: Cannot read properties of null (reading 'product_id')
+        at C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\src\backend\order-utils.js:17:28
+        at Array.map (<anonymous>)
+        at buildPricedItems (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\src\backend\order-utils.js:16:27)
+        at C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:12:25
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (C:\Users\CONTROL C-TECH\Desktop\kays-haven-setup\LocalHosts7-qa-local\tests\order-validation.test.js:12:12)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18),
+    expected: /Each item needs/,
+    operator: 'throws',
+    diff: 'simple'
+  }

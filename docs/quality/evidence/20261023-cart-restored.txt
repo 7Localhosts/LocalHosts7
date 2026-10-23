@@ -1,0 +1,16 @@
+2026-10-23T10:07:13.114Z
+Browser tab: 1, Title: "Kay's Haven | Quality products from crib to campus.", URL: "https://kayshaven.live/shop".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 8, 653-668, 670
+~		7 button Description: Open shopping cart, 1 item, ID: cartBtn
++			1236 text 1
++			1237 image Tommee tipped bottle and warmer
++			1238 heading Tommee tipped bottle and warmer, Value: 4
++				1239 text Tommee tipped bottle and warmer
++			1240 text GHS 450.00
++			1241 button Decrease quantity
++			1242 text 1
++			1243 button Increase quantity
++			1244 button Remove Tommee tipped bottle and warmer from cart
++		1245 text GHS 450.00
+The focused UI element is 1 AXWebArea Kay's Haven | Quality products from crib to campus., URL: kayshaven.live/shop

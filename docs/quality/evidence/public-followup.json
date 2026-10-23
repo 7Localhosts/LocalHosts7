@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-23T10:10:52.967Z",
+  "checks": [
+    {
+      "type": "database",
+      "status": 200,
+      "body": {
+        "success": true,
+        "database": "connected"
+      }
+    },
+    {
+      "type": "invalid-catalogue-prices",
+      "products": [
+        {
+          "id": 192,
+          "price": 0
+        },
+        {
+          "id": 193,
+          "price": 0
+        },
+        {
+          "id": 194,
+          "price": 0
+        }
+      ]
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kayshaven.live/script.js",
+      "status": 200,
+      "deployedHash": "a913be968832b7fb9126c224c42113c0e0c29b6f77e2373323d341080f858a49",
+      "builtHash": "a913be968832b7fb9126c224c42113c0e0c29b6f77e2373323d341080f858a49",
+      "deployedNormalizedHash": "c76c1c05ad78335908f14f1e4ca279a9c22a10687a3ad28ab42374da92e9e973",
+      "builtNormalizedHash": "c76c1c05ad78335908f14f1e4ca279a9c22a10687a3ad28ab42374da92e9e973"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kayshaven.live/checkout/checkout.js",
+      "status": 200,
+      "deployedHash": "53015e8beb311a1a8ff599ef868ecaf477cf02e42d3e59f214fbd5f9b7d8d441",
+      "builtHash": "53015e8beb311a1a8ff599ef868ecaf477cf02e42d3e59f214fbd5f9b7d8d441",
+      "deployedNormalizedHash": "4f919d65058bd6107eed23e1ceb7337ee4914145ff9e55e2bdcedd0d418989da",
+      "builtNormalizedHash": "4f919d65058bd6107eed23e1ceb7337ee4914145ff9e55e2bdcedd0d418989da"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kayshaven.live/checkout/receipt-pdf.js",
+      "status": 200,
+      "deployedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b",
+      "builtHash": "9aad5c1b316ee61760619ba809e18aac7cc5c6accad8d7b63602d9dc81efc698",
+      "deployedNormalizedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b",
+      "builtNormalizedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kayshaven.live/checkout/payment-button-state.js",
+      "status": 200,
+      "deployedHash": "13993c68ab8522cefff22a92005e5c457f8281b2ee41381e3e989617d14bd19e",
+      "builtHash": "13993c68ab8522cefff22a92005e5c457f8281b2ee41381e3e989617d14bd19e",
+      "deployedNormalizedHash": "ac7deb0a314fba9011c66664e1be306c77625172a573a13b54bb50d94629331c",
+      "builtNormalizedHash": "ac7deb0a314fba9011c66664e1be306c77625172a573a13b54bb50d94629331c"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kayshaven.live/admin/app.js",
+      "status": 200,
+      "deployedHash": "2a4e85682d9b28596158e2b8767697982a2945bad101bc988dfb0f47468e408c",
+      "builtHash": "2a4e85682d9b28596158e2b8767697982a2945bad101bc988dfb0f47468e408c",
+      "deployedNormalizedHash": "ef5ccb0e662342e07ae768c567e4fe51000a964fd6c6c41dab896988ee3f18f5",
+      "builtNormalizedHash": "ef5ccb0e662342e07ae768c567e4fe51000a964fd6c6c41dab896988ee3f18f5"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kays-haven-staging.pages.dev/script.js",
+      "status": 200,
+      "deployedHash": "a913be968832b7fb9126c224c42113c0e0c29b6f77e2373323d341080f858a49",
+      "builtHash": "a913be968832b7fb9126c224c42113c0e0c29b6f77e2373323d341080f858a49",
+      "deployedNormalizedHash": "c76c1c05ad78335908f14f1e4ca279a9c22a10687a3ad28ab42374da92e9e973",
+      "builtNormalizedHash": "c76c1c05ad78335908f14f1e4ca279a9c22a10687a3ad28ab42374da92e9e973"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kays-haven-staging.pages.dev/checkout/checkout.js",
+      "status": 200,
+      "deployedHash": "53015e8beb311a1a8ff599ef868ecaf477cf02e42d3e59f214fbd5f9b7d8d441",
+      "builtHash": "53015e8beb311a1a8ff599ef868ecaf477cf02e42d3e59f214fbd5f9b7d8d441",
+      "deployedNormalizedHash": "4f919d65058bd6107eed23e1ceb7337ee4914145ff9e55e2bdcedd0d418989da",
+      "builtNormalizedHash": "4f919d65058bd6107eed23e1ceb7337ee4914145ff9e55e2bdcedd0d418989da"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kays-haven-staging.pages.dev/checkout/receipt-pdf.js",
+      "status": 200,
+      "deployedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b",
+      "builtHash": "9aad5c1b316ee61760619ba809e18aac7cc5c6accad8d7b63602d9dc81efc698",
+      "deployedNormalizedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b",
+      "builtNormalizedHash": "fcf16327fcfa41c4b7cf9a8c33b8b7c3c99a8c4dd3b8b3be52576f783b757a3b"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kays-haven-staging.pages.dev/checkout/payment-button-state.js",
+      "status": 200,
+      "deployedHash": "13993c68ab8522cefff22a92005e5c457f8281b2ee41381e3e989617d14bd19e",
+      "builtHash": "13993c68ab8522cefff22a92005e5c457f8281b2ee41381e3e989617d14bd19e",
+      "deployedNormalizedHash": "ac7deb0a314fba9011c66664e1be306c77625172a573a13b54bb50d94629331c",
+      "builtNormalizedHash": "ac7deb0a314fba9011c66664e1be306c77625172a573a13b54bb50d94629331c"
+    },
+    {
+      "type": "asset-hash",
+      "url": "https://kays-haven-staging.pages.dev/admin/app.js",
+      "status": 200,
+      "deployedHash": "2a4e85682d9b28596158e2b8767697982a2945bad101bc988dfb0f47468e408c",
+      "builtHash": "2a4e85682d9b28596158e2b8767697982a2945bad101bc988dfb0f47468e408c",
+      "deployedNormalizedHash": "ef5ccb0e662342e07ae768c567e4fe51000a964fd6c6c41dab896988ee3f18f5",
+      "builtNormalizedHash": "ef5ccb0e662342e07ae768c567e4fe51000a964fd6c6c41dab896988ee3f18f5"
+    }
+  ]
+}
