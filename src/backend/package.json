@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node ../../tests/backend.test.js && node ../../tests/frontend.test.js && node ../../tests/order-validation.test.js",
+    "test": "node ../../tests/backend.test.js && node ../../tests/frontend.test.js && node ../../tests/order-validation.test.js && node ../../tests/quality-gate.test.js",
     "lint": "node ../../deployment/quality-gate.js lint",
     "test:coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=**/src/backend/order-utils.js --test-coverage-lines=95 --test-coverage-branches=80 --test-coverage-functions=95 ../../tests/backend.test.js ../../tests/frontend.test.js ../../tests/order-validation.test.js",
     "build:static": "node ../../deployment/build-static.js",
