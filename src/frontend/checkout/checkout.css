@@ -490,83 +490,6 @@ textarea:focus {
 
 
 /* =========================
-   CONFIRMATION
-========================= */
-
-#confirmation-view {
-    max-width: 640px;
-
-    margin: 60px auto;
-
-    padding: 50px 32px;
-
-    text-align: center;
-
-    background: var(--panel);
-
-    border: 1px solid var(--line);
-
-    border-radius: var(--kh-radius-panel);
-
-    box-shadow: var(--shadow);
-}
-
-#confirmation-view .check-badge {
-    width: 68px;
-    height: 68px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    margin: 0 auto 20px;
-
-    border-radius: 50%;
-
-    background: var(--kh-surface-muted);
-
-    color: var(--kh-primary);
-
-    font-size: 30px;
-}
-
-#confirmation-view h2 {
-    margin: 0 0 10px;
-
-    color: var(--text);
-
-    font-size: 23px;
-}
-
-#confirmation-view p {
-    margin: 0 0 6px;
-
-    color: var(--muted);
-
-    font-size: 14px;
-}
-
-#confirmation-view .order-id {
-    display: inline-block;
-
-    margin-top: 14px;
-
-    padding: 7px 15px;
-
-    border-radius: 9px;
-
-    background: var(--soft);
-
-    color: var(--kh-primary);
-
-    font-weight: 700;
-
-    letter-spacing: 0.5px;
-}
-
-
-/* =========================
    MOBILE
 ========================= */
 
@@ -594,22 +517,8 @@ textarea:focus {
         position: static;
     }
 
-    #confirmation-view {
-        margin: 35px auto;
-
-        padding: 40px 22px;
-    }
-
 }
 .back-link, .back-link:hover { color: #7a13aa; text-decoration: none; }
-
-#confirmation-view[hidden] {
-    display: none;
-}
-
-#confirmation-view:not([hidden]) {
-    display: block;
-}
 
 input,
 select,
