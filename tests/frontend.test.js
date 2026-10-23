@@ -51,6 +51,7 @@ const shop = fs.readFileSync(path.join(frontend, "shop.html"), "utf8");
 const storefrontStyles = fs.readFileSync(path.join(frontend, "styles.css"), "utf8");
 const checkout = fs.readFileSync(path.join(frontend, "checkout", "checkout.html"), "utf8");
 const checkoutScript = fs.readFileSync(path.join(frontend, "checkout", "checkout.js"), "utf8");
+const checkoutStyles = fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8");
 const checkoutPaymentButton = require(path.join(frontend, "checkout", "payment-button-state.js"));
 const receiptPdf = require(path.join(frontend, "checkout", "receipt-pdf.js"));
 const productPage = fs.readFileSync(path.join(frontend, "products", "product.html"), "utf8");
@@ -239,7 +240,7 @@ assert.match(cartScript, /aria-label="Remove \$\{safe\(item\.name\)\} from cart"
 assert.match(cartPage, /cart-heading-icon/);
 assert.match(cartPage, /class="eyebrow kh-brand cart-brand"[^>]*><span class="kh-brand__kays">Kay's/);
 assert.match(fs.readFileSync(path.join(frontend, "cart", "cart.css"), "utf8"), /\.cart-item-info\s*\{/);
-assert.match(checkout, /id="confirmation-view" hidden/);
+assert.doesNotMatch(checkout, /confirmation-view|check-badge|Payment confirmed|conf-name|conf-order-id|Return to the shop/);
 assert.match(checkoutScript, /\/payments\/verify/);
 assert.match(checkoutScript, /window\.addEventListener\("storage"/);
 assert.doesNotMatch(checkoutScript, /checkoutConfigReady|DELIVERY_FEE|shipping_address|delivery_fee/i);
@@ -251,9 +252,9 @@ assert.doesNotMatch(checkout, /transport-note|#collection|transport information/
 assert.match(checkout, /class="kh-brand checkout-brand"/);
 assert.match(checkout, /Customer information/);
 assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /\.panel h2\s*\{[\s\S]*?font-family: "Montserrat"/);
-assert.match(checkoutScript, /document\.getElementById\("confirmation-view"\)\.hidden = false/);
-assert.match(checkout, /<div class="check-badge">✓<\/div><h2>Payment confirmed<\/h2>/, "the existing confirmation checkmark/message remains unchanged below the button");
-assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /#confirmation-view:not\(\[hidden\]\)\s*\{\s*display:\s*block/);
+assert.doesNotMatch(checkoutScript, /confirmation-view|conf-name|conf-order-id/);
+assert.doesNotMatch(checkoutStyles, /confirmation-view|check-badge/);
+assert.match(checkoutStyles, /#receipt-view\[hidden\]/, "the verified receipt remains independently available after payment");
 assert.match(adminPage, /id="refresh-orders"/);
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
 assert.doesNotMatch(adminPage, /name="(?:quantity|description|sizes)"|Current stock/i);
@@ -666,10 +667,7 @@ for (const [, rawUrl] of productionAdmin.matchAll(/\b(?:href|src)="([^"]+)"/g)) 
 async function exercisePaymentVerification(responseFactory) {
   const button = { textContent: "", disabled: false };
   const message = { textContent: "", classList: { add() {}, remove() {} } };
-  const confirmation = { hidden: true };
   const checkoutView = { hidden: false };
-  const confName = { textContent: "" };
-  const confOrderId = { textContent: "" };
   const receiptActions = { disabled: true, addEventListener() {} };
   const removed = [];
   const replaced = [];
@@ -687,10 +685,7 @@ async function exercisePaymentVerification(responseFactory) {
       return ({
         "place-order-btn": button,
         "checkout-message": message,
-        "confirmation-view": confirmation,
         "checkout-view": checkoutView,
-        "conf-name": confName,
-        "conf-order-id": confOrderId,
         "download-receipt": receiptActions,
         "print-receipt": receiptActions
       })[id];
@@ -713,7 +708,7 @@ async function exercisePaymentVerification(responseFactory) {
   vm.runInNewContext(`${checkoutScript.slice(buttonHelpersStart, buttonHelpersEnd)}\n${checkoutScript.slice(verifyStart, verifyEnd)}\nglobalThis.verifyPaymentReference = verifyPaymentReference;`, context);
   button.textContent = checkoutPaymentButton.buttonPresentation("ready", true).label;
   await context.verifyPaymentReference("KH-existing-reference");
-  return { button, message, confirmation, checkoutView, confName, confOrderId, removed, replaced, receiptLoads, observedWhilePending, context };
+  return { button, checkoutView, message, removed, replaced, receiptLoads, observedWhilePending, context };
 }
 
 async function testPaymentVerificationButtonStates() {
@@ -729,15 +724,12 @@ async function testPaymentVerificationButtonStates() {
 
   const successful = await exercisePaymentVerification(async () => ({
     ok: true,
-    json: async () => ({ success: true, payment_status: "paid", order_id: "synthetic-order-1", receipt_access_token: "synthetic-signed-token", order_number: "KH-TEST", customer_name: "Synthetic Buyer" })
+    json: async () => ({ success: true, payment_status: "paid", order_id: "synthetic-order-1", receipt_access_token: "synthetic-signed-token" })
   }));
   assert.equal(successful.observedWhilePending, "Verifying payment…");
   assert.equal(successful.button.textContent, "Payment successful", "the success label requires backend confirmation as paid");
   assert.equal(successful.button.disabled, true, "a successful payment cannot be submitted again");
-  assert.equal(successful.confirmation.hidden, false);
-  assert.equal(successful.checkoutView.hidden, true);
-  assert.equal(successful.confName.textContent, "Synthetic Buyer");
-  assert.equal(successful.confOrderId.textContent, "Order #KH-TEST");
+  assert.equal(successful.checkoutView.hidden, false, "the checkout remains visible so its payment button is the success indicator");
   assert.deepEqual(successful.receiptLoads, [["synthetic-order-1", "synthetic-signed-token"]], "the receipt uses the order ID and access token returned only after backend verification");
   assert.deepEqual(successful.removed, ["kayshaven-cart"]);
   assert.equal(successful.replaced.length, 1);
