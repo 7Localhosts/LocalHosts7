@@ -249,10 +249,6 @@ async function verifyPaymentReference(reference) {
       throw new Error(result.error || "Payment is not confirmed yet.");
     }
     setCheckoutPaymentState("successful");
-    document.getElementById("conf-name").textContent = result.customer_name || "";
-    document.getElementById("conf-order-id").textContent = `Order #${result.order_number || result.order_id}`;
-    document.getElementById("checkout-view").hidden = true;
-    document.getElementById("confirmation-view").hidden = false;
     localStorage.removeItem("kayshaven-cart");
     history.replaceState({}, "", window.location.pathname);
     await loadVerifiedReceipt(result.order_id, result.receipt_access_token);
