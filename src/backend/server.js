@@ -20,6 +20,31 @@ function isStoredProductImageUrl(value) {
   }
 }
 
+function snapshotProductImage(productImage, requestedImage) {
+  const saved = String(productImage || "").trim().replace(/\\/g, "/");
+  if (isStoredProductImageUrl(saved)) return saved;
+
+  const frontendOrigin = normalizeFrontendOrigin(process.env.FRONTEND_ORIGIN);
+  if (!frontendOrigin) return null;
+  const allowedStaticImage = value => {
+    try {
+      const image = new URL(String(value || ""), `${frontendOrigin}/`);
+      if (image.origin !== frontendOrigin || image.search || image.hash) return null;
+      if (!/^\/product-images\/(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._/-]+\.(?:png|jpe?g|webp)$/i.test(image.pathname)) return null;
+      return image.href;
+    } catch {
+      return null;
+    }
+  };
+
+  if (/^(?:images\/|product-images\/)/i.test(saved)) {
+    const staticPath = saved.replace(/^images\//i, "product-images/");
+    const savedImage = allowedStaticImage(staticPath);
+    if (savedImage) return savedImage;
+  }
+  return allowedStaticImage(requestedImage);
+}
+
 function describeProductImageStorageError(error) {
   const message = String(error?.message || "");
   const code = String(error?.statusCode || error?.code || "");
@@ -238,7 +263,7 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigins = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN, paymentClient = supabaseAdmin, paymentRequest = paystackRequest) => {
+const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigins = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN, paymentClient = supabaseAdmin, paymentRequest = paystackRequest, catalogueClient = supabaseAdmin) => {
 
     if (!applyCors(req, res, frontendOrigins)) {
       res.writeHead(403, { "Content-Type": "application/json" });
@@ -312,7 +337,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         const productIds = [...new Set(body.items.map(item => item.product_id ?? item.id).filter(id => id !== undefined && id !== null))];
         failureStage = "product_lookup";
         const { data: products, error: productsError } = await paymentClient
-          .from("products").select("id, name, price, sizes, is_active").in("id", productIds);
+          .from("products").select("id, name, price, sizes, is_active, image").in("id", productIds);
         if (productsError) throw productsError;
         failureStage = "price_validation";
         const priced = buildPricedItems(body.items, products || []);
@@ -336,13 +361,19 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         createdOrderId = order.id;
 
         failureStage = "order_item_insert";
+        const requestedItems = new Map(body.items.map(item => [String(item.product_id ?? item.id), item]));
+        const productsById = new Map((products || []).map(product => [String(product.id), product]));
         const { error: itemError } = await paymentClient.from("order_items").insert(priced.items.map(item => ({
           order_id: order.id,
           product_id: item.product_id,
           product_name: item.product_name,
           quantity: item.quantity,
           price: item.price,
-          size: item.size
+          size: item.size,
+          product_image_url: snapshotProductImage(
+            productsById.get(String(item.product_id))?.image,
+            requestedItems.get(String(item.product_id))?.image_url
+          )
         })));
         if (itemError) throw itemError;
 
@@ -428,7 +459,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         }
 
         const { data: order, error } = await receiptClient.from("orders")
-          .select("id, order_number, customer_name, created_at, total_amount, payment_status, payment_method, payment_reference, order_items ( product_name, size, quantity, price )")
+          .select("id, order_number, customer_name, email, phone, created_at, total_amount, payment_status, payment_method, payment_reference, order_items ( product_name, product_image_url, size, quantity, price )")
           .eq("id", orderId).single();
         if (error || !order) {
           sendReceiptJson(res, 404, { error: "Receipt order was not found." });
@@ -446,23 +477,30 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
 
         const items = Array.isArray(order.order_items) ? order.order_items.map(item => ({
           product_name: String(item.product_name || "Product"),
+          image_url: String(item.product_image_url || ""),
           size: String(item.size || "N/A"),
           quantity: Number(item.quantity),
           unit_price: Number(item.price),
           line_total: Number(item.price) * Number(item.quantity)
         })) : [];
-        if (!Number.isFinite(Number(order.total_amount)) || items.some(item => !Number.isFinite(item.quantity) || !Number.isFinite(item.unit_price) || !Number.isFinite(item.line_total))) {
+        const subtotal = Math.round((items.reduce((sum, item) => sum + item.line_total, 0) + Number.EPSILON) * 100) / 100;
+        const totalAmount = Math.round((Number(order.total_amount) + Number.EPSILON) * 100) / 100;
+        if (!items.length || !Number.isFinite(totalAmount) || items.some(item => !Number.isInteger(item.quantity) || item.quantity < 1 || !Number.isFinite(item.unit_price) || !Number.isFinite(item.line_total)) || Math.abs(subtotal - totalAmount) > 0.01) {
           sendReceiptJson(res, 500, { error: "Receipt details are unavailable." });
           return;
         }
         sendReceiptJson(res, 200, {
           receipt: {
+            verified: true,
             order_number: String(order.order_number || `KH-${order.id}`),
             purchase_date: order.created_at,
             customer_name: String(order.customer_name || "Customer"),
+            email: String(order.email || ""),
+            phone: String(order.phone || ""),
             items,
-            total_amount: Number(order.total_amount),
-            payment_status: "Paid",
+            subtotal,
+            total_amount: totalAmount,
+            payment_status: "VERIFIED PAID",
             payment_method: String(order.payment_method || "Paystack"),
             payment_reference: String(order.payment_reference || "")
           }
@@ -485,9 +523,9 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           sendJson(res, 401, { error: "Unauthorized" });
           return;
         }
-        let productsQuery = supabaseAdmin
+        let productsQuery = (includeInactive ? supabaseAdmin : catalogueClient)
           .from("products")
-          .select("*")
+          .select(includeInactive ? "*" : "id, name, category, price, image, description, sizes")
           .order("id");
         if (!includeInactive) productsQuery = productsQuery.eq("is_active", true);
         const { data, error } = await productsQuery;
@@ -496,9 +534,12 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           throw error;
         }
 
-        sendJson(res, 200, {
-          products: data || []
-        });
+        if (includeInactive) {
+          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "private, no-store" });
+        } else {
+          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=30, stale-while-revalidate=120", "Vary": "Origin" });
+        }
+        res.end(JSON.stringify({ products: data || [] }));
 
       } catch (error) {
         console.error(
@@ -1248,9 +1289,9 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN, frontendOrigins = process.env.FRONTEND_ORIGINS, paymentClient = supabaseAdmin, paymentRequest = paystackRequest } = {}) {
+function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN, frontendOrigins = process.env.FRONTEND_ORIGINS, paymentClient = supabaseAdmin, paymentRequest = paystackRequest, catalogueClient = supabaseAdmin } = {}) {
   const corsOrigins = frontendOrigins || frontendOrigin;
-  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, corsOrigins, paymentClient, paymentRequest));
+  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, corsOrigins, paymentClient, paymentRequest, catalogueClient));
 }
 
 function validEmail(value) {
