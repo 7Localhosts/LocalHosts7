@@ -20,11 +20,27 @@ function validateApiBase(apiBase) {
   }
 }
 
-function assembleSite(output, apiBase) {
+function normalizeFrontendOrigin(value) {
+  try {
+    const origin = new URL(String(value || "").trim());
+    if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) {
+      return "";
+    }
+    return origin.origin;
+  } catch {
+    return "";
+  }
+}
+
+function assembleSite(output, apiBase, frontendOrigin) {
   const root = path.resolve(__dirname, "..");
   fs.mkdirSync(output, { recursive: false });
   copyTree(path.join(root, "src", "frontend"), output);
   copyTree(path.join(root, "src", "admin"), path.join(output, "admin"));
+
+  const headersFile = path.join(output, "_headers");
+  const headers = fs.readFileSync(headersFile, "utf8");
+  fs.writeFileSync(headersFile, headers.replace(/Access-Control-Allow-Origin:\s*[^\r\n]+/, `Access-Control-Allow-Origin: ${frontendOrigin}`), "utf8");
 
   const pages = [
     "index.html",
@@ -57,18 +73,26 @@ function assembleSite(output, apiBase) {
   return output;
 }
 
-function buildStaticSite(outputDirectory = path.resolve(__dirname, "..", "dist"), apiBase = process.env.KAYS_HAVEN_API_URL) {
+function buildStaticSite(
+  outputDirectory = path.resolve(__dirname, "..", "dist"),
+  apiBase = process.env.KAYS_HAVEN_API_URL,
+  frontendOrigin = process.env.KAYS_HAVEN_FRONTEND_ORIGIN || "https://kayshaven.live"
+) {
   validateApiBase(apiBase);
+  const allowedFrontendOrigin = normalizeFrontendOrigin(frontendOrigin);
+  if (!allowedFrontendOrigin) throw new Error("Set KAYS_HAVEN_FRONTEND_ORIGIN to one exact public HTTPS origin before building the site.");
   const root = path.resolve(__dirname, "..");
   const output = path.resolve(outputDirectory);
   if (output !== path.join(root, "dist")) {
     throw new Error("Production static build output is restricted to the repository's dist directory.");
   }
   fs.rmSync(output, { recursive: true, force: true });
-  return assembleSite(output, apiBase);
+  return assembleSite(output, apiBase, allowedFrontendOrigin);
 }
 
-function buildStaticPreview(outputDirectory) {
+function buildStaticPreview(outputDirectory, frontendOrigin = "https://kayshaven.live") {
+  const allowedFrontendOrigin = normalizeFrontendOrigin(frontendOrigin);
+  if (!allowedFrontendOrigin) throw new Error("Preview frontend origin must be one exact public HTTPS origin.");
   const output = path.resolve(outputDirectory);
   const tempRoot = path.resolve(os.tmpdir());
   const relative = path.relative(tempRoot, output);
@@ -77,7 +101,7 @@ function buildStaticPreview(outputDirectory) {
   }
   if (fs.existsSync(output)) throw new Error("Preview build output already exists; refusing to overwrite it.");
   fs.mkdirSync(path.dirname(output), { recursive: true });
-  return assembleSite(output, "");
+  return assembleSite(output, "", allowedFrontendOrigin);
 }
 
 if (require.main === module) {

@@ -1,6 +1,9 @@
 let products = [];
 let productsLoading = true;
 let cart = readStoredCart();
+const PUBLIC_CATALOG_STORAGE_KEY = "kayshaven-public-catalog-v1";
+const PUBLIC_CATALOG_MAX_AGE_MS = 10 * 60 * 1000;
+const PUBLIC_CATALOG_STALE_LIMIT_MS = 24 * 60 * 60 * 1000;
 
 function readStoredCart() {
   try {
@@ -29,22 +32,57 @@ function cartImageUrl(product) {
   return new URL(image.replace(/^(\.\.\/)+/, ""), document.baseURI).href;
 }
 
-async function productsWithLoadedImages(candidates, onProgress = () => {}) {
-  const visible = new Array(candidates.length);
-  let nextIndex = 0;
-  const worker = async () => {
-    while (nextIndex < candidates.length) {
-      const index = nextIndex++;
-      const product = candidates[index];
-      const imageUrl = cartImageUrl(product);
-      if (await productImageLoads(imageUrl)) {
-        visible[index] = { ...product, _catalogImageUrl: imageUrl };
-        onProgress(visible.filter(Boolean));
-      }
-    }
+function cleanPublicProduct(product) {
+  if (!product || product.id == null || !String(product.name || "").trim()) return null;
+  const price = Number(product.price);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  return {
+    id: product.id,
+    name: String(product.name),
+    category: String(product.category || ""),
+    price,
+    image: typeof product.image === "string" ? product.image : "",
+    description: String(product.description || ""),
+    sizes: Array.isArray(product.sizes) ? product.sizes.map(size => String(size)) : [],
+    badge: String(product.badge || ""),
+    _catalogImageUrl: cartImageUrl(product)
   };
-  await Promise.all(Array.from({ length: Math.min(8, candidates.length) }, worker));
-  return visible.filter(Boolean);
+}
+
+function readPublicCatalogCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(PUBLIC_CATALOG_STORAGE_KEY) || "null");
+    const savedAt = Number(cached?.saved_at);
+    if (!Number.isFinite(savedAt) || Date.now() - savedAt > PUBLIC_CATALOG_STALE_LIMIT_MS || !Array.isArray(cached.products)) return null;
+    const safeProducts = cached.products.map(cleanPublicProduct).filter(Boolean);
+    return safeProducts.length ? { products: safeProducts, fresh: Date.now() - savedAt <= PUBLIC_CATALOG_MAX_AGE_MS } : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePublicCatalogCache(catalogue) {
+  try {
+    const safeProducts = catalogue.map(({ _catalogImageUrl, ...product }) => product);
+    localStorage.setItem(PUBLIC_CATALOG_STORAGE_KEY, JSON.stringify({ saved_at: Date.now(), products: safeProducts }));
+  } catch {
+    // A full or disabled browser storage should not interrupt the live catalogue.
+  }
+}
+
+function renderProductSkeletons(count = 8) {
+  const grid = $("productGrid");
+  if (!grid) return;
+  grid.setAttribute("aria-busy", "true");
+  grid.innerHTML = Array.from({ length: count }, () => `
+    <article class="product-card product-card-skeleton" aria-hidden="true">
+      <div class="skeleton-image"></div>
+      <div class="skeleton-line skeleton-line-short"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line skeleton-line-price"></div>
+      <div class="skeleton-button"></div>
+    </article>
+  `).join("");
 }
 
 
@@ -53,7 +91,15 @@ async function productsWithLoadedImages(candidates, onProgress = () => {}) {
 ========================= */
 
 async function loadProducts() {
-  productsLoading = true;
+  const cached = readPublicCatalogCache();
+  if (cached) {
+    products = cached.products;
+    productsLoading = false;
+    renderProducts();
+  } else {
+    productsLoading = true;
+    renderProductSkeletons();
+  }
   try {
     const response = await fetch(`${window.KAYS_HAVEN_API_URL}/api/products`);
 
@@ -63,32 +109,28 @@ async function loadProducts() {
 
     const data = await response.json();
 
-    const candidates = Array.isArray(data.products)
-      ? data.products.filter(product => Number.isFinite(Number(product.price)) && Number(product.price) > 0)
-      : [];
-    products = [];
-    renderProducts();
-    products = await productsWithLoadedImages(candidates, available => {
-      products = available;
-      renderProducts();
-    });
-
+    const candidates = Array.isArray(data.products) ? data.products.map(cleanPublicProduct).filter(Boolean) : [];
+    products = candidates;
+    writePublicCatalogCache(candidates);
     productsLoading = false;
     renderProducts();
   } catch (error) {
     productsLoading = false;
     console.error("Failed to load products:", error);
 
-    if ($("productGrid")) {
+    if (!products.length && $("productGrid")) {
       $("productGrid").innerHTML = `
         <div class="empty-cart">
           <p>Could not load products.</p>
           <p>Please try again later.</p>
         </div>
       `;
+    } else if (products.length) {
+      toast("Showing the saved catalogue. Current prices are confirmed securely at checkout.");
     }
 
-    toast("Could not load products");
+    if (!products.length) toast("Could not load products");
+    if ($("productGrid")) $("productGrid").setAttribute("aria-busy", "false");
   }
 }
 
@@ -109,10 +151,13 @@ function renderProducts() {
     return currentFilter === "All" || product.category === currentFilter;
   });
 
-  grid.innerHTML = matches.map(product => {
+  grid.setAttribute("aria-busy", String(productsLoading));
+  grid.innerHTML = matches.map((product, index) => {
 
     const imageUrl = product._catalogImageUrl || cartImageUrl(product);
-    const image = `<img data-catalog-image src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async">`;
+    const image = imageUrl
+      ? `<img data-catalog-image src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" width="800" height="880" loading="${index < 4 ? "eager" : "lazy"}" decoding="async"${index < 4 ? ' fetchpriority="high"' : ""}>`
+      : "";
     const badge = String(product.badge || "").trim();
     const showBadge = badge && !/\bout\s+of\s+stock\b/i.test(badge);
 
@@ -121,7 +166,9 @@ function renderProducts() {
 
         <a href="products/product.html?id=${encodeURIComponent(product.id)}" class="product-link">
 
-          <div class="product-image">
+          <div class="product-image" data-image-state="loading">
+
+            <span class="placeholder" aria-hidden="true"></span>
 
             ${showBadge ? `<span class="product-badge">${escapeHtml(badge)}</span>` : ""}
 
@@ -154,18 +201,19 @@ function renderProducts() {
   }).join("");
 
   grid.querySelectorAll("img[data-catalog-image]").forEach(image => {
+    const frame = image.closest(".product-image");
+    image.addEventListener("load", () => { if (frame) frame.dataset.imageState = "loaded"; }, { once: true });
     image.addEventListener("error", () => {
-      const card = image.closest("[data-product-card]");
-      if (!card) return;
-      const failedId = card.dataset.productCard;
-      products = products.filter(product => String(product.id) !== String(failedId));
-      renderProducts();
+      if (!frame) return;
+      frame.dataset.imageState = "failed";
+      image.hidden = true;
     }, { once: true });
+    if (image.complete && image.naturalWidth > 0 && frame) frame.dataset.imageState = "loaded";
   });
 
   if ($("emptyState")) {
     $("emptyState").textContent = productsLoading ? "Loading products…" : "No products found. Try another search.";
-    $("emptyState").style.display = matches.length ? "none" : "block";
+    $("emptyState").style.display = productsLoading || matches.length ? "none" : "block";
   }
 }
 

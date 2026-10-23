@@ -1,4 +1,16 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+// Keep this suite independent of account credentials and safe for CI/local runs.
+process.env.SUPABASE_URL = "https://unit-test.invalid.supabase.co";
+process.env.SUPABASE_ANON_KEY = "unit-test-anon-key";
+process.env.SUPABASE_SERVICE_ROLE_KEY = "unit-test-service-role-key";
+process.env.RECEIPT_ACCESS_TOKEN_SECRET = "unit-test-receipt-signing-key";
+process.env.FRONTEND_ORIGIN = "https://unit-test.invalid";
+delete process.env.PAYSTACK_SECRET_KEY;
+delete process.env.PAYSTACK_CALLBACK_URL;
+
 const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
@@ -15,11 +27,17 @@ async function main() {
   assert.equal(isValidCheckoutContact("", "", "+233200000000"), false, "customer name remains required");
   assert.equal(isValidCheckoutContact("Buyer Example", "", ""), false, "phone remains required");
   const guestPaymentEmail = createGuestPaystackEmail("https://shop.example.co.gh/checkout/return");
+  const productionOrigin = "https://kayshaven.live";
+  const productionCallback = `${productionOrigin}/checkout/checkout.html`;
   assert.match(guestPaymentEmail, /^checkout-[a-f0-9]{32}@shop\.example\.co\.gh$/, "Paystack receives a non-personal alias based on the HTTPS callback domain");
   assert.equal(getPaystackConfiguration("", "https://shop.example.co.gh/checkout/return").configured, false, "missing Paystack secret disables checkout");
   assert.equal(getPaystackConfiguration("sk_live_example", "https://shop.example.co.gh/checkout/return").configured, false, "live Paystack keys are rejected while the integration is restricted to Test Mode");
-  assert.equal(getPaystackConfiguration("sk_test_example", "http://localhost/return").configured, false, "non-HTTPS callback disables checkout");
-  assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/return").configured, true, "complete secure Paystack configuration enables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", "http://localhost/checkout/checkout.html", "https://shop.example.co.gh").configured, false, "non-HTTPS callback disables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/checkout.html", "https://shop.example.co.gh").configured, true, "complete secure Paystack configuration enables checkout");
+  assert.equal(getPaystackConfiguration("sk_test_example", productionCallback, productionOrigin).callbackUrl, productionCallback, "the production Paystack callback is the canonical Cloudflare checkout URL");
+  assert.equal(getPaystackConfiguration("sk_test_example", "https://radiant-croissant-02f4a0.netlify.app/checkout/checkout.html", productionOrigin).configured, false, "a callback on the retired Netlify origin is rejected");
+  assert.equal(getPaystackConfiguration("sk_test_example", "https://kays-haven-staging.pages.dev/checkout/checkout.html", productionOrigin).configured, false, "staging remains an API origin but cannot replace the production payment callback");
+  assert.equal(getPaystackConfiguration("sk_test_example", `${productionOrigin}/checkout/return`, productionOrigin).configured, false, "callbacks must use the verified checkout route");
   assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh").callbackUrl, "https://shop.example.co.gh/checkout/checkout.html", "an omitted callback derives the checkout URL from the secure frontend origin");
   assert.equal(getPaystackConfiguration("sk_test_example", "", "http://shop.example.co.gh").configured, false, "callback fallback requires an HTTPS frontend origin");
   assert.equal(getPaystackConfiguration("sk_test_example", "", "https://shop.example.co.gh/shop").configured, false, "callback fallback accepts an origin, not a path-bearing URL");
@@ -39,7 +57,7 @@ async function main() {
     email: guestPaymentEmail,
     totalAmount: 765.25,
     reference: "KH-1792600000000-a1b2c3d4e5f6",
-    callbackUrl: "https://shop.example.co.gh/checkout/checkout.html",
+    callbackUrl: productionCallback,
     orderId: "synthetic-order-id",
     orderNumber: "KH-SYNTHETIC",
     customerName: "Synthetic Buyer"
@@ -49,7 +67,7 @@ async function main() {
   assert.equal(paystackPayload.currency, "GHS");
   assert.equal(paystackPayload.email, guestPaymentEmail, "an optional customer email uses the existing non-personal alias");
   assert.match(paystackPayload.reference, /^[A-Za-z0-9.=-]+$/, "payment reference uses Paystack-supported characters");
-  assert.equal(paystackPayload.callback_url, "https://shop.example.co.gh/checkout/checkout.html");
+  assert.equal(paystackPayload.callback_url, productionCallback);
   assert.equal(typeof paystackPayload.metadata, "string", "Paystack receives metadata as a JSON string");
   assert.deepEqual(JSON.parse(paystackPayload.metadata), {
     order_id: "synthetic-order-id",
@@ -144,6 +162,71 @@ async function main() {
       assert.equal(normalizedHealth.status, 200, `${path} is accepted as a health check`);
       assert.deepEqual(await normalizedHealth.json(), { success: true, message: "Backend is running" });
     }
+
+    console.log("Check CORS allows only explicitly configured storefront origins");
+    const temporaryPagesOrigin = "https://kays-haven-staging.pages.dev";
+    const productionOrigin = "https://kayshaven.live";
+    const corsServer = createServer({ frontendOrigins: `${productionOrigin}, ${temporaryPagesOrigin}` });
+    try {
+      await new Promise(resolve => corsServer.listen(0, "127.0.0.1", resolve));
+      const corsUrl = `http://127.0.0.1:${corsServer.address().port}`;
+      for (const allowedOrigin of [productionOrigin, temporaryPagesOrigin]) {
+        const allowedOriginResponse = await fetch(`${corsUrl}/api/health`, {
+          headers: { Origin: allowedOrigin }
+        });
+        assert.equal(allowedOriginResponse.status, 200, `${allowedOrigin} can call the API`);
+        assert.equal(allowedOriginResponse.headers.get("access-control-allow-origin"), allowedOrigin);
+        assert.match(allowedOriginResponse.headers.get("vary") || "", /origin/i);
+
+        const allowedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
+          method: "OPTIONS",
+          headers: {
+            Origin: allowedOrigin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type"
+          }
+        });
+        assert.equal(allowedPreflight.status, 204, `${allowedOrigin} can preflight API calls`);
+        assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), allowedOrigin);
+        assert.equal(allowedPreflight.headers.get("access-control-allow-methods"), "GET, POST, PATCH, DELETE, OPTIONS");
+        assert.equal(allowedPreflight.headers.get("access-control-allow-headers"), "Content-Type, Authorization");
+      }
+
+      const rejectedOrigin = await fetch(`${corsUrl}/api/health`, {
+        headers: { Origin: "https://other-project.pages.dev" }
+      });
+      assert.equal(rejectedOrigin.status, 403);
+      assert.equal(rejectedOrigin.headers.get("access-control-allow-origin"), null);
+
+      const rejectedPreflight = await fetch(`${corsUrl}/api/payments/initialize`, {
+        method: "OPTIONS",
+        headers: { Origin: "https://other-project.pages.dev", "Access-Control-Request-Method": "POST" }
+      });
+      assert.equal(rejectedPreflight.status, 403);
+      assert.equal(rejectedPreflight.headers.get("access-control-allow-origin"), null);
+
+      const wildcardOrigin = await fetch(`${corsUrl}/api/health`, {
+        headers: { Origin: "https://anything.pages.dev" }
+      });
+      assert.equal(wildcardOrigin.status, 403, "a Pages wildcard is never allowed");
+      assert.equal(wildcardOrigin.headers.get("access-control-allow-origin"), null);
+
+      const legacyServer = createServer({ frontendOrigin: temporaryPagesOrigin });
+      try {
+        await new Promise(resolve => legacyServer.listen(0, "127.0.0.1", resolve));
+        const legacyUrl = `http://127.0.0.1:${legacyServer.address().port}`;
+        const legacyOrigin = await fetch(`${legacyUrl}/api/health`, {
+          headers: { Origin: temporaryPagesOrigin }
+        });
+        assert.equal(legacyOrigin.status, 200, "the original single-origin configuration remains supported");
+        assert.equal(legacyOrigin.headers.get("access-control-allow-origin"), temporaryPagesOrigin);
+      } finally {
+        await new Promise((resolve, reject) => legacyServer.close(error => error ? reject(error) : resolve()));
+      }
+    } finally {
+      await new Promise((resolve, reject) => corsServer.close(error => error ? reject(error) : resolve()));
+    }
+
     console.log("Check Supabase readiness without exposing database errors");
     const readinessClient = result => ({
       from(table) {
@@ -212,6 +295,164 @@ async function main() {
       else process.env.PAYSTACK_CALLBACK_URL = previousCallbackUrl;
     }
 
+    console.log("Check payment initialization sends the production callback without returning secrets");
+    const previousInitKey = process.env.PAYSTACK_SECRET_KEY;
+    const previousInitCallback = process.env.PAYSTACK_CALLBACK_URL;
+    const previousInitOrigin = process.env.FRONTEND_ORIGIN;
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_synthetic_only";
+    process.env.PAYSTACK_CALLBACK_URL = productionCallback;
+    process.env.FRONTEND_ORIGIN = productionOrigin;
+    let initializationPayload;
+    const initializationClient = {
+      from(table) {
+        if (table === "products") {
+          return { select: () => ({ in: async (field, values) => {
+            assert.equal(field, "id");
+            assert.deepEqual(values, ["synthetic-toy"]);
+            return { data: [{ id: "synthetic-toy", name: "Synthetic toy", category: "Toys", price: 42.5, sizes: [], is_active: true, image: "images/synthetic-toy.webp" }], error: null };
+          } }) };
+        }
+        if (table === "orders") {
+          return { insert: rows => {
+            assert.equal(rows[0].payment_status, "pending");
+            return { select: () => ({ single: async () => ({ data: { id: "synthetic-payment-order", order_number: "KH-SYNTHETIC-PAYMENT" }, error: null }) }) };
+          } };
+        }
+        if (table === "order_items") return { insert: async rows => { initializationOrderItems = rows; return { error: null, rows }; } };
+        throw new Error(`Unexpected payment table ${table}`);
+      }
+    };
+    let initializationOrderItems = [];
+    const initializationServer = createServer({
+      paymentClient: initializationClient,
+      frontendOrigins: productionOrigin,
+      paymentRequest: async (endpoint, payload) => {
+        assert.equal(endpoint, "/transaction/initialize");
+        initializationPayload = payload;
+        return { authorization_url: "https://checkout.paystack.com/synthetic-test-authorization" };
+      }
+    });
+    try {
+      await new Promise(resolve => initializationServer.listen(0, "127.0.0.1", resolve));
+      const initializationResponse = await fetch(`http://127.0.0.1:${initializationServer.address().port}/api/payments/initialize`, {
+        method: "POST", headers: { "Content-Type": "application/json", Origin: productionOrigin },
+        body: JSON.stringify({
+          customer_name: "Synthetic Callback Buyer",
+          email: "buyer@example.test",
+          phone: "+233000000042",
+          expected_total: 42.5,
+          items: [{ product_id: "synthetic-toy", quantity: 1, image_url: `${productionOrigin}/product-images/synthetic-toy.webp` }]
+        })
+      });
+      assert.equal(initializationResponse.status, 200);
+      const initializationBody = await initializationResponse.json();
+      assert.equal(initializationPayload.callback_url, productionCallback, "Paystack initialization uses the exact Cloudflare production callback");
+      assert.equal(initializationOrderItems[0].product_image_url, `${productionOrigin}/product-images/synthetic-toy.webp`, "checkout saves a safe item image snapshot beside authoritative name, size, quantity, and price");
+      assert.equal(initializationBody.authorization_url, "https://checkout.paystack.com/synthetic-test-authorization");
+      assert.ok(initializationBody.reference);
+      assert.deepEqual(Object.keys(initializationBody).sort(), ["authorization_url", "reference"], "the customer response contains no callback configuration or provider secret");
+      assert.doesNotMatch(JSON.stringify(initializationBody), /sk_test_synthetic_only|secret/i, "the Test Mode secret is never returned to the browser");
+    } finally {
+      await new Promise((resolve, reject) => initializationServer.close(error => error ? reject(error) : resolve()));
+      if (previousInitKey === undefined) delete process.env.PAYSTACK_SECRET_KEY;
+      else process.env.PAYSTACK_SECRET_KEY = previousInitKey;
+      if (previousInitCallback === undefined) delete process.env.PAYSTACK_CALLBACK_URL;
+      else process.env.PAYSTACK_CALLBACK_URL = previousInitCallback;
+      if (previousInitOrigin === undefined) delete process.env.FRONTEND_ORIGIN;
+      else process.env.FRONTEND_ORIGIN = previousInitOrigin;
+    }
+
+    console.log("Check payment verification rejects failed and mismatched transactions");
+    const verificationOrder = {
+      id: "synthetic-payment-order",
+      order_number: "KH-SYNTHETIC-PAYMENT",
+      customer_name: "Synthetic Buyer",
+      total_amount: 42.5,
+      payment_reference: "KH-VERIFY-REFERENCE-42",
+      payment_status: "pending"
+    };
+    let providerPayment = {};
+    let providerVerificationCount = 0;
+    const finalizedReferences = [];
+    const paymentClient = {
+      from(table) {
+        assert.equal(table, "orders");
+        return {
+          select(columns) {
+            assert.match(columns, /payment_status/);
+            return {
+              eq(field, value) {
+                assert.equal(field, "payment_reference");
+                assert.equal(value, "KH-VERIFY-REFERENCE-42");
+                return { single: async () => ({ data: { ...verificationOrder }, error: null }) };
+              }
+            };
+          }
+        };
+      },
+      async rpc(name, args) {
+        assert.equal(name, "finalize_paid_order");
+        finalizedReferences.push(args.p_reference);
+        verificationOrder.payment_status = "paid";
+        return { error: null };
+      }
+    };
+    const verificationServer = createServer({
+      paymentClient,
+      paymentRequest: async endpoint => {
+        providerVerificationCount += 1;
+        assert.equal(endpoint, "/transaction/verify/KH-VERIFY-REFERENCE-42");
+        return providerPayment;
+      },
+      receiptSigningKey: "synthetic-payment-signing-key"
+    });
+    try {
+      await new Promise(resolve => verificationServer.listen(0, "127.0.0.1", resolve));
+      const verificationUrl = `http://127.0.0.1:${verificationServer.address().port}/api/payments/verify`;
+      const invalidPayments = [
+        { reference: "KH-VERIFY-REFERENCE-42", status: "failed", currency: "GHS", amount: 4250 },
+        { reference: "KH-VERIFY-REFERENCE-42", status: "abandoned", currency: "GHS", amount: 4250 },
+        { reference: "KH-OTHER-REFERENCE", status: "success", currency: "GHS", amount: 4250 },
+        { reference: "KH-VERIFY-REFERENCE-42", status: "success", currency: "USD", amount: 4250 },
+        { reference: "KH-VERIFY-REFERENCE-42", status: "success", currency: "GHS", amount: 4249 },
+        { reference: "KH-VERIFY-REFERENCE-42", status: "pending", currency: "GHS", amount: 4250 }
+      ];
+      for (const invalidPayment of invalidPayments) {
+        verificationOrder.payment_status = "pending";
+        providerPayment = invalidPayment;
+        const response = await fetch(verificationUrl, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference: "KH-VERIFY-REFERENCE-42" })
+        });
+        assert.equal(response.status, 409, `${invalidPayment.status}/${invalidPayment.currency}/${invalidPayment.amount} is not confirmed`);
+        const body = await response.json();
+        assert.notEqual(body.success, true, "failed, canceled, pending, or mismatched transactions never receive a paid response");
+        assert.equal(finalizedReferences.length, 0, "unverified payments never finalize the order");
+      }
+
+      providerPayment = { reference: "KH-VERIFY-REFERENCE-42", status: "success", currency: "GHS", amount: 4250 };
+      const verifiedResponse = await fetch(verificationUrl, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: "KH-VERIFY-REFERENCE-42" })
+      });
+      assert.equal(verifiedResponse.status, 200);
+      const verifiedBody = await verifiedResponse.json();
+      assert.equal(verifiedBody.success, true);
+      assert.equal(verifiedBody.payment_status, "paid");
+      assert.deepEqual(finalizedReferences, ["KH-VERIFY-REFERENCE-42"], "only a verified exact amount, currency, and reference are finalized");
+
+      const verificationCountAfterSuccess = providerVerificationCount;
+      const duplicateCallback = await fetch(verificationUrl, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: "KH-VERIFY-REFERENCE-42" })
+      });
+      assert.equal(duplicateCallback.status, 200, "a retry of an already verified callback remains idempotent");
+      assert.equal(providerVerificationCount, verificationCountAfterSuccess, "an already-paid order is not initialized or finalized again");
+      assert.deepEqual(finalizedReferences, ["KH-VERIFY-REFERENCE-42"]);
+    } finally {
+      await new Promise((resolve, reject) => verificationServer.close(error => error ? reject(error) : resolve()));
+    }
+
     const badPaymentRequest = await fetch(`${baseUrl}/api/payments/initialize`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({})
     });
@@ -261,8 +502,8 @@ async function main() {
       payment_method: "Paystack",
       payment_reference: "KH-TEST-REFERENCE-42",
       order_items: [
-        { product_name: "Cotton top", size: "M", quantity: 2, price: 20 },
-        { product_name: "Toy", size: null, quantity: 1, price: 2.5 }
+        { product_name: "Cotton top", product_image_url: "https://kayshaven.live/product-images/cotton-top.png", size: "M", quantity: 2, price: 20 },
+        { product_name: "Toy", product_image_url: null, size: null, quantity: 1, price: 2.5 }
       ]
     },
     error: null
@@ -274,7 +515,9 @@ async function main() {
       return {
         select(columns) {
           assert.match(columns, /order_items/);
-          assert.doesNotMatch(columns, /email|phone/, "receipt lookup avoids unnecessary contact data");
+          assert.match(columns, /email/);
+          assert.match(columns, /phone/);
+          assert.match(columns, /product_image_url/, "receipt reads the immutable image stored on each order item");
           return {
             eq(field, id) {
               assert.equal(field, "id");
@@ -300,19 +543,24 @@ async function main() {
     assert.equal(successfulReceipt.headers.get("cache-control"), "private, no-store", "customer receipt data is not cached by shared intermediaries");
     const successfulReceiptBody = await successfulReceipt.json();
     assert.deepEqual(successfulReceiptBody.receipt, {
+      verified: true,
       order_number: "KH-RECEIPT-42",
       purchase_date: "2026-10-22T12:00:00.000Z",
       customer_name: "Synthetic Buyer",
+      email: "private@example.test",
+      phone: "+233000000042",
       items: [
-        { product_name: "Cotton top", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
-        { product_name: "Toy", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
+        { product_name: "Cotton top", image_url: "https://kayshaven.live/product-images/cotton-top.png", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
+        { product_name: "Toy", image_url: "", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
       ],
+      subtotal: 42.5,
       total_amount: 42.5,
-      payment_status: "Paid",
+      payment_status: "VERIFIED PAID",
       payment_method: "Paystack",
       payment_reference: "KH-TEST-REFERENCE-42"
     });
-    assert.doesNotMatch(JSON.stringify(successfulReceiptBody), /private@example|\+233000000042/, "receipt responses do not include customer email or phone");
+    assert.match(JSON.stringify(successfulReceiptBody), /private@example/);
+    assert.match(JSON.stringify(successfulReceiptBody), /\+233000000042/);
 
     receiptRecord = { data: null, error: { code: "PGRST116" } };
     const missingToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey);
@@ -325,7 +573,7 @@ async function main() {
         id: "receipt-order-42",
         payment_status: "failed",
         payment_reference: "KH-TEST-REFERENCE-42",
-        order_items: [{ product_name: "Cotton top", size: "M", quantity: 2, price: 20 }]
+        order_items: [{ product_name: "Cotton top", product_image_url: null, size: "M", quantity: 2, price: 20 }]
       },
       error: null
     };
@@ -336,6 +584,46 @@ async function main() {
   } finally {
     await new Promise((resolve, reject) => receiptServer.close(error => error ? reject(error) : resolve()));
   }
+
+  console.log("Check public catalogue caching excludes private and inventory fields");
+  let publicProductColumns = "";
+  const catalogueClient = {
+    from(table) {
+      assert.equal(table, "products");
+      return {
+        select(columns) {
+          publicProductColumns = columns;
+          return {
+            order(column) {
+              assert.equal(column, "id");
+              return { eq: async (field, value) => {
+                assert.equal(field, "is_active");
+                assert.equal(value, true);
+                return { data: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "images/toy.png", description: "A public product", sizes: [] }], error: null };
+              } };
+            }
+          };
+        }
+      };
+    }
+  };
+  const publicCatalogueServer = createServer({ catalogueClient, frontendOrigins: productionOrigin });
+  try {
+    await new Promise(resolve => publicCatalogueServer.listen(0, "127.0.0.1", resolve));
+    const publicResponse = await fetch(`http://127.0.0.1:${publicCatalogueServer.address().port}/api/products`, { headers: { Origin: productionOrigin } });
+    assert.equal(publicResponse.status, 200);
+    assert.equal(publicResponse.headers.get("cache-control"), "public, max-age=30, stale-while-revalidate=120");
+    assert.equal(publicResponse.headers.get("vary"), "Origin");
+    assert.match(publicProductColumns, /id, name, category, price, image, description, sizes/);
+    assert.doesNotMatch(publicProductColumns, /stock|email|phone|is_active/);
+    assert.deepEqual(await publicResponse.json(), { products: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "images/toy.png", description: "A public product", sizes: [] }] });
+  } finally {
+    await new Promise((resolve, reject) => publicCatalogueServer.close(error => error ? reject(error) : resolve()));
+  }
+
+  const receiptImageMigration = fs.readFileSync(path.join(__dirname, "..", "supabase", "migrations", "202610230001_order_item_receipt_image_snapshot.sql"), "utf8");
+  assert.match(receiptImageMigration, /add column if not exists product_image_url text/i);
+  assert.doesNotMatch(receiptImageMigration, /update\s+public\.order_items/i, "legacy order snapshots are not silently overwritten with today's catalogue images");
   console.log("All backend checks passed");
 }
 

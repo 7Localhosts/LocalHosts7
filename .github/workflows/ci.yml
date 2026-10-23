@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, kays-haven-pages-deploy, 'qa/**' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, kays-haven-pages-deploy ]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
 
 jobs:
   ci:
@@ -25,11 +29,40 @@ jobs:
           test -f supabase/migrations/202610070001_checkout_sizes_payments.sql
           test -d tests
       - name: Install backend dependencies
-        working-directory: src/backend
-        run: npm ci
+        run: make setup
       - name: Backend tests
+        run: make test
+      - name: Full JavaScript syntax lint
+        run: make lint
+      - name: Run target health smoke with synthetic configuration
+        env:
+          SUPABASE_URL: https://unit-test.invalid.supabase.co
+          SUPABASE_ANON_KEY: unit-test-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: unit-test-service-role-key
+          FRONTEND_ORIGIN: https://kayshaven.live
+          RECEIPT_ACCESS_TOKEN_SECRET: unit-test-receipt-signing-key
+          PORT: 18080
+        run: |
+          timeout 20s make run > /tmp/kays-run.log 2>&1 &
+          smoke_pid=$!
+          trap 'kill "$smoke_pid" 2>/dev/null || true' EXIT
+          curl --fail --retry 8 --retry-connrefused --retry-delay 1 http://127.0.0.1:18080/api/health
+      - name: Production static build
+        run: make build
+        env:
+          KAYS_HAVEN_API_URL: https://kays-haven-backend.onrender.com
+          KAYS_HAVEN_FRONTEND_ORIGIN: https://kayshaven.live
+      - name: PR evidence gate
+        if: github.event_name == 'pull_request'
+        run: node deployment/quality-gate.js pr
+      - name: Coverage evidence
         working-directory: src/backend
-        run: npm test
+        run: npm run test:coverage
+      - name: Upload static build for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: dist
       - name: JavaScript syntax checks
         run: |
           node --check src/backend/server.js

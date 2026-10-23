@@ -39,17 +39,13 @@
       <div id="order-items" class="order-items"></div>
       <div class="summary-line total"><span>Total</span><span id="summary-total">Checking prices…</span></div>
       <button type="submit" form="checkout-form" id="place-order-btn" class="place-order-btn">Pay securely with Paystack</button>
+      <button type="button" id="view-receipt" class="receipt-toggle-btn" aria-controls="receipt-view" aria-expanded="false" hidden>View / Download Receipt</button>
       <small>Secure payment processing by Paystack.</small>
     </aside>
   </div>
-  <section id="confirmation-view" hidden>
-    <div class="check-badge">✓</div><h2>Payment confirmed</h2>
-    <p>Thank you, <span id="conf-name"></span>. Your paid order is being prepared.</p>
-    <p id="conf-order-id" class="order-id"></p>
-    <a href="../shop.html">Return to the shop</a>
-  </section>
   <section id="receipt-view" class="receipt-card" aria-labelledby="receipt-title" hidden>
     <div class="receipt-paper" id="receipt-paper">
+      <img class="receipt-logo" src="../site-assets/Kay%E2%80%99s%20Haven%20Lavender%20Emblem.png" alt="Kay's Haven logo">
       <a class="kh-brand receipt-brand" href="../shop.html" aria-label="Kay's Haven"><span class="kh-brand__kays">Kay's</span><span class="kh-brand__haven">Haven</span></a>
       <p class="receipt-slogan">Quality products from crib to campus.</p>
       <h2 id="receipt-title">Purchase receipt</h2>
@@ -58,12 +54,15 @@
         <div><dt>Order number</dt><dd id="receipt-order-number">—</dd></div>
         <div><dt>Purchase date</dt><dd id="receipt-purchase-date">—</dd></div>
         <div><dt>Customer</dt><dd id="receipt-customer-name">—</dd></div>
+        <div id="receipt-phone-row" hidden><dt>Phone</dt><dd id="receipt-customer-phone"></dd></div>
+        <div id="receipt-email-row" hidden><dt>Email</dt><dd id="receipt-customer-email"></dd></div>
         <div><dt>Payment status</dt><dd id="receipt-payment-status">—</dd></div>
         <div id="receipt-method-row" hidden><dt>Payment method</dt><dd id="receipt-payment-method"></dd></div>
         <div id="receipt-reference-row" hidden><dt>Payment reference</dt><dd id="receipt-payment-reference"></dd></div>
       </dl>
       <h3>Items purchased</h3>
       <div id="receipt-items" class="receipt-items"></div>
+      <div class="receipt-subtotal"><span>Subtotal</span><strong id="receipt-subtotal-amount">—</strong></div>
       <div class="receipt-total"><span>Total paid</span><strong id="receipt-total-amount">—</strong></div>
     </div>
     <div class="receipt-actions">

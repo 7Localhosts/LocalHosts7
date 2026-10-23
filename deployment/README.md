@@ -26,7 +26,8 @@ Copy `src/backend/.env.example` to an untracked `.env` for local use, or configu
 - `KAYS_HAVEN_PRODUCT_BUCKET` (optional; defaults to `kays-haven-products`)
 - `PAYSTACK_SECRET_KEY` (must be an `sk_test_...` key; this backend rejects live keys and remains in Test Mode)
 - `PAYSTACK_CALLBACK_URL` (optional explicit public HTTPS callback URL for `/checkout/checkout.html`; if omitted, the backend derives it from `FRONTEND_ORIGIN`)
-- `FRONTEND_ORIGIN` (the exact HTTPS origin serving the built storefront and `/admin/`, without a path)
+- `FRONTEND_ORIGIN` (the canonical exact HTTPS storefront origin; also used to derive the Paystack checkout callback if `PAYSTACK_CALLBACK_URL` is unset)
+- `FRONTEND_ORIGINS` (optional comma-separated exact HTTPS origin allowlist for CORS; for this deployment set `https://kayshaven.live,https://kays-haven-staging.pages.dev`; never use a wildcard)
 - `PORT` (optional; defaults to `8000`)
 
 The static build sets each page's API base from `KAYS_HAVEN_API_URL`; do not edit source pages for each deployment.
