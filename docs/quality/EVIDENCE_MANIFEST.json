@@ -1,6 +1,7 @@
 {
-  "at": "2026-10-23T13:26:10.630307+00:00",
+  "at": "2026-10-23T13:34:50.787960+00:00",
   "testedCodeSHA": "1e9b237645ade82dd34c20e7d1b5df84f4e84118",
+  "completeEvidenceTestedSHA": "b6c8f9b0b7b0934ca408c40d5bfeda5a3a86aaaa",
   "counts": {
     "FAIL": 18,
     "BLOCKED": 9,
@@ -127,6 +128,12 @@
       "sha256": "b722004a3d7b99cd1d1effc4ec5f8892cd773e6ad238bee143fa17c0390d4df3",
       "bytes": 4254,
       "modifiedUTC": "2026-10-23T10:13:43.627934+00:00"
+    },
+    {
+      "path": "evidence/github-evidence-commit-success.log",
+      "sha256": "35d3809e07a1d4db9505e7a0744f247346c6f2fa610c8c155f1f4beafe1c3d6e",
+      "bytes": 37401,
+      "modifiedUTC": "2026-10-23T13:33:54.545635+00:00"
     },
     {
       "path": "evidence/github-main-failure.log",
@@ -310,9 +317,9 @@
     },
     {
       "path": "evidence/secret-scan.json",
-      "sha256": "2e8112b1741d2cb625b12356a2f03d4b9436fee27595833ee8df6e59aaf1ef56",
+      "sha256": "cd680eb44bebd53d73643e880ba8433836336bbea115fc437507a0b361e8797c",
       "bytes": 240,
-      "modifiedUTC": "2026-10-23T13:25:54.200497+00:00"
+      "modifiedUTC": "2026-10-23T13:34:25.738732+00:00"
     },
     {
       "path": "evidence/summary-page-1.png",
@@ -325,6 +332,12 @@
       "sha256": "1f2705b6146879599c5d565ba8a8ceb706e9937148839615157e5f308f4a51ab",
       "bytes": 188848,
       "modifiedUTC": "2026-10-23T13:25:50.886812+00:00"
+    },
+    {
+      "path": "FINAL_HANDOFF.md",
+      "sha256": "34383274c1947d2a53abe7b801862c168665edce4da94b4a759367696d824833",
+      "bytes": 2848,
+      "modifiedUTC": "2026-10-23T13:33:55.250057+00:00"
     },
     {
       "path": "matrix.json",
