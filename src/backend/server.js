@@ -238,7 +238,7 @@ async function authenticateStaff(req) {
 // SERVER
 // -------------------------
 
-const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigins = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN) => {
+const requestHandler = async (req, res, healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigins = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN, paymentClient = supabaseAdmin, paymentRequest = paystackRequest) => {
 
     if (!applyCors(req, res, frontendOrigins)) {
       res.writeHead(403, { "Content-Type": "application/json" });
@@ -311,7 +311,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
 
         const productIds = [...new Set(body.items.map(item => item.product_id ?? item.id).filter(id => id !== undefined && id !== null))];
         failureStage = "product_lookup";
-        const { data: products, error: productsError } = await supabaseAdmin
+        const { data: products, error: productsError } = await paymentClient
           .from("products").select("id, name, price, sizes, is_active").in("id", productIds);
         if (productsError) throw productsError;
         failureStage = "price_validation";
@@ -322,7 +322,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         }
         const reference = `KH-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
         failureStage = "order_insert";
-        const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert([{
+        const { data: order, error: orderError } = await paymentClient.from("orders").insert([{
           customer_name: customerName,
           email: email || null,
           phone,
@@ -336,7 +336,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         createdOrderId = order.id;
 
         failureStage = "order_item_insert";
-        const { error: itemError } = await supabaseAdmin.from("order_items").insert(priced.items.map(item => ({
+        const { error: itemError } = await paymentClient.from("order_items").insert(priced.items.map(item => ({
           order_id: order.id,
           product_id: item.product_id,
           product_name: item.product_name,
@@ -349,7 +349,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         const callbackUrl = paymentConfiguration.callbackUrl;
         const paystackEmail = email || createGuestPaystackEmail(callbackUrl);
         failureStage = "paystack_initialize";
-        const payment = await paystackRequest("/transaction/initialize", buildPaystackInitializationPayload({
+        const payment = await paymentRequest("/transaction/initialize", buildPaystackInitializationPayload({
           email: paystackEmail,
           totalAmount: priced.total,
           reference,
@@ -366,7 +366,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         }
         if (createdOrderId) {
           try {
-            const { error: updateError } = await supabaseAdmin.from("orders")
+            const { error: updateError } = await paymentClient.from("orders")
               .update({ payment_status: "failed", status: "Payment setup failed" }).eq("id", createdOrderId);
             if (updateError) {
               console.error(JSON.stringify(formatPaymentInitializationFailure("failure_cleanup", updateError)));
@@ -388,7 +388,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           sendJson(res, 400, { error: "A valid payment reference is required." });
           return;
         }
-        const { data: order, error: orderError } = await supabaseAdmin.from("orders")
+        const { data: order, error: orderError } = await paymentClient.from("orders")
           .select("id, order_number, customer_name, total_amount, payment_reference, payment_status")
           .eq("payment_reference", reference).single();
         if (orderError || !order) {
@@ -396,13 +396,13 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           return;
         }
         if (order.payment_status !== "paid") {
-          const payment = await paystackRequest(`/transaction/verify/${encodeURIComponent(reference)}`);
+          const payment = await paymentRequest(`/transaction/verify/${encodeURIComponent(reference)}`);
           const expectedAmount = Math.round(Number(order.total_amount) * 100);
           if (payment.reference !== reference || payment.status !== "success" || payment.currency !== "GHS" || Number(payment.amount) !== expectedAmount) {
             sendJson(res, 409, { error: "Payment is not confirmed. No order has been marked paid." });
             return;
           }
-          const { error: finalizeError } = await supabaseAdmin.rpc("finalize_paid_order", { p_reference: reference });
+          const { error: finalizeError } = await paymentClient.rpc("finalize_paid_order", { p_reference: reference });
           if (finalizeError) throw finalizeError;
         }
         const receiptAccessToken = createReceiptAccessToken(order.id, reference, receiptSigningKey);
@@ -1248,9 +1248,9 @@ async function paystackRequest(endpoint, payload) {
   return result.data;
 }
 
-function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN, frontendOrigins = process.env.FRONTEND_ORIGINS } = {}) {
+function createServer({ healthClient = supabase, receiptClient = supabaseAdmin, receiptSigningKey = getReceiptSigningKey(), frontendOrigin = process.env.FRONTEND_ORIGIN, frontendOrigins = process.env.FRONTEND_ORIGINS, paymentClient = supabaseAdmin, paymentRequest = paystackRequest } = {}) {
   const corsOrigins = frontendOrigins || frontendOrigin;
-  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, corsOrigins));
+  return http.createServer((req, res) => requestHandler(req, res, healthClient, receiptClient, receiptSigningKey, corsOrigins, paymentClient, paymentRequest));
 }
 
 function validEmail(value) {
@@ -1333,16 +1333,19 @@ function getPaystackConfiguration(
   // Keep this deployment explicitly in Paystack Test Mode. Never accept a live key here.
   if (!/^sk_test_[A-Za-z0-9_-]+$/.test(String(secretKey || "").trim())) return unavailable;
   try {
+    const origin = new URL(String(frontendOrigin || "").trim());
+    if (origin.protocol !== "https:" || !origin.hostname || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return unavailable;
     let callback;
     if (String(callbackUrl || "").trim()) {
       callback = new URL(String(callbackUrl).trim());
     } else {
       // A missing callback can safely be derived from the configured HTTPS storefront origin.
-      const origin = new URL(String(frontendOrigin || "").trim());
-      if (origin.protocol !== "https:" || !origin.hostname || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return unavailable;
       callback = new URL("/checkout/checkout.html", origin.origin);
     }
-    if (callback.protocol !== "https:" || !callback.hostname || callback.username || callback.password) return unavailable;
+    if (
+      callback.protocol !== "https:" || !callback.hostname || callback.username || callback.password ||
+      callback.origin !== origin.origin || callback.pathname !== "/checkout/checkout.html" || callback.search || callback.hash
+    ) return unavailable;
     return { configured: true, callbackUrl: callback.toString() };
   } catch {
     return unavailable;

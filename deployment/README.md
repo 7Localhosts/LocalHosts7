@@ -1,10 +1,10 @@
 # Kay's Haven deployment configuration
 
-This repository does not deploy automatically. Build the landing page, storefront and admin together as one same-origin static site, and run `src/backend` as a Node.js service with HTTPS. Keep the Supabase service-role key and Paystack secret key in the backend host's secret manager only.
+Production serves the landing page, storefront and admin from Cloudflare Pages at `https://kayshaven.live`; Render runs `src/backend` as the Node.js API with HTTPS. Keep the Supabase service-role key and Paystack secret key in Render's secret manager only. The root [`netlify.toml`](../netlify.toml) is retained for legacy builds; it is not used by Cloudflare Pages and contains no visitor redirect.
 
 From `src/backend`, set `KAYS_HAVEN_API_URL` to the public HTTPS backend base URL and run `npm run build:static`. The build rejects missing, insecure, or localhost API URLs. Configure the static host to publish the repository's generated `dist` directory. The dedicated landing page is at `/`, the actual storefront at `/shop.html`, and the admin at `/admin/`; the build rewrites the API base in app pages. Both UIs then share the same browser origin for the backend CORS allowlist. Do not publish `src` directly; it contains backend code and local configuration files. For local UI work, pages use `http://localhost:8000` only when served from localhost and no API base is configured. The `buildStaticPreview()` helper assembles a temporary package for local checks only and does not inject a production API URL.
 
-The root [`netlify.toml`](../netlify.toml) pins Netlify to the repository root, builds with `cd src/backend && npm ci && npm run build:static`, and publishes `dist`. Keep `KAYS_HAVEN_API_URL=https://kays-haven-backend.onrender.com` configured in the Netlify environment; it is intentionally not embedded in the deployment file.
+For a Pages upload, build `dist` with `KAYS_HAVEN_API_URL=https://kays-haven-backend.onrender.com` and `KAYS_HAVEN_FRONTEND_ORIGIN=https://kayshaven.live`, then publish that directory to the existing Pages project. The API URL is injected into the built frontend; the production build does not contain a Netlify destination.
 
 ## Database setup
 
@@ -25,8 +25,8 @@ Copy `src/backend/.env.example` to an untracked `.env` for local use, or configu
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `KAYS_HAVEN_PRODUCT_BUCKET` (optional; defaults to `kays-haven-products`)
 - `PAYSTACK_SECRET_KEY` (must be an `sk_test_...` key; this backend rejects live keys and remains in Test Mode)
-- `PAYSTACK_CALLBACK_URL` (optional explicit public HTTPS callback URL for `/checkout/checkout.html`; if omitted, the backend derives it from `FRONTEND_ORIGIN`)
-- `FRONTEND_ORIGIN` (the canonical exact HTTPS storefront origin; also used to derive the Paystack checkout callback if `PAYSTACK_CALLBACK_URL` is unset)
+- `PAYSTACK_CALLBACK_URL` (optional explicit callback; if set, it must be exactly `${FRONTEND_ORIGIN}/checkout/checkout.html`. The backend rejects other origins, paths, query strings and fragments.)
+- `FRONTEND_ORIGIN` (the canonical production HTTPS storefront origin; also used to derive the Paystack checkout callback if `PAYSTACK_CALLBACK_URL` is unset)
 - `FRONTEND_ORIGINS` (optional comma-separated exact HTTPS origin allowlist for CORS; for this deployment set `https://kayshaven.live,https://kays-haven-staging.pages.dev`; never use a wildcard)
 - `PORT` (optional; defaults to `8000`)
 
