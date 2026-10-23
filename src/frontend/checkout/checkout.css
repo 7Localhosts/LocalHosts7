@@ -477,6 +477,22 @@ textarea:focus {
     box-shadow: none;
 }
 
+.receipt-toggle-btn {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--kh-primary);
+    border-radius: var(--kh-radius-control);
+    background: #fff;
+    color: var(--kh-primary);
+    font: 700 14px "Montserrat", sans-serif;
+    cursor: pointer;
+}
+
+.receipt-toggle-btn:hover { background: var(--kh-surface-muted); }
+.receipt-toggle-btn[hidden] { display: none; }
+
 
 /* =========================
    STICKY SUMMARY
@@ -547,6 +563,7 @@ textarea {
 }
 
 .receipt-paper { padding: clamp(22px, 5vw, 42px); }
+.receipt-logo { display: block; width: 58px; height: 58px; object-fit: contain; margin: 0 auto 8px; }
 .receipt-brand { display: flex; width: max-content; margin: 0 auto 4px; font-size: 23px; }
 .receipt-slogan { margin: 0 0 22px; text-align: center; color: var(--muted); font-family: "Playfair Display", serif; }
 .receipt-paper h2 { margin: 0 0 8px; text-align: center; color: var(--kh-primary); font-family: "Playfair Display", serif; font-size: 28px; }
@@ -557,10 +574,13 @@ textarea {
 .receipt-meta dt { color: var(--muted); font-size: 12px; }
 .receipt-meta dd { margin: 3px 0 0; overflow-wrap: anywhere; font-weight: 700; }
 .receipt-items { border-top: 1px solid var(--line); }
-.receipt-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.receipt-item { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.receipt-item-image { display: grid; width: 64px; height: 64px; place-items: center; grid-row: span 2; border-radius: 9px; background: var(--kh-surface-muted); object-fit: contain; }
+.receipt-item-image-fallback { color: var(--muted); font-size: 10px; text-align: center; }
 .receipt-item-name { font-weight: 700; overflow-wrap: anywhere; }
 .receipt-item-size, .receipt-item-quantity { color: var(--muted); font-size: 13px; }
-.receipt-item-prices { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.receipt-item-prices { grid-column: 2 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.receipt-subtotal { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; color: var(--muted); }
 .receipt-total { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding: 16px 0 0; border-top: 2px solid var(--kh-primary); font-size: 18px; }
 .receipt-total strong { color: var(--kh-primary); }
 .receipt-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 18px 22px; background: var(--kh-surface-muted); }
@@ -573,7 +593,8 @@ textarea {
     .receipt-meta { grid-template-columns: 1fr; gap: 10px; }
     .receipt-actions { align-items: stretch; flex-direction: column; }
     .receipt-actions .button { width: 100%; }
-    .receipt-item { gap: 4px 8px; }
+    .receipt-item { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 4px 8px; }
+    .receipt-item-image { width: 52px; height: 52px; }
 }
 
 @media print {
