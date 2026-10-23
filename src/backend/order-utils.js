@@ -14,10 +14,12 @@ function buildPricedItems(requested, products) {
   if (!Array.isArray(requested) || requested.length === 0) throw new Error("Order items are required");
   const byId = new Map((products || []).map(product => [String(product.id), product]));
   const items = requested.map(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("Each item needs a product and a positive whole-number quantity");
     const id = String(item.product_id ?? item.id ?? "").trim();
-    const quantity = Number(item.quantity ?? item.qty);
+    const rawQuantity = item.quantity ?? item.qty;
+    const quantity = typeof rawQuantity === "number" || (typeof rawQuantity === "string" && /^\d+$/.test(rawQuantity.trim())) ? Number(rawQuantity) : NaN;
     const size = String(item.size || "").trim();
-    if (!id || !Number.isInteger(quantity) || quantity < 1) throw new Error("Each item needs a product and a positive whole-number quantity");
+    if (!id || !Number.isSafeInteger(quantity) || quantity < 1) throw new Error("Each item needs a product and a positive whole-number quantity");
     const product = byId.get(id);
     if (!product) throw new Error("A product in your cart is no longer available");
     if (product.is_active === false) throw new Error(`${product.name} is no longer available for sale`);
