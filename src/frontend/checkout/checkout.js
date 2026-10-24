@@ -338,6 +338,24 @@ async function loadCheckoutCatalogue() {
   }
 }
 
+async function showPaymentModeNotice() {
+  const notice = document.getElementById("payment-mode-notice");
+  if (!notice) return;
+  try {
+    const response = await fetch(`${API_URL}/payments/status`, { headers: { Accept: "application/json" } });
+    const result = await response.json();
+    if (result.mode === "test") {
+      notice.textContent = "This checkout is currently in Paystack Test Mode. No real money will be charged.";
+      notice.hidden = false;
+    } else if (!result.configured) {
+      notice.textContent = "Live payments are temporarily unavailable. Please contact the store before placing an order.";
+      notice.hidden = false;
+    }
+  } catch {
+    // The checkout's normal API connection message remains the source of truth if status cannot load.
+  }
+}
+
 document.getElementById("retry-checkout-catalogue")?.addEventListener("click", () => loadCheckoutCatalogue());
 
 async function verifyPaymentReference(reference) {
@@ -449,6 +467,7 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
 
 renderOrderSummary();
 loadCheckoutCatalogue();
+showPaymentModeNotice();
 if (returnedPaymentReference()) verifyReturnedPayment();
 else restoreStoredReceipt(new URLSearchParams(window.location.search).get("receipt_order") || "");
 

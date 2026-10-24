@@ -11,7 +11,7 @@ process.env.FRONTEND_ORIGIN = "https://unit-test.invalid";
 delete process.env.PAYSTACK_SECRET_KEY;
 delete process.env.PAYSTACK_CALLBACK_URL;
 
-const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
+const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackMode, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -31,7 +31,12 @@ async function main() {
   const productionCallback = `${productionOrigin}/checkout/checkout.html`;
   assert.match(guestPaymentEmail, /^checkout-[a-f0-9]{32}@shop\.example\.co\.gh$/, "Paystack receives a non-personal alias based on the HTTPS callback domain");
   assert.equal(getPaystackConfiguration("", "https://shop.example.co.gh/checkout/return").configured, false, "missing Paystack secret disables checkout");
-  assert.equal(getPaystackConfiguration("sk_live_example", "https://shop.example.co.gh/checkout/return").configured, false, "live Paystack keys are rejected while the integration is restricted to Test Mode");
+  assert.equal(getPaystackMode("live"), "live", "the backend supports explicit Paystack Live Mode");
+  assert.equal(getPaystackMode("test"), "test", "Test Mode remains available for staging");
+  assert.equal(getPaystackMode("unexpected"), "test", "unknown modes fail safely to Test Mode");
+  assert.equal(getPaystackConfiguration("sk_live_example", "https://shop.example.co.gh/checkout/checkout.html", "https://shop.example.co.gh", "test").configured, false, "a live key cannot be used while mode is Test");
+  assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/checkout.html", "https://shop.example.co.gh", "live").configured, false, "a test key cannot be used while mode is Live");
+  assert.equal(getPaystackConfiguration("sk_live_example", "https://shop.example.co.gh/checkout/checkout.html", "https://shop.example.co.gh", "live").configured, true, "a secure live key enables live payments only in explicit Live Mode");
   assert.equal(getPaystackConfiguration("sk_test_example", "http://localhost/checkout/checkout.html", "https://shop.example.co.gh").configured, false, "non-HTTPS callback disables checkout");
   assert.equal(getPaystackConfiguration("sk_test_example", "https://shop.example.co.gh/checkout/checkout.html", "https://shop.example.co.gh").configured, true, "complete secure Paystack configuration enables checkout");
   assert.equal(getPaystackConfiguration("sk_test_example", productionCallback, productionOrigin).callbackUrl, productionCallback, "the production Paystack callback is the canonical Cloudflare checkout URL");
@@ -165,6 +170,12 @@ async function main() {
     const response = await fetch(`${baseUrl}/api/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { success: true, message: "Backend is running" });
+    const paymentStatusResponse = await fetch(`${baseUrl}/api/payments/status`);
+    assert.equal(paymentStatusResponse.status, 200);
+    const paymentStatus = await paymentStatusResponse.json();
+    assert.equal(paymentStatus.mode, "test", "missing payment mode defaults to the safe Test Mode");
+    assert.equal(paymentStatus.configured, false);
+    assert.doesNotMatch(JSON.stringify(paymentStatus), /secret|sk_test|sk_live/i, "public payment status never discloses credentials");
     for (const path of ["/api/health/", "/api/health?probe=render"]) {
       const normalizedHealth = await fetch(`${baseUrl}${path}`);
       assert.equal(normalizedHealth.status, 200, `${path} is accepted as a health check`);

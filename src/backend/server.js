@@ -309,6 +309,13 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
       return;
     }
 
+    if (req.method === "GET" && new URL(req.url, "http://localhost").pathname.replace(/\/+$/, "") === "/api/payments/status") {
+      const mode = getPaystackMode();
+      const paymentConfiguration = getPaystackConfiguration();
+      sendJson(res, 200, { mode, configured: paymentConfiguration.configured });
+      return;
+    }
+
     if (req.method === "POST" && req.url === "/api/payments/initialize") {
       let createdOrderId;
       let failureStage = "request_body";
@@ -1433,11 +1440,15 @@ function formatPaymentVerificationFailure(stage, error) {
 function getPaystackConfiguration(
   secretKey = process.env.PAYSTACK_SECRET_KEY,
   callbackUrl = process.env.PAYSTACK_CALLBACK_URL,
-  frontendOrigin = process.env.FRONTEND_ORIGIN
+  frontendOrigin = process.env.FRONTEND_ORIGIN,
+  mode = getPaystackMode()
 ) {
   const unavailable = { configured: false, error: "Online payments are temporarily unavailable. Please try again later." };
-  // Keep this deployment explicitly in Paystack Test Mode. Never accept a live key here.
-  if (!/^sk_test_[A-Za-z0-9_-]+$/.test(String(secretKey || "").trim())) return unavailable;
+  const normalizedKey = String(secretKey || "").trim();
+  const validKey = mode === "live"
+    ? /^sk_live_[A-Za-z0-9_-]+$/.test(normalizedKey)
+    : mode === "test" && /^sk_test_[A-Za-z0-9_-]+$/.test(normalizedKey);
+  if (!validKey) return unavailable;
   try {
     const origin = new URL(String(frontendOrigin || "").trim());
     if (origin.protocol !== "https:" || !origin.hostname || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return unavailable;
@@ -1458,4 +1469,8 @@ function getPaystackConfiguration(
   }
 }
 
-module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken };
+function getPaystackMode(mode = process.env.PAYSTACK_MODE) {
+  return String(mode || "test").trim().toLowerCase() === "live" ? "live" : "test";
+}
+
+module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackMode, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken };

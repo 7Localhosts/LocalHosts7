@@ -24,7 +24,8 @@ Copy `src/backend/.env.example` to an untracked `.env` for local use, or configu
 
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `KAYS_HAVEN_PRODUCT_BUCKET` (optional; defaults to `kays-haven-products`)
-- `PAYSTACK_SECRET_KEY` (must be an `sk_test_...` key; this backend rejects live keys and remains in Test Mode)
+- `PAYSTACK_MODE` (`test` or `live`; defaults safely to `test`)
+- `PAYSTACK_SECRET_KEY` (must match the selected mode: `sk_test_...` for test or `sk_live_...` for live)
 - `PAYSTACK_CALLBACK_URL` (optional explicit callback; if set, it must be exactly `${FRONTEND_ORIGIN}/checkout/checkout.html`. The backend rejects other origins, paths, query strings and fragments.)
 - `FRONTEND_ORIGIN` (the canonical production HTTPS storefront origin; also used to derive the Paystack checkout callback if `PAYSTACK_CALLBACK_URL` is unset)
 - `FRONTEND_ORIGINS` (optional comma-separated exact HTTPS origin allowlist for CORS; for this deployment set `https://kayshaven.live,https://kays-haven-staging.pages.dev`; never use a wildcard)
@@ -36,9 +37,11 @@ Checkout accepts a customer email when provided and stores no email value when o
 
 From `src/backend`, run `npm ci`, `npm test`, and `npm start`. The service must be reachable from the public storefront and configured for the storefront origin. Never put either Supabase service-role or Paystack secret keys in frontend files.
 
-## Test Mode acceptance review
+## Paystack mode and production launch
 
-Before switching Paystack to live mode, complete a real Test Mode transaction against the public staging URL and verify:
+The checkout calls `/api/payments/status` and clearly labels Test Mode so customers are not led to believe a test payment is a real charge. In Test Mode, Paystack does not charge money. Live Mode requires `PAYSTACK_MODE=live` and a matching `sk_live_...` secret configured only in the Render secret manager. A mode/key prefix mismatch disables checkout. Never expose the secret in Pages files, browser JavaScript, logs, or client-visible API responses.
+
+Before setting production to Live Mode, complete a real Test Mode transaction against the public staging URL and verify:
 
 1. A sized and a non-sized product can be added, and checkout uses database prices and stock; the total matches the product lines only.
 2. Successful payment returns to the configured checkout URL, is verified by the backend, creates one order and its order items, and decrements stock exactly once.
@@ -46,4 +49,4 @@ Before switching Paystack to live mode, complete a real Test Mode transaction ag
 4. Both active staff accounts can log in and see the same order and inventory records.
 5. The About, FAQ, Customer Feedback, Terms, Refund/Cancellation and Transport & Collection links load on the public storefront.
 
-Production launch still requires resolving outstanding schema migrations, adding the account's Test Mode secret and final HTTPS URLs, completing the Test Mode acceptance review, and then configuring Paystack live credentials in the production secret manager. No deployment is performed by this repository workflow.
+Production launch still requires resolving outstanding schema migrations, completing the Test Mode acceptance review, and confirming the Paystack account is activated for live transactions. Then set the production Render environment to `PAYSTACK_MODE=live` and add the account's live secret key to Render's secret manager. Do not copy or reuse a test key. No payment is made by this repository workflow.
