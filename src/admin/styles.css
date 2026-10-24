@@ -19,7 +19,7 @@
 * { box-sizing: border-box; }
 button { transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease; }
 button:not(:disabled):hover { filter: brightness(.94); }
-body { min-width: 320px; min-height: 100vh; margin: 0; }
+body { min-width: 0; min-height: 100vh; margin: 0; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 .topbar { display: none; height: 78px; display: flex; align-items: center; justify-content: space-between; padding: 0 6.25vw; background: #ffffff; border-bottom: 1px solid #7a13aa; }
@@ -926,3 +926,9 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
 #overview-order-history[hidden] { display:none; }
 #overview-order-history { margin-top:18px; }
 .inventory-delete-button svg { flex-shrink:0; }
+
+.orders-refresh-control small { flex-basis:auto; text-align:right; }
+@media (prefers-reduced-motion: no-preference) {
+  #overview-order-history:not([hidden]) { animation: history-reveal .16s ease-out; }
+  @keyframes history-reveal { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+}
