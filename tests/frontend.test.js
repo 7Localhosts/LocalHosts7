@@ -236,7 +236,7 @@ assert.doesNotMatch(shop, /searchBtn|searchPanel|Search products/);
 assert.doesNotMatch(storefrontScript, /searchBtn|searchPanel|searchInput/);
 assert.match(shop, /<span>Quality products<\/span> <em>from crib to campus\.<\/em>/);
 assert.match(shop, /aria-label="Open menu" aria-controls="mobileNav" aria-expanded="false"><span><\/span><span><\/span><span><\/span>/);
-assert.equal((shop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "desktop and mobile storefront Login links target the sibling admin directory from frontend roots");
+assert.equal((shop.match(/href="\.\.\/admin\/"/g) || []).length, 0, "storefront header navigation does not expose the staff admin route");
 assert.match(shop, /social-links[\s\S]*?aria-label="Instagram: @kayshaven\.mothercare"[\s\S]*?<svg/);
 assert.match(shop, /social-links[\s\S]*?aria-label="Facebook: Kay's Haven"[\s\S]*?<svg/);
 assert.match(fs.readFileSync(path.join(root, "DESIGN_SYSTEM.md"), "utf8"), /#000000[\s\S]*?black footer/i);
@@ -648,7 +648,7 @@ try {
   const builtCheckout = fs.readFileSync(path.join(previewOutput, "checkout", "checkout.html"), "utf8");
   assert.match(builtLanding, /href="shop\.html"[^>]*>Enter Shop/);
   assert.match(builtShop, /<span>Quality products<\/span>/);
-  assert.equal((builtShop.match(/href="\.\.\/admin\/"/g) || []).length, 2, "built desktop and mobile Login links target the sibling admin directory");
+  assert.equal((builtShop.match(/href="\.\.\/admin\/"/g) || []).length, 0, "built storefront header does not expose the staff admin route");
   assert.doesNotMatch(builtShop, /class="hero"|hero-mother-and-baby|id="landing-title"|Enter Shop/);
   assert.match(builtAdmin, /href="\.\.\/shop\.html"/);
   assert.match(builtAdmin, /src="\.\.\/site-assets\/landing-mother-and-baby-clean\.png"/);
