@@ -428,6 +428,12 @@ td {
 .login-panel input { min-width: 0; max-width: 100%; }
 footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; --kh-brand-haven-color: #9760c3; }
 
+/* Admin titles use Montserrat; the store name keeps its branded lettering. */
+.login h1, .login h2, .login h3, .login h4, .login h5, .login h6,
+.dashboard h1, .dashboard h2, .dashboard h3, .dashboard h4, .dashboard h5, .dashboard h6 {
+  font-family: "Montserrat", sans-serif;
+}
+
 /* The orders list has one summary row per stable customer identity. */
 .orders-search { display: grid; gap: 7px; width: min(100%, 430px); margin: 3px 0 12px; color: var(--charcoal); font-size: 11px; font-weight: 700; }
 .orders-search input { width: 100%; min-width: 0; min-height: 39px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--charcoal); background: #ffffff; font: inherit; font-size: 12px; }

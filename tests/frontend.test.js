@@ -63,6 +63,7 @@ const apiConfig = fs.readFileSync(path.join(frontend, "api-config.js"), "utf8");
 const adminPage = fs.readFileSync(path.join(root, "src", "admin", "index.html"), "utf8");
 const adminScript = fs.readFileSync(path.join(root, "src", "admin", "app.js"), "utf8");
 const adminStyles = fs.readFileSync(path.join(root, "src", "admin", "styles.css"), "utf8");
+const orderNumberMigration = fs.readFileSync(path.join(root, "supabase", "migrations", "202610240001_restart_order_numbers.sql"), "utf8");
 const backendSource = fs.readFileSync(path.join(root, "src", "backend", "server.js"), "utf8");
 const staticBuild = fs.readFileSync(path.join(root, "deployment", "build-static.js"), "utf8");
 const localPreview = fs.readFileSync(path.join(root, "deployment", "serve-local.js"), "utf8");
@@ -272,6 +273,10 @@ assert.doesNotMatch(checkoutScript, /confirmation-view|conf-name|conf-order-id/)
 assert.doesNotMatch(checkoutStyles, /confirmation-view|check-badge/);
 assert.match(checkoutStyles, /#receipt-view\[hidden\]/, "the verified receipt remains independently available after payment");
 assert.match(adminPage, /id="refresh-orders"/);
+assert.match(adminStyles, /\.login h1[\s\S]*?\.dashboard h6\s*\{\s*font-family:\s*"Montserrat",\s*sans-serif;/, "admin titles use Montserrat across login and dashboard screens");
+assert.match(adminStyles, /\.store-name \.kh-brand__haven\s*\{[^}]*font-family:\s*"Playfair Display"/, "store name keeps its existing branded typeface");
+assert.match(orderNumberMigration, /create sequence if not exists public\.kayshaven_order_number_seq[\s\S]*?restart with 1/i, "fresh order numbering starts at one");
+assert.match(orderNumberMigration, /'KH-'\s*\|\|\s*lpad\(nextval\('public\.kayshaven_order_number_seq'\)::text,\s*6,\s*'0'\)/i, "new orders receive readable sequential order numbers");
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
 assert.doesNotMatch(adminPage, /name="(?:quantity|description|sizes)"|Current stock/i);
 assert.match(adminPage, /id="bulk-product-images"[^>]*multiple/);
