@@ -530,8 +530,16 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
     if (req.method === "GET" && productsRequestUrl.pathname === "/api/products") {
       try {
         const includeInactive = productsRequestUrl.searchParams.get("include_inactive") === "true";
-        if (includeInactive && !await authenticateStaff(req)) {
+        const includeArchived = productsRequestUrl.searchParams.get("include_archived") === "true";
+        if ((includeInactive || includeArchived) && !await authenticateStaff(req)) {
           sendJson(res, 401, { error: "Unauthorized" });
+          return;
+        }
+        if (includeArchived) {
+          const { data, error } = await supabaseAdmin.from("products").select("*").not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+          if (error) throw error;
+          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "private, no-store" });
+          res.end(JSON.stringify({ products: data || [] }));
           return;
         }
         const data = [];
@@ -832,6 +840,23 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         sendJson(res, 200, { success: true, product_id: id });
       } catch {
         sendJson(res, 500, { error: "Could not safely delete this product." });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && /^\/api\/products\/[^/]+\/restore$/.test(req.url)) {
+      const authenticated = await authenticateStaff(req);
+      if (!authenticated) {
+        sendJson(res, 401, { error: "Unauthorized" });
+        return;
+      }
+      try {
+        const id = decodeURIComponent(req.url.slice("/api/products/".length, -"/restore".length));
+        const { error } = await supabaseAdmin.rpc("restore_catalogue_product", { p_product_id: id });
+        if (error) throw error;
+        sendJson(res, 200, { success: true, product_id: id });
+      } catch {
+        sendJson(res, 500, { error: "Could not restore this product." });
       }
       return;
     }

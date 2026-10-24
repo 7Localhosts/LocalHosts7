@@ -510,7 +510,12 @@ assert.doesNotMatch(cartScript, /productImageLoads\(/, "cart availability is bas
 assert.match(adminScript, /This active product cannot be purchased until its price is corrected/);
 assert.match(adminScript, /Needs correction/);
 assert.match(adminScript, /function restoreStaffSession\(\)/);
-assert.match(adminScript, /sessionStorage\.getItem\("kayshaven-access-token"\)/);
+assert.doesNotMatch(adminScript, /sessionStorage\.setItem\("kayshaven-access-token"/);
+assert.match(adminScript, /Never restore staff credentials from browser storage/);
+assert.doesNotMatch(adminScript, /window\.confirm\(`Permanently delete/);
+assert.match(backendSource, /restore_catalogue_product/);
+assert.match(adminStyles, /\.sidebar\s*\{[^}]*position:\s*sticky/s);
+assert.match(adminStyles, /\.metric\s*>\s*strong\s*\{[^}]*var\(--kh-brand-haven-color/s);
 assert.match(adminScript, /#profile-name/);
 assert.doesNotMatch(adminStyles, /status-history/);
 assert.doesNotMatch(backendSource, /status-history|order_status_history/);
