@@ -47,6 +47,31 @@ const changePasswordForm =
 const passwordFeedback =
   document.querySelector("#password-feedback");
 
+async function showProductRestoreAction(productId, productName) {
+  if (!inventoryListFeedback) return;
+  inventoryListFeedback.replaceChildren(document.createTextNode(`${productName} was removed from the storefront. `));
+  const restore = document.createElement("button");
+  restore.type = "button";
+  restore.className = "text-button";
+  restore.textContent = "Undo";
+  restore.addEventListener("click", async () => {
+    restore.disabled = true;
+    try {
+      const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(productId)}/restore`, {
+        method: "POST", headers: authHeaders()
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not restore product.");
+      inventoryListFeedback.textContent = `${productName} was restored.`;
+      await loadInventory();
+    } catch (error) {
+      restore.disabled = false;
+      inventoryListFeedback.textContent = error.message || "Could not restore product.";
+    }
+  });
+  inventoryListFeedback.append(restore);
+}
+
 /* -----------------------------
    SCREEN CONTROL
 ----------------------------- */
@@ -136,16 +161,6 @@ if (loginForm) {
 
       currentUser = result.staff;
 
-      sessionStorage.setItem(
-        "kayshaven-access-token",
-        accessToken
-      );
-
-      sessionStorage.setItem(
-        "kayshaven-staff",
-        JSON.stringify(currentUser)
-      );
-
       updateUserDisplay();
 
       loginForm.reset();
@@ -192,19 +207,10 @@ function clearStaffSession() {
 }
 
 function restoreStaffSession() {
-  const token = sessionStorage.getItem("kayshaven-access-token");
-  const staff = sessionStorage.getItem("kayshaven-staff");
-  if (!token || !staff) return;
-  try {
-    currentUser = JSON.parse(staff);
-    if (!currentUser || typeof currentUser !== "object") throw new Error("Invalid saved staff session");
-    accessToken = token;
-    updateUserDisplay();
-    showScreen("dashboard");
-    loadOrders();
-  } catch {
-    clearStaffSession();
-  }
+  // Never restore staff credentials from browser storage. A page reload or
+  // return from the storefront must require an explicit password sign-in.
+  sessionStorage.removeItem("kayshaven-access-token");
+  sessionStorage.removeItem("kayshaven-staff");
 }
 
 /* -----------------------------
@@ -465,6 +471,7 @@ async function loadInventory() {
         : [];
 
     renderInventory();
+    await loadArchivedProducts();
 
   } catch (error) {
     console.error(
@@ -478,6 +485,40 @@ async function loadInventory() {
     failed.textContent = "Products could not be loaded. Refresh or try again shortly.";
     inventoryRows.appendChild(failed);
     if (inventoryListFeedback) inventoryListFeedback.textContent = error.message || "Inventory could not be loaded.";
+  }
+}
+
+async function loadArchivedProducts() {
+  const container = document.querySelector("#archived-product-rows");
+  if (!container || !accessToken) return;
+  try {
+    const response = await fetch(`${API_URL}/api/products?include_archived=true`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Removed products could not be loaded.");
+    container.replaceChildren();
+    const archived = Array.isArray(result.products) ? result.products : [];
+    if (!archived.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "No recently removed products.";
+      container.appendChild(empty);
+      return;
+    }
+    archived.forEach(product => {
+      const row = document.createElement("div");
+      row.className = "archived-product-row";
+      row.setAttribute("role", "listitem");
+      const name = document.createElement("span");
+      name.textContent = product.name || `Product ${product.id}`;
+      const restore = document.createElement("button");
+      restore.type = "button";
+      restore.className = "text-button";
+      restore.dataset.restoreProduct = String(product.id);
+      restore.textContent = "Restore";
+      row.append(name, restore);
+      container.appendChild(row);
+    });
+  } catch (error) {
+    container.textContent = error.message || "Removed products could not be loaded.";
   }
 }
 
@@ -602,8 +643,15 @@ function renderInventory() {
     const facts = document.createElement("div");
     facts.className = "inventory-product-facts";
     appendInventoryValue(facts, "Category", product.category || "—");
-    appendInventoryValue(facts, "Price", `GHS ${Number(product.price || 0).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`, "inventory-product-price");
+    const validPrice = Number.isFinite(Number(product.price)) && Number(product.price) > 0;
+    appendInventoryValue(facts, "Price", validPrice ? `GHS ${Number(product.price).toLocaleString("en-GH", { maximumFractionDigits: 2 })}` : "Needs correction", "inventory-product-price");
     summary.appendChild(facts);
+    if (!validPrice) {
+      const priceWarning = document.createElement("p");
+      priceWarning.className = "inventory-product-price-warning";
+      priceWarning.textContent = "This active product cannot be purchased until its price is corrected.";
+      summary.appendChild(priceWarning);
+    }
 
     const actions = document.createElement("div");
     actions.className = "inventory-product-actions";
@@ -670,19 +718,14 @@ function renderInventory() {
     cancelButton.textContent = "Cancel";
     cancelButton.dataset.cancelProductEdit = String(product.id);
     editorActions.append(saveButton, cancelButton);
-    const hasOrderHistory = orders.some(order => (order.order_items || []).some(item => String(item.product_id) === String(product.id)));
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "button inventory-delete-button";
-    deleteButton.textContent = "Delete permanently";
     deleteButton.dataset.deleteProduct = String(product.id);
-    deleteButton.title = "Separate permanent-delete action. Storefront removal only hides this product.";
-    if (hasOrderHistory) {
-      deleteButton.disabled = true;
-      deleteButton.textContent = "Used in order history";
-      deleteButton.title = "Hide this product instead to preserve its historical orders.";
-    }
-    editorActions.appendChild(deleteButton);
+    deleteButton.setAttribute("aria-label", `Delete ${product.name} permanently from catalogue`);
+    deleteButton.title = `Delete ${product.name} from catalogue`;
+    deleteButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
+    actions.appendChild(deleteButton);
     const cardFeedback = document.createElement("p");
     cardFeedback.className = "inventory-card-feedback";
     cardFeedback.setAttribute("role", "status");
@@ -762,6 +805,21 @@ inventoryRows?.addEventListener("click", async event => {
   const button = event.target.closest("button");
   if (!button) return;
   const card = button.closest(".inventory-product-card");
+
+  if (button.matches("[data-restore-product]")) {
+    button.disabled = true;
+    try {
+      const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(button.dataset.restoreProduct)}/restore`, { method: "POST", headers: authHeaders() });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not restore product.");
+      await loadInventory();
+      if (inventoryListFeedback) inventoryListFeedback.textContent = "Product restored to the catalogue.";
+    } catch (error) {
+      button.disabled = false;
+      if (inventoryListFeedback) inventoryListFeedback.textContent = error.message || "Could not restore product.";
+    }
+    return;
+  }
 
   if (button.matches("[data-edit-product]")) {
     const editor = card?.querySelector("[data-product-editor]");
@@ -862,9 +920,8 @@ inventoryRows?.addEventListener("click", async event => {
     if (!accessToken) return;
     const product = inventory.find(item => String(item.id) === button.dataset.deleteProduct);
     const name = product?.name || "this product";
-    if (!window.confirm(`Permanently delete ${name}? This cannot be undone. Products referenced by any order cannot be deleted.`)) return;
     button.disabled = true;
-    if (inventoryListFeedback) inventoryListFeedback.textContent = `Checking whether ${name} can be safely deleted…`;
+    if (inventoryListFeedback) inventoryListFeedback.textContent = `Removing ${name} from the catalogue…`;
     try {
       const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(button.dataset.deleteProduct)}`, {
         method: "DELETE", headers: authHeaders()
@@ -872,7 +929,7 @@ inventoryRows?.addEventListener("click", async event => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || "Could not safely delete this product.");
       await loadInventory();
-      if (inventoryListFeedback) inventoryListFeedback.textContent = `${name} was permanently deleted.`;
+      await showProductRestoreAction(button.dataset.deleteProduct, name);
     } catch (error) {
       button.disabled = false;
       if (inventoryListFeedback) inventoryListFeedback.textContent = error.message || "Could not safely delete this product.";
@@ -1458,9 +1515,10 @@ function renderOrders() {
   const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
   const visibleOrders = filterOrders(search);
   const activeOrders = visibleOrders.filter(isActiveFulfillmentOrder);
-  const historicalOrders = visibleOrders.filter(isHistoryOrder);
   renderOrderSection(activeRows, activeOrders, false, visibleOrders.length > 0);
-  renderOrderSection(historyRows, historicalOrders, true, visibleOrders.length > 0);
+  const historySearch = String(document.querySelector("#history-search-input")?.value || "").trim().toLowerCase();
+  const historyMatches = orders.filter(isHistoryOrder).filter(order => !historySearch || JSON.stringify([order.customer_name, order.email, order.phone, order.order_number]).toLowerCase().includes(historySearch));
+  renderOrderSection(historyRows, historyMatches, true, orders.length > 0);
 }
 
 document.addEventListener("click", async event => {
@@ -1731,3 +1789,11 @@ function formatDate(value) {
 
 showScreen("login");
 restoreStaffSession();
+
+ document.querySelector("#history-search-input")?.addEventListener("input", updateOrderView);
+ document.querySelector("#toggle-order-history")?.addEventListener("click", event => {
+   const panel = document.querySelector("#overview-order-history");
+   panel.hidden = !panel.hidden;
+   event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+   event.currentTarget.textContent = panel.hidden ? "View Order History" : "Hide Order History";
+ });
