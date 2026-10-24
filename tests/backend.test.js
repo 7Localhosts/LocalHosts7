@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 // Keep this suite independent of account credentials and safe for CI/local runs.
 process.env.SUPABASE_URL = "https://unit-test.invalid.supabase.co";
@@ -9,7 +11,7 @@ process.env.FRONTEND_ORIGIN = "https://unit-test.invalid";
 delete process.env.PAYSTACK_SECRET_KEY;
 delete process.env.PAYSTACK_CALLBACK_URL;
 
-const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
+const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -85,6 +87,14 @@ async function main() {
   assert.equal(safePaymentErrorCode({ code: "PGRST204", message: "schema cache error" }), "PGRST204", "Supabase/PostgREST error codes remain useful to operators");
   assert.equal(safePaymentErrorCode({ code: "customer@example.com", message: "sensitive" }), "UNCLASSIFIED", "untrusted error codes are not logged");
   assert.equal(formatPaymentInitializationFailure("order_item_insert", { code: "23503", message: "details omitted" }).stage, "order_item_insert", "order-item failures are reported at their own stage");
+  const verificationFailureLog = formatPaymentVerificationFailure("finalize_order", sensitiveProviderError);
+  assert.deepEqual(verificationFailureLog, {
+    event: "payment_verification_failed",
+    stage: "finalize_order",
+    code: "PAYSTACK_HTTP_401",
+    message: "The verified payment could not be finalized."
+  }, "verification diagnostics identify the failure stage and safe provider/database code");
+  assert.doesNotMatch(JSON.stringify(verificationFailureLog), /buyer@example|\+233|sk_test|Bearer|checkout\.paystack\.com|private-token/i, "verification diagnostics omit customer details, credentials, and URLs");
 
   console.log("Check server prices, sizes, and product visibility");
   const projectOrigin = new URL(process.env.SUPABASE_URL).origin;
@@ -307,7 +317,7 @@ async function main() {
           return { select: () => ({ in: async (field, values) => {
             assert.equal(field, "id");
             assert.deepEqual(values, ["synthetic-toy"]);
-            return { data: [{ id: "synthetic-toy", name: "Synthetic toy", category: "Toys", price: 42.5, sizes: [], is_active: true }], error: null };
+            return { data: [{ id: "synthetic-toy", name: "Synthetic toy", category: "Toys", price: 42.5, sizes: [], is_active: true, image: "images/synthetic-toy.webp" }], error: null };
           } }) };
         }
         if (table === "orders") {
@@ -316,10 +326,11 @@ async function main() {
             return { select: () => ({ single: async () => ({ data: { id: "synthetic-payment-order", order_number: "KH-SYNTHETIC-PAYMENT" }, error: null }) }) };
           } };
         }
-        if (table === "order_items") return { insert: async rows => ({ error: null, rows }) };
+        if (table === "order_items") return { insert: async rows => { initializationOrderItems = rows; return { error: null, rows }; } };
         throw new Error(`Unexpected payment table ${table}`);
       }
     };
+    let initializationOrderItems = [];
     const initializationServer = createServer({
       paymentClient: initializationClient,
       frontendOrigins: productionOrigin,
@@ -338,12 +349,13 @@ async function main() {
           email: "buyer@example.test",
           phone: "+233000000042",
           expected_total: 42.5,
-          items: [{ product_id: "synthetic-toy", quantity: 1 }]
+          items: [{ product_id: "synthetic-toy", quantity: 1, image_url: `${productionOrigin}/product-images/synthetic-toy.webp` }]
         })
       });
       assert.equal(initializationResponse.status, 200);
       const initializationBody = await initializationResponse.json();
       assert.equal(initializationPayload.callback_url, productionCallback, "Paystack initialization uses the exact Cloudflare production callback");
+      assert.equal(initializationOrderItems[0].product_image_url, `${productionOrigin}/product-images/synthetic-toy.webp`, "checkout saves a safe item image snapshot beside authoritative name, size, quantity, and price");
       assert.equal(initializationBody.authorization_url, "https://checkout.paystack.com/synthetic-test-authorization");
       assert.ok(initializationBody.reference);
       assert.deepEqual(Object.keys(initializationBody).sort(), ["authorization_url", "reference"], "the customer response contains no callback configuration or provider secret");
@@ -498,8 +510,8 @@ async function main() {
       payment_method: "Paystack",
       payment_reference: "KH-TEST-REFERENCE-42",
       order_items: [
-        { product_name: "Cotton top", size: "M", quantity: 2, price: 20 },
-        { product_name: "Toy", size: null, quantity: 1, price: 2.5 }
+        { product_name: "Cotton top", product_image_url: "https://kayshaven.live/product-images/cotton-top.png", size: "M", quantity: 2, price: 20 },
+        { product_name: "Toy", product_image_url: null, size: null, quantity: 1, price: 2.5 }
       ]
     },
     error: null
@@ -511,7 +523,9 @@ async function main() {
       return {
         select(columns) {
           assert.match(columns, /order_items/);
-          assert.doesNotMatch(columns, /email|phone/, "receipt lookup avoids unnecessary contact data");
+          assert.match(columns, /email/);
+          assert.match(columns, /phone/);
+          assert.match(columns, /product_image_url/, "receipt reads the immutable image stored on each order item");
           return {
             eq(field, id) {
               assert.equal(field, "id");
@@ -537,19 +551,24 @@ async function main() {
     assert.equal(successfulReceipt.headers.get("cache-control"), "private, no-store", "customer receipt data is not cached by shared intermediaries");
     const successfulReceiptBody = await successfulReceipt.json();
     assert.deepEqual(successfulReceiptBody.receipt, {
+      verified: true,
       order_number: "KH-RECEIPT-42",
       purchase_date: "2026-10-22T12:00:00.000Z",
       customer_name: "Synthetic Buyer",
+      email: "private@example.test",
+      phone: "+233000000042",
       items: [
-        { product_name: "Cotton top", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
-        { product_name: "Toy", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
+        { product_name: "Cotton top", image_url: "https://kayshaven.live/product-images/cotton-top.png", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
+        { product_name: "Toy", image_url: "", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
       ],
+      subtotal: 42.5,
       total_amount: 42.5,
-      payment_status: "Paid",
+      payment_status: "VERIFIED PAID",
       payment_method: "Paystack",
       payment_reference: "KH-TEST-REFERENCE-42"
     });
-    assert.doesNotMatch(JSON.stringify(successfulReceiptBody), /private@example|\+233000000042/, "receipt responses do not include customer email or phone");
+    assert.match(JSON.stringify(successfulReceiptBody), /private@example/);
+    assert.match(JSON.stringify(successfulReceiptBody), /\+233000000042/);
 
     receiptRecord = { data: null, error: { code: "PGRST116" } };
     const missingToken = createReceiptAccessToken("receipt-order-42", "KH-TEST-REFERENCE-42", receiptSigningKey);
@@ -562,7 +581,7 @@ async function main() {
         id: "receipt-order-42",
         payment_status: "failed",
         payment_reference: "KH-TEST-REFERENCE-42",
-        order_items: [{ product_name: "Cotton top", size: "M", quantity: 2, price: 20 }]
+        order_items: [{ product_name: "Cotton top", product_image_url: null, size: "M", quantity: 2, price: 20 }]
       },
       error: null
     };
@@ -573,6 +592,71 @@ async function main() {
   } finally {
     await new Promise((resolve, reject) => receiptServer.close(error => error ? reject(error) : resolve()));
   }
+
+  console.log("Check public catalogue caching excludes private and inventory fields");
+  let publicProductColumns = "";
+  const catalogueClient = {
+    from(table) {
+      assert.equal(table, "products");
+      return {
+        select(columns) {
+          publicProductColumns = columns;
+          const query = {
+            is(field, value) { assert.equal(field, "deleted_at"); assert.equal(value, null); return this; },
+            order(column) { assert.equal(column, "id"); return this; },
+            eq(field, value) { assert.equal(field, "is_active"); assert.equal(value, true); return this; },
+            async range(start, end) {
+              assert.equal(start, 0); assert.equal(end, 499);
+              return { data: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "product-images/4-seba-med-cleansing-bar.png", description: "A public product", sizes: [] }, { id: 2, image: null }], error: null };
+            }
+          };
+          return query;
+        }
+      };
+    }
+  };
+  const publicCatalogueServer = createServer({ catalogueClient, frontendOrigins: productionOrigin });
+  try {
+    await new Promise(resolve => publicCatalogueServer.listen(0, "127.0.0.1", resolve));
+    const publicResponse = await fetch(`http://127.0.0.1:${publicCatalogueServer.address().port}/api/products`, { headers: { Origin: productionOrigin } });
+    assert.equal(publicResponse.status, 200);
+    assert.equal(publicResponse.headers.get("cache-control"), "public, max-age=15, stale-while-revalidate=30");
+    assert.equal(publicResponse.headers.get("vary"), "Origin");
+    assert.match(publicProductColumns, /id, name, category, price, image, description, sizes/);
+    assert.doesNotMatch(publicProductColumns, /stock|email|phone|is_active/);
+    assert.deepEqual(await publicResponse.json(), { products: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "product-images/4-seba-med-cleansing-bar.png", description: "A public product", sizes: [] }] });
+  } finally {
+    await new Promise((resolve, reject) => publicCatalogueServer.close(error => error ? reject(error) : resolve()));
+  }
+
+  console.log("Check catalogue pagination past Supabase row limits and failure recovery");
+  let paginationFailure = false;
+  let pageRequests = [];
+  const pagedCatalogue = { from() { return { select() { return this; }, is() { return this; }, order() { return this; }, eq() { return this; },
+    async range(start, end) {
+      pageRequests.push([start, end]);
+      if (paginationFailure && start === 500) return { error: { message: "synthetic database failure" } };
+      return { data: Array.from({ length: start === 0 ? 500 : 2 }, (_, i) => ({ id: 1000 + start + i, name: `Toy ${start+i}`, price: 10, image: "images/4-seba-med-cleansing-bar.png" })) };
+    }
+  }; } };
+  const pagedServer = createServer({ catalogueClient: pagedCatalogue, frontendOrigins: productionOrigin });
+  try {
+    await new Promise(resolve => pagedServer.listen(0, "127.0.0.1", resolve));
+    const endpoint = `http://127.0.0.1:${pagedServer.address().port}/api/products`;
+    const complete = await fetch(endpoint);
+    const body = await complete.json();
+    assert.equal(body.products.length, 502);
+    assert.equal(new Set(body.products.map(p => p.id)).size, 502);
+    assert.deepEqual(pageRequests, [[0,499],[500,999]]);
+    paginationFailure = true;
+    const failed = await fetch(endpoint);
+    assert.equal(failed.status, 500, "an incomplete catalogue must not be returned as success");
+    assert.equal((await failed.json()).products, undefined);
+  } finally { await new Promise(resolve => pagedServer.close(resolve)); }
+
+  const receiptImageMigration = fs.readFileSync(path.join(__dirname, "..", "supabase", "migrations", "202610230001_order_item_receipt_image_snapshot.sql"), "utf8");
+  assert.match(receiptImageMigration, /add column if not exists product_image_url text/i);
+  assert.doesNotMatch(receiptImageMigration, /update\s+public\.order_items/i, "legacy order snapshots are not silently overwritten with today's catalogue images");
   console.log("All backend checks passed");
 }
 

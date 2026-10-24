@@ -472,19 +472,41 @@ a {
 }
 
 .product-image .placeholder {
+  position: absolute;
+  inset: 0;
   display: grid;
-  place-items: center;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
   height: 100%;
-  padding: 30px;
-  color: #7a13aa;
-  background: #ffffff;
+  padding: 24px;
+  color: #674477;
+  background: linear-gradient(145deg, #fbf8fd 0%, #f1e9f7 100%);
 }
 
-.product-image .placeholder::after { content: "Photo unavailable"; max-width: 14ch; font-size: 12px; font-weight: 600; line-height: 1.5; text-align: center; }
+.product-image .placeholder::before { content: ""; width: 34px; height: 27px; border: 2px solid #a88ab8; border-radius: 6px; background: radial-gradient(circle at 50% 50%, #a88ab8 0 4px, transparent 4.5px), linear-gradient(145deg, transparent 48%, #c4afd0 49% 54%, transparent 55%); }
+.product-image .placeholder::after { content: "Product photo coming soon"; max-width: 18ch; font-size: 11px; font-weight: 600; line-height: 1.5; text-align: center; }
 
 .product-image img {
-  transition: transform .35s ease;
+  opacity: 0;
+  transition: none;
 }
+
+.product-image[data-image-state="loaded"] .placeholder { display: none; }
+.product-image[data-image-state="loaded"] img { opacity: 1; }
+.product-image[data-image-state="failed"] img { display: none; }
+
+.product-card-skeleton { pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, .06); }
+.product-card-skeleton:hover { transform: none; }
+.skeleton-image,
+.skeleton-line,
+.skeleton-button { border-radius: 8px; background: linear-gradient(110deg, #f2edf6 8%, #faf8fc 18%, #f2edf6 33%); }
+.skeleton-image { aspect-ratio: 1 / 1.1; margin-bottom: 15px; }
+.skeleton-line { height: 11px; margin: 0 3px 10px; }
+.skeleton-line-short { width: 42%; height: 9px; }
+.skeleton-line-price { width: 30%; height: 13px; margin-top: 5px; }
+.skeleton-button { height: 36px; margin: 8px 3px 0; }
+.product-price-unavailable { color: #735d7f; font-size: .9em; }
 
 .product-badge {
   position: absolute;
@@ -552,6 +574,10 @@ a {
   .product-card:hover .product-image img {
     transform: scale(1.025);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card, .product-image img { transition: none !important; }
 }
 
 .empty-state {

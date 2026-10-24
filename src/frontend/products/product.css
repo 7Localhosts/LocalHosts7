@@ -109,14 +109,16 @@ body {
 }
 
 .product-image.is-missing::after {
-    content: "Photo unavailable";
-    max-width: 16ch;
-    color: #7a13aa;
-    font-size: 13px;
+    content: "Product photo coming soon";
+    max-width: 18ch;
+    color: #674477;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.5;
     text-align: center;
 }
+
+.product-image.is-missing { position: relative; background: linear-gradient(145deg, #fbf8fd, #f1e9f7); }
 
 .product-image img {
     width: 100%;

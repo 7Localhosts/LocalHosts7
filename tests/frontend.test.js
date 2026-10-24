@@ -51,6 +51,7 @@ const shop = fs.readFileSync(path.join(frontend, "shop.html"), "utf8");
 const storefrontStyles = fs.readFileSync(path.join(frontend, "styles.css"), "utf8");
 const checkout = fs.readFileSync(path.join(frontend, "checkout", "checkout.html"), "utf8");
 const checkoutScript = fs.readFileSync(path.join(frontend, "checkout", "checkout.js"), "utf8");
+const checkoutStyles = fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8");
 const checkoutPaymentButton = require(path.join(frontend, "checkout", "payment-button-state.js"));
 const receiptPdf = require(path.join(frontend, "checkout", "receipt-pdf.js"));
 const productPage = fs.readFileSync(path.join(frontend, "products", "product.html"), "utf8");
@@ -65,6 +66,15 @@ const adminStyles = fs.readFileSync(path.join(root, "src", "admin", "styles.css"
 const backendSource = fs.readFileSync(path.join(root, "src", "backend", "server.js"), "utf8");
 const staticBuild = fs.readFileSync(path.join(root, "deployment", "build-static.js"), "utf8");
 const localPreview = fs.readFileSync(path.join(root, "deployment", "serve-local.js"), "utf8");
+const cleanProductStart = storefrontScript.indexOf("function cleanPublicProduct(product) {");
+const cleanProductEnd = storefrontScript.indexOf("function readPublicCatalogCache()", cleanProductStart);
+const cleanProductContext = { cartImageUrl: () => "" };
+vm.runInNewContext(`${storefrontScript.slice(cleanProductStart, cleanProductEnd)}; globalThis.clean = cleanPublicProduct;`, cleanProductContext);
+const zeroPriceProduct = cleanProductContext.clean({ id: 192, name: "Price review item", category: "Baby care", price: 0, image: null });
+assert.equal(zeroPriceProduct.id, 192, "zero-price active products are retained in the public catalogue");
+assert.equal(zeroPriceProduct.category, "Baby care", "the original product category is preserved");
+assert.equal(zeroPriceProduct.purchasable, false, "invalid-price products are marked non-purchasable");
+assert.equal(zeroPriceProduct.price, null, "an invalid amount is not presented as a sale price");
 assert.match(landing, /<p class="landing-welcome">Welcome to<\/p>/);
 assert.match(landing, /class="landing-wordmark kh-brand"[^>]*><span class="kh-brand__kays">Kay's<\/span><span class="kh-brand__haven">Haven<\/span><\/p>/);
 assert.match(landing, /<p class="landing-slogan"[^>]*>Quality products from crib to campus\.<\/p>/);
@@ -95,12 +105,12 @@ assert.doesNotMatch(storefrontStyles.match(/\.category-card\s*\{[^}]*\}/s)?.[0] 
 const renderProductsStart = storefrontScript.indexOf("function renderProducts() {");
 const renderProductsEnd = storefrontScript.indexOf("function saveCart()", renderProductsStart);
 assert.ok(renderProductsStart >= 0 && renderProductsEnd > renderProductsStart, "storefront product renderer is available for category regression checks");
-const categoryGrid = { innerHTML: "", querySelectorAll: () => [] };
+const categoryGrid = { innerHTML: "", setAttribute() {}, querySelectorAll: () => [] };
 const categoryEmptyState = { textContent: "", style: {} };
 const categoryRenderContext = {
   products: [
-    { id: "baby-item", name: "Baby item", category: "Baby", price: 20, _catalogImageUrl: "/baby.webp" },
-    { id: "kids-item", name: "Kids item", category: "Kids", price: 30, _catalogImageUrl: "/kids.webp" }
+    { id: "baby-item", name: "Baby item", category: "Baby", price: 20, purchasable: true, _catalogImageUrl: "/baby.webp" },
+    { id: "kids-item", name: "Kids item", category: "Kids", price: 30, purchasable: true, _catalogImageUrl: "/kids.webp" }
   ],
   productsLoading: false,
   currentFilter: "Kids",
@@ -115,6 +125,8 @@ assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="baby-item"/);
 vm.runInNewContext('currentFilter = "Baby"; renderProducts();', categoryRenderContext);
 assert.match(categoryGrid.innerHTML, /data-product-card="baby-item"/);
 assert.doesNotMatch(categoryGrid.innerHTML, /data-product-card="kids-item"/);
+assert.match(categoryGrid.innerHTML, /class="placeholder"/);
+assert.match(categoryGrid.innerHTML, /width="800" height="880"/);
 const selectionHelper = storefrontScript.match(/function updateCategorySelection\(category\) \{[\s\S]*?^\}/m);
 assert.ok(selectionHelper, "category selection helper is defined");
 function fakeSelectionButton(dataset) {
@@ -152,13 +164,13 @@ assert.doesNotMatch(shop, />Cart\s*<span id="cartCount"/);
 assert.match(shop, /<svg class="nav-icon" aria-hidden="true"><use href="#icon-info"\/><\/svg>About/);
 assert.match(shop, /<svg class="category-icon" aria-hidden="true"><use href="#icon-tag"\/><\/svg>/);
 assert.equal((shop.match(/<footer\b/g) || []).length, 1, "the storefront retains its single shared footer");
-assert.match(storefrontScript, /Number\.isFinite\(Number\(product\.price\)\) && Number\(product\.price\) > 0/);
+assert.match(storefrontScript, /const purchasable = Number\.isFinite\(parsedPrice\) && parsedPrice > 0/);
 assert.doesNotMatch(storefrontScript, /Out of stock|Maximum available stock reached|stock\s*<=\s*0/i);
 assert.match(storefrontScript, /const showBadge = badge && !\/\\bout\\s\+of\\s\+stock\\b\/i\.test\(badge\)/);
 assert.doesNotMatch(storefrontScript, /filter\(product => Number\(product\.stock/);
 assert.doesNotMatch(cartScript, /stock|Out of Stock/i);
 assert.doesNotMatch(checkoutScript, /stock|Out of Stock/i);
-assert.match(productScript, /textContent = priceIsValid \? money\(price\) : "Price unavailable"/);
+assert.match(productScript, /textContent = priceIsValid \? money\(price\) : "Price to be confirmed"/);
 assert.match(productScript, /addButton\.disabled = !priceIsValid/);
 assert.match(productPage, /<main class="product-page" aria-busy="true">/);
 assert.match(productPage, /id="product-loading"[^>]*role="status"/);
@@ -190,9 +202,9 @@ assert.match(checkout, /id="download-receipt"[^>]*>Download Receipt/);
 assert.match(checkout, /id="print-receipt"[^>]*>Print Receipt/);
 assert.match(checkoutScript, /fetch\(`\$\{API_URL\}\/receipts\/\$\{encodeURIComponent\(orderId\)\}`/);
 assert.match(checkoutScript, /Authorization: `Bearer \$\{accessToken\}`/);
-assert.match(checkoutScript, /loadVerifiedReceipt\(result\.order_id, result\.receipt_access_token\)/);
-assert.match(checkoutScript, /String\(receipt\.payment_status \|\| ""\)\.trim\(\)\.toLowerCase\(\) !== "paid"/);
-assert.doesNotMatch(checkoutScript.slice(checkoutScript.indexOf("function renderVerifiedReceipt"), checkoutScript.indexOf("async function loadVerifiedReceipt")), /localStorage|readCart|window\.location\.search/);
+assert.match(checkoutScript, /saveReceiptAccess\(result\.order_id, reference, result\.receipt_access_token\)/);
+assert.match(checkoutScript, /String\(receipt\.payment_status \|\| ""\)\.trim\(\)\.toLowerCase\(\) !== "verified paid"/);
+assert.doesNotMatch(checkoutScript.slice(checkoutScript.indexOf("function renderVerifiedReceipt"), checkoutScript.indexOf("const RECEIPT_ACCESS_STORAGE_PREFIX")), /localStorage|readCart|window\.location\.search/);
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("ready", true), { label: "Pay securely with Paystack", disabled: false });
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("connecting", true), { label: "Connecting to Paystack…", disabled: true });
 assert.deepEqual(checkoutPaymentButton.buttonPresentation("verifying", true), { label: "Verifying payment…", disabled: true });
@@ -239,21 +251,26 @@ assert.match(cartScript, /aria-label="Remove \$\{safe\(item\.name\)\} from cart"
 assert.match(cartPage, /cart-heading-icon/);
 assert.match(cartPage, /class="eyebrow kh-brand cart-brand"[^>]*><span class="kh-brand__kays">Kay's/);
 assert.match(fs.readFileSync(path.join(frontend, "cart", "cart.css"), "utf8"), /\.cart-item-info\s*\{/);
-assert.match(checkout, /id="confirmation-view" hidden/);
+assert.doesNotMatch(checkout, /confirmation-view|check-badge|Payment confirmed|conf-name|conf-order-id|Return to the shop/);
+assert.match(checkout, /id="view-receipt"[^>]*>View \/ Download Receipt<\/button>/, "the small receipt action sits in checkout without restoring a confirmation card");
+assert.match(checkout, /id="receipt-logo"|class="receipt-logo"/);
+assert.match(checkout, /receipt-customer-phone|receipt-customer-email|receipt-subtotal-amount/);
 assert.match(checkoutScript, /\/payments\/verify/);
 assert.match(checkoutScript, /window\.addEventListener\("storage"/);
 assert.doesNotMatch(checkoutScript, /checkoutConfigReady|DELIVERY_FEE|shipping_address|delivery_fee/i);
 assert.match(checkoutScript, /expected_total: currentCartTotal\(lines\)/);
-assert.match(checkoutScript, /imageAvailable !== true/);
+assert.doesNotMatch(checkoutScript, /imageAvailable !== true/, "missing product photography does not block a valid-price cart item");
+assert.match(checkoutScript, /retry-checkout-catalogue/);
+assert.match(checkoutScript, /Price unavailable/);
 assert.match(cartScript, /refreshCartAvailability\(\)/);
 assert.match(cartScript, /cartAvailability\.get\(String\(item\.id\)\) !== true/);
 assert.doesNotMatch(checkout, /transport-note|#collection|transport information/i);
 assert.match(checkout, /class="kh-brand checkout-brand"/);
 assert.match(checkout, /Customer information/);
 assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /\.panel h2\s*\{[\s\S]*?font-family: "Montserrat"/);
-assert.match(checkoutScript, /document\.getElementById\("confirmation-view"\)\.hidden = false/);
-assert.match(checkout, /<div class="check-badge">✓<\/div><h2>Payment confirmed<\/h2>/, "the existing confirmation checkmark/message remains unchanged below the button");
-assert.match(fs.readFileSync(path.join(frontend, "checkout", "checkout.css"), "utf8"), /#confirmation-view:not\(\[hidden\]\)\s*\{\s*display:\s*block/);
+assert.doesNotMatch(checkoutScript, /confirmation-view|conf-name|conf-order-id/);
+assert.doesNotMatch(checkoutStyles, /confirmation-view|check-badge/);
+assert.match(checkoutStyles, /#receipt-view\[hidden\]/, "the verified receipt remains independently available after payment");
 assert.match(adminPage, /id="refresh-orders"/);
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
 assert.doesNotMatch(adminPage, /name="(?:quantity|description|sizes)"|Current stock/i);
@@ -406,7 +423,7 @@ assert.match(adminScript, /function isActiveFulfillmentOrder\(order\)/);
 assert.match(adminScript, /function canCompleteOrder\(order\)/);
 assert.match(adminScript, /function orderStatusActions\(order, historical\)/);
 assert.match(adminScript, /const availableActions = orderStatusActions\(order, historical\)/);
-assert.match(adminScript, /const historicalOrders = visibleOrders\.filter\(isHistoryOrder\)/);
+assert.match(adminScript, /const historyMatches = orders\.filter\(isHistoryOrder\)/);
 assert.match(adminScript, /appendField\(customerFields, "Phone", order\.phone\)/);
 assert.match(adminScript, /appendField\(expandedCustomer, "Customer email", order\.email\)/);
 assert.match(adminScript, /appendField\(customerFields, "Order number"/);
@@ -462,7 +479,7 @@ assert.match(backendSource, /eq\("is_active", true\)/);
 assert.match(fs.readFileSync(path.join(root, "src", "backend", "order-utils.js"), "utf8"), /if \(product\.is_active === false\)/);
 assert.doesNotMatch(backendSource, /select\("id, name, price, stock, sizes, is_active"\)/);
 assert.match(backendSource, /update\.is_active = body\.is_active/);
-assert.match(backendSource, /delete_product_without_orders/);
+assert.match(backendSource, /archive_catalogue_product/);
 assert.match(backendSource, /createGuestPaystackEmail/);
 assert.match(backendSource, /email: email \|\| null/);
 assert.match(backendSource, /sizes: \[\.\.\.new Set\(sizes\.map/);
@@ -472,11 +489,26 @@ assert.match(checkoutHtml, /id="email" name="email" type="email" autocomplete="e
 assert.doesNotMatch(checkoutHtml, /id="email"[^>]*required/);
 assert.match(checkoutHtml, /Email address \(optional\)/);
 assert.match(fs.readFileSync(path.join(root, "supabase", "migrations", "202610150001_optional_guest_checkout_and_product_visibility.sql"), "utf8"), /alter column email drop not null[\s\S]*?add column if not exists is_active[\s\S]*?delete_product_without_orders/);
-assert.match(fs.readFileSync(path.join(frontend, "script.js"), "utf8"), /productsWithLoadedImages/);
-assert.match(fs.readFileSync(path.join(frontend, "script.js"), "utf8"), /productImageLoads\(imageUrl\)/);
+assert.doesNotMatch(storefrontScript, /productsWithLoadedImages|productImageLoads\(imageUrl\)/, "catalogue cards no longer wait on each image and append progressively");
+assert.match(storefrontScript, /PUBLIC_CATALOG_STORAGE_KEY/);
+assert.match(storefrontScript, /kayshaven-public-catalog-v2/);
+assert.match(storefrontScript, /PUBLIC_CATALOG_STALE_LIMIT_MS = 2 \* 60 \* 1000/);
+assert.match(storefrontScript, /cache: "no-store"/);
+assert.match(storefrontScript, /ensureCategoryFilters\(products\)/, "API categories omitted from the original filter list get their own filter");
+assert.match(storefrontScript, /Price to be confirmed/);
+assert.match(storefrontScript, /This item is unavailable until its price is confirmed/);
+assert.match(storefrontScript, /renderProductSkeletons/);
+assert.match(storefrontScript, /setAttribute\("aria-busy", String\(productsLoading\)\)/);
+assert.doesNotMatch(storefrontScript, /products = products\.filter/, "an image error preserves the card and its layout slot");
+assert.match(storefrontStyles, /\.product-image\[data-image-state="loaded"\] \.placeholder/);
+assert.match(storefrontStyles, /\.product-card-skeleton/);
 assert.doesNotMatch(fs.readFileSync(path.join(frontend, "script.js"), "utf8"), /placeholder.*Product image unavailable/);
 assert.match(fs.readFileSync(path.join(frontend, "product-images.js"), "utf8"), /productImageLoads/);
-assert.match(productScript, /await productImageLoads\(absoluteImageUrl\)/);
+assert.doesNotMatch(productScript, /await productImageLoads|disabled = true/, "a missing product image never disables a valid product's purchase button");
+assert.match(productScript, /Price to be confirmed/);
+assert.doesNotMatch(cartScript, /productImageLoads\(/, "cart availability is based on live product and price data, not photography");
+assert.match(adminScript, /This active product cannot be purchased until its price is corrected/);
+assert.match(adminScript, /Needs correction/);
 assert.match(adminScript, /function restoreStaffSession\(\)/);
 assert.match(adminScript, /sessionStorage\.getItem\("kayshaven-access-token"\)/);
 assert.match(adminScript, /#profile-name/);
@@ -666,10 +698,7 @@ for (const [, rawUrl] of productionAdmin.matchAll(/\b(?:href|src)="([^"]+)"/g)) 
 async function exercisePaymentVerification(responseFactory) {
   const button = { textContent: "", disabled: false };
   const message = { textContent: "", classList: { add() {}, remove() {} } };
-  const confirmation = { hidden: true };
   const checkoutView = { hidden: false };
-  const confName = { textContent: "" };
-  const confOrderId = { textContent: "" };
   const receiptActions = { disabled: true, addEventListener() {} };
   const removed = [];
   const replaced = [];
@@ -681,16 +710,15 @@ async function exercisePaymentVerification(responseFactory) {
     paymentVerificationPending: false,
     paymentButtonState: checkoutPaymentButton,
     loadVerifiedReceipt: async (...args) => receiptLoads.push(args),
+    saveReceiptAccess: (...args) => ({ order_id: String(args[0]), reference: args[1], access_token: args[2] }),
+    showReceiptAction() {},
     getPricedLines: () => [],
     cartValidationError: () => "",
     document: { getElementById(id) {
       return ({
         "place-order-btn": button,
         "checkout-message": message,
-        "confirmation-view": confirmation,
         "checkout-view": checkoutView,
-        "conf-name": confName,
-        "conf-order-id": confOrderId,
         "download-receipt": receiptActions,
         "print-receipt": receiptActions
       })[id];
@@ -700,9 +728,10 @@ async function exercisePaymentVerification(responseFactory) {
       observedWhilePending = button.textContent;
       return responseFactory(...args);
     },
-    localStorage: { removeItem: key => removed.push(key) },
+    localStorage: { removeItem: key => removed.push(key), setItem() {} },
     history: { replaceState: (...args) => replaced.push(args) },
-    window: { location: { pathname: "/checkout/checkout.html" } }
+    URL,
+    window: { location: { pathname: "/checkout/checkout.html", href: "https://kayshaven.live/checkout/checkout.html?reference=KH-existing-reference" } }
   };
   const buttonHelpersStart = checkoutScript.indexOf("function syncPaymentButton(");
   const buttonHelpersEnd = checkoutScript.indexOf("function formatReceiptDate(", buttonHelpersStart);
@@ -713,7 +742,7 @@ async function exercisePaymentVerification(responseFactory) {
   vm.runInNewContext(`${checkoutScript.slice(buttonHelpersStart, buttonHelpersEnd)}\n${checkoutScript.slice(verifyStart, verifyEnd)}\nglobalThis.verifyPaymentReference = verifyPaymentReference;`, context);
   button.textContent = checkoutPaymentButton.buttonPresentation("ready", true).label;
   await context.verifyPaymentReference("KH-existing-reference");
-  return { button, message, confirmation, checkoutView, confName, confOrderId, removed, replaced, receiptLoads, observedWhilePending, context };
+  return { button, checkoutView, message, removed, replaced, receiptLoads, observedWhilePending, context };
 }
 
 async function testPaymentVerificationButtonStates() {
@@ -729,15 +758,12 @@ async function testPaymentVerificationButtonStates() {
 
   const successful = await exercisePaymentVerification(async () => ({
     ok: true,
-    json: async () => ({ success: true, payment_status: "paid", order_id: "synthetic-order-1", receipt_access_token: "synthetic-signed-token", order_number: "KH-TEST", customer_name: "Synthetic Buyer" })
+    json: async () => ({ success: true, payment_status: "paid", order_id: "synthetic-order-1", receipt_access_token: "synthetic-signed-token" })
   }));
   assert.equal(successful.observedWhilePending, "Verifying payment…");
   assert.equal(successful.button.textContent, "Payment successful", "the success label requires backend confirmation as paid");
   assert.equal(successful.button.disabled, true, "a successful payment cannot be submitted again");
-  assert.equal(successful.confirmation.hidden, false);
-  assert.equal(successful.checkoutView.hidden, true);
-  assert.equal(successful.confName.textContent, "Synthetic Buyer");
-  assert.equal(successful.confOrderId.textContent, "Order #KH-TEST");
+  assert.equal(successful.checkoutView.hidden, false, "the existing checkout remains visible with its successful payment button");
   assert.deepEqual(successful.receiptLoads, [["synthetic-order-1", "synthetic-signed-token"]], "the receipt uses the order ID and access token returned only after backend verification");
   assert.deepEqual(successful.removed, ["kayshaven-cart"]);
   assert.equal(successful.replaced.length, 1);
@@ -761,31 +787,127 @@ async function testPaymentVerificationButtonStates() {
   assert.equal(timeout.button.disabled, false, "a verification timeout can be retried");
 }
 
+async function testReceiptAccessRefresh() {
+  const restoreStart = checkoutScript.indexOf("async function restoreStoredReceipt(");
+  const restoreEnd = checkoutScript.indexOf('\ndocument.getElementById("view-receipt").addEventListener', restoreStart);
+  assert.ok(restoreStart >= 0 && restoreEnd > restoreStart, "refresh restoration logic is available for direct testing");
+  const savedAccess = { order_id: "paid-order-9", reference: "KH-PAID-REFERENCE-9", access_token: "expired-token" };
+  const storage = {
+    getItem(key) {
+      if (key === "kayshaven-last-receipt-order") return savedAccess.order_id;
+      if (key === `kayshaven-receipt-access:${savedAccess.order_id}`) return JSON.stringify(savedAccess);
+      return null;
+    },
+    setItem() {}
+  };
+  const restored = { actions: 0, receiptLoads: [], paymentState: "" };
+  const context = {
+    API_URL: "https://api.example.test/api",
+    LAST_RECEIPT_ORDER_STORAGE_KEY: "kayshaven-last-receipt-order",
+    RECEIPT_ACCESS_STORAGE_PREFIX: "kayshaven-receipt-access:",
+    localStorage: storage,
+    readCart: () => [],
+    readReceiptAccess: () => savedAccess,
+    AbortSignal: { timeout: () => "synthetic-timeout" },
+    fetch: async (url, options) => {
+      assert.equal(url, "https://api.example.test/api/payments/verify");
+      assert.equal(JSON.parse(options.body).reference, savedAccess.reference, "refresh uses the stored unguessable payment reference, never an order number alone");
+      return { ok: true, json: async () => ({ success: true, payment_status: "paid", order_id: savedAccess.order_id, receipt_access_token: "fresh-signed-token" }) };
+    },
+    saveReceiptAccess: (orderId, reference, token) => ({ order_id: orderId, reference, access_token: token }),
+    showReceiptAction() { restored.actions += 1; },
+    setCheckoutPaymentState(state) { restored.paymentState = state; },
+    loadVerifiedReceipt: async (...args) => restored.receiptLoads.push(args),
+    document: { getElementById: () => ({ textContent: "" }) }
+  };
+  vm.runInNewContext(`${checkoutScript.slice(restoreStart, restoreEnd)}\nglobalThis.restoreReceipt = restoreStoredReceipt;`, context);
+  await context.restoreReceipt();
+  assert.equal(restored.actions, 1, "the receipt action returns after backend re-verification");
+  assert.equal(restored.paymentState, "successful");
+  assert.deepEqual(restored.receiptLoads, [[savedAccess.order_id, "fresh-signed-token"]], "an expired bearer token is renewed only through backend payment verification");
+
+  const rejected = { actions: 0, receiptLoads: [] };
+  context.fetch = async () => ({ ok: false, json: async () => ({ success: false, payment_status: "pending" }) });
+  context.showReceiptAction = () => { rejected.actions += 1; };
+  context.loadVerifiedReceipt = async (...args) => rejected.receiptLoads.push(args);
+  await context.restoreReceipt();
+  assert.equal(rejected.actions, 0, "an unverified payment never reveals the receipt action after refresh");
+  assert.deepEqual(rejected.receiptLoads, []);
+}
+
 async function testReceiptPdf() {
   const paidReceipt = {
+    verified: true,
     order_number: "KH-RECEIPT-1",
     purchase_date: "2026-10-22T12:00:00.000Z",
     customer_name: "Synthetic Buyer",
-    payment_status: "Paid",
+    payment_status: "VERIFIED PAID",
     payment_method: "Paystack",
     payment_reference: "KH-REFERENCE-1",
+    subtotal: 42.5,
     total_amount: 42.5,
     email: "private@example.test",
     phone: "+233000000000",
-    items: [{ product_name: "Cotton top", size: "M", quantity: 2, unit_price: 20, line_total: 40 }, { product_name: "Toy", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }]
+    items: [
+      { product_name: "Cotton top", image_url: "https://kayshaven.live/product-images/cotton-top.png", size: "M", quantity: 2, unit_price: 20, line_total: 40 },
+      { product_name: "Toy", image_url: "https://kayshaven.live/product-images/toy.png", size: "N/A", quantity: 1, unit_price: 2.5, line_total: 2.5 }
+    ]
   };
-  const pdf = receiptPdf.createReceiptPdf(paidReceipt);
+  const drawnText = [];
+  let drawnImageCount = 0;
+  const context = {
+    scale() {}, fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, drawImage() { drawnImageCount += 1; },
+    fillText(text) { drawnText.push(String(text)); },
+    measureText(text) { return { width: String(text).length * 6 }; }
+  };
+  const pdfEnvironment = {
+    Blob,
+    Image: class TestImage {
+      naturalWidth = 100;
+      naturalHeight = 100;
+      complete = true;
+      set src(value) { this._src = value; }
+    },
+    location: { origin: "https://kayshaven.live", href: "https://kayshaven.live/checkout/checkout.html" },
+    document: {
+      baseURI: "https://kayshaven.live/checkout/checkout.html",
+      fonts: { ready: Promise.resolve(), load: async () => [] },
+      createElement() {
+        return {
+          width: 0, height: 0,
+          getContext: () => context,
+          toBlob(callback, type) { callback(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type })); }
+        };
+      }
+    }
+  };
+  const pdfReceipt = {
+    ...paidReceipt,
+    subtotal: 63.5,
+    total_amount: 63.5,
+    items: [
+      ...paidReceipt.items,
+      { product_name: "School shoes", image_url: "https://kayshaven.live/product-images/shoes.png", size: "3", quantity: 1, unit_price: 10, line_total: 10 },
+      { product_name: "Blue hat", image_url: "https://kayshaven.live/product-images/hat.png", size: "One size", quantity: 1, unit_price: 5, line_total: 5 },
+      { product_name: "School bag", image_url: "https://kayshaven.live/product-images/bag.png", size: "N/A", quantity: 1, unit_price: 6, line_total: 6 }
+    ]
+  };
+  const pdf = await receiptPdf.createReceiptPdf(pdfReceipt, pdfEnvironment);
   assert.equal(pdf.type, "application/pdf", "Download Receipt creates a PDF blob");
-  const pdfText = await pdf.text();
+  const pdfBuffer = new Uint8Array(await pdf.arrayBuffer());
+  const pdfText = new TextDecoder("latin1").decode(pdfBuffer);
   assert.match(pdfText, /^%PDF-1\.4/);
-  assert.match(pdfText, /0\.478 0\.075 0\.667 rg/, "the printable receipt uses Kay's Haven deep-purple branding");
+  assert.match(pdfText, /\/Filter \/DCTDecode/, "the downloadable PDF embeds rendered, branded page images");
+  assert.match(pdfText, /\/Count 2/, "long receipts paginate instead of clipping later order items");
+  assert.ok(drawnImageCount >= 7, "the PDF draws the logo and each saved product image on its receipt page");
   const xrefOffset = Number(pdfText.match(/startxref\n(\d+)/)?.[1]);
   assert.equal(pdfText.slice(xrefOffset, xrefOffset + 4), "xref", "the generated PDF has a valid cross-reference offset");
-  for (const detail of ["KAY'S HAVEN", "Quality products from crib to campus.", "KH-RECEIPT-1", "Cotton top", "Size: M", "Quantity: 2", "GHS 20.00", "GHS 40.00", "TOTAL PAID: GHS 42.50", "Payment status: Paid"]) {
-    assert.ok(pdfText.includes(detail), `receipt PDF contains backend receipt detail: ${detail}`);
+  for (const detail of ["Kay's", "Haven", "Quality products from crib to campus.", "VERIFIED PAID", "Cotton top", "Size: M", "Quantity: 2", "GH₵ 20.00", "GH₵ 40.00", "Subtotal", "GH₵ 63.50", "private@example.test", "+233000000000", "KH-REFERENCE-1"]) {
+    assert.ok(drawnText.some(line => line.includes(detail)), `branded receipt layout includes backend receipt detail: ${detail}`);
   }
-  assert.doesNotMatch(pdfText, /private@example|\+233000000000/, "receipt PDF omits unnecessary customer contact information");
-  assert.throws(() => receiptPdf.createReceiptPdf({ ...paidReceipt, payment_status: "failed" }), /confirmed paid order/i, "failed payments cannot produce a paid receipt PDF");
+  assert.throws(() => receiptPdf.validateVerifiedReceipt({ ...paidReceipt, payment_status: "failed" }), /backend-verified paid order/i, "failed payments cannot produce a paid receipt PDF");
+  assert.throws(() => receiptPdf.validateVerifiedReceipt({ ...paidReceipt, verified: false }), /backend-verified paid order/i, "frontend status alone cannot authorize a receipt");
+  assert.throws(() => receiptPdf.validateVerifiedReceipt({ ...paidReceipt, total_amount: 99 }), /totals do not match/i, "incorrect or mutated order totals cannot be receipted");
 
   const receiptElements = new Map();
   const makeElement = () => ({
@@ -796,11 +918,14 @@ async function testReceiptPdf() {
     children: [],
     append(...children) { this.children.push(...children); },
     appendChild(child) { this.children.push(child); },
-    replaceChildren(...children) { this.children = children; }
+    replaceChildren(...children) { this.children = children; },
+    addEventListener() {},
+    setAttribute(name, value) { this[name] = value; },
+    replaceWith(replacement) { this.replacement = replacement; }
   });
   const renderContext = {
     Date,
-    money: amount => `GHS ${Number(amount).toFixed(2)}`,
+    money: amount => `GH₵ ${Number(amount).toFixed(2)}`,
     document: {
       getElementById(id) {
         if (!receiptElements.has(id)) receiptElements.set(id, makeElement());
@@ -810,24 +935,35 @@ async function testReceiptPdf() {
     }
   };
   const renderStart = checkoutScript.indexOf("function formatReceiptDate(");
-  const renderEnd = checkoutScript.indexOf('\ndocument.getElementById("download-receipt").addEventListener', renderStart);
-  assert.ok(renderStart >= 0 && renderEnd > renderStart, "verified receipt renderer and retrieval helper are defined");
+  const renderEnd = checkoutScript.indexOf("\nconst RECEIPT_ACCESS_STORAGE_PREFIX", renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, "verified receipt renderer is defined without handling its access token");
   vm.runInNewContext(`${checkoutScript.slice(renderStart, renderEnd)}\nglobalThis.renderReceipt = renderVerifiedReceipt;`, renderContext);
   renderContext.renderReceipt(paidReceipt);
-  assert.equal(receiptElements.get("receipt-view").hidden, false, "the verified receipt is shown after backend receipt data is rendered");
+  assert.equal(receiptElements.get("receipt-view").hidden, true, "the receipt stays collapsed until the customer selects its action");
   assert.equal(receiptElements.get("receipt-order-number").textContent, "KH-RECEIPT-1");
-  assert.equal(receiptElements.get("receipt-payment-status").textContent, "Paid");
-  assert.equal(receiptElements.get("receipt-total-amount").textContent, "GHS 42.50");
+  assert.equal(receiptElements.get("receipt-payment-status").textContent, "VERIFIED PAID");
+  assert.equal(receiptElements.get("receipt-total-amount").textContent, "GH₵ 42.50");
+  assert.equal(receiptElements.get("receipt-subtotal-amount").textContent, "GH₵ 42.50");
   assert.equal(receiptElements.get("receipt-items").children.length, 2);
-  assert.equal(receiptElements.get("receipt-items").children[0].children[0].textContent, "Cotton top");
+  assert.equal(receiptElements.get("receipt-items").children[0].children[1].children[0].textContent, "Cotton top");
   assert.equal(receiptElements.get("download-receipt").disabled, false);
   assert.equal(receiptElements.get("print-receipt").disabled, false);
   assert.throws(() => renderContext.renderReceipt({ ...paidReceipt, payment_status: "failed" }), /only after payment is verified/i, "failed payment data is rejected by the receipt renderer");
 }
 
-testPaymentVerificationButtonStates().then(testReceiptPdf).then(() => {
+testPaymentVerificationButtonStates().then(testReceiptAccessRefresh).then(testReceiptPdf).then(() => {
   console.log("Frontend assets, checkout verification states, and receipt PDF checks passed");
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
+
+// History is relocated once and initially collapsed; search remains available inside Overview.
+const overviewMarkup = adminPage.slice(adminPage.indexOf('id="view-overview"'), adminPage.indexOf('<!-- ORDERS -->'));
+assert.match(overviewMarkup, /id="overview-order-history" hidden/);
+assert.match(overviewMarkup, /View Order History/);
+assert.match(overviewMarkup, /id="history-search-input"/);
+assert.equal((adminPage.match(/id="orders-history-rows"/g) || []).length, 1);
+assert.match(adminPage, /class="orders-refresh-control">[\s\S]*?id="refresh-orders"[\s\S]*?<small id="orders-refreshed-at"/);
+assert.match(adminScript, /actions.appendChild\(deleteButton\)/);
+assert.match(adminScript, /<svg width="18"/);

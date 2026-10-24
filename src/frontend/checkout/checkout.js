@@ -6,6 +6,7 @@ let checkoutCatalogueError = "";
 let checkoutPaymentState = "ready";
 let paymentVerificationPending = false;
 let verifiedReceipt = null;
+let activeReceiptAccess = null;
 
 function readCart() {
   try {
@@ -35,7 +36,6 @@ function cartValidationError(lines) {
   if (!checkoutCatalogueReady) return "Checking current product prices…";
   for (const line of lines) {
     if (!line.product) return "A product in your cart is no longer available. Return to the shop to update your cart.";
-    if (line.product.imageAvailable !== true) return `${line.product.name} does not have a working product image and cannot be checked out. Remove it from your cart.`;
     if (!Number.isInteger(line.quantity) || line.quantity < 1) return "Check the quantity for each item in your cart.";
     if (!Number.isFinite(line.unitPrice) || line.unitPrice <= 0) return `${line.product.name} is currently unavailable for checkout.`;
     const sizes = productSizeOptions(line.product);
@@ -77,7 +77,7 @@ function formatReceiptDate(value) {
 }
 
 function renderVerifiedReceipt(receipt) {
-  if (!receipt || String(receipt.payment_status || "").trim().toLowerCase() !== "paid") {
+  if (!receipt || receipt.verified !== true || String(receipt.payment_status || "").trim().toLowerCase() !== "verified paid") {
     throw new Error("A receipt is available only after payment is verified.");
   }
   if (!Array.isArray(receipt.items) || !receipt.items.length) throw new Error("Receipt items are unavailable.");
@@ -85,8 +85,16 @@ function renderVerifiedReceipt(receipt) {
   document.getElementById("receipt-order-number").textContent = String(receipt.order_number || "Unavailable");
   document.getElementById("receipt-purchase-date").textContent = formatReceiptDate(receipt.purchase_date);
   document.getElementById("receipt-customer-name").textContent = String(receipt.customer_name || "Customer");
-  document.getElementById("receipt-payment-status").textContent = "Paid";
+  document.getElementById("receipt-payment-status").textContent = "VERIFIED PAID";
   document.getElementById("receipt-total-amount").textContent = money(receipt.total_amount);
+  document.getElementById("receipt-subtotal-amount").textContent = money(receipt.subtotal);
+
+  const phoneRow = document.getElementById("receipt-phone-row");
+  phoneRow.hidden = !receipt.phone;
+  if (receipt.phone) document.getElementById("receipt-customer-phone").textContent = String(receipt.phone);
+  const emailRow = document.getElementById("receipt-email-row");
+  emailRow.hidden = !receipt.email;
+  if (receipt.email) document.getElementById("receipt-customer-email").textContent = String(receipt.email);
 
   const methodRow = document.getElementById("receipt-method-row");
   methodRow.hidden = !receipt.payment_method;
@@ -100,6 +108,24 @@ function renderVerifiedReceipt(receipt) {
   receipt.items.forEach(item => {
     const row = document.createElement("div");
     row.className = "receipt-item";
+    const image = document.createElement(item.image_url ? "img" : "span");
+    image.className = item.image_url ? "receipt-item-image" : "receipt-item-image receipt-item-image-fallback";
+    if (item.image_url) {
+      image.src = String(item.image_url);
+      image.alt = "";
+      image.loading = "lazy";
+      image.addEventListener("error", () => {
+        const fallback = document.createElement("span");
+        fallback.className = "receipt-item-image receipt-item-image-fallback";
+        fallback.textContent = "Image unavailable";
+        image.replaceWith(fallback);
+      }, { once: true });
+    } else {
+      image.textContent = "Image not captured";
+      image.setAttribute("aria-label", "Product image was not captured for this historical order");
+    }
+    const details = document.createElement("div");
+    details.className = "receipt-item-details";
     const name = document.createElement("span");
     name.className = "receipt-item-name";
     name.textContent = String(item.product_name || "Product");
@@ -118,49 +144,130 @@ function renderVerifiedReceipt(receipt) {
     const lineTotal = document.createElement("strong");
     lineTotal.textContent = `Line total: ${money(item.line_total)}`;
     prices.append(unitPrice, lineTotal);
-    row.append(name, quantityLabel, size, prices);
+    details.append(name, size);
+    row.append(image, details, quantityLabel, prices);
     itemsContainer.appendChild(row);
   });
 
   document.getElementById("receipt-message").textContent = "Your verified receipt is ready.";
-  document.getElementById("receipt-view").hidden = false;
+  document.getElementById("receipt-view").hidden = true;
   document.getElementById("download-receipt").disabled = false;
   document.getElementById("print-receipt").disabled = false;
 }
 
+const RECEIPT_ACCESS_STORAGE_PREFIX = "kayshaven-receipt-access:";
+const LAST_RECEIPT_ORDER_STORAGE_KEY = "kayshaven-last-receipt-order";
+
+function saveReceiptAccess(orderId, reference, accessToken) {
+  if (!orderId || !reference || !accessToken) return null;
+  const value = { order_id: String(orderId), reference: String(reference), access_token: String(accessToken) };
+  localStorage.setItem(`${RECEIPT_ACCESS_STORAGE_PREFIX}${value.order_id}`, JSON.stringify(value));
+  localStorage.setItem(LAST_RECEIPT_ORDER_STORAGE_KEY, value.order_id);
+  activeReceiptAccess = value;
+  return value;
+}
+
+function readReceiptAccess(orderId) {
+  try {
+    const value = JSON.parse(localStorage.getItem(`${RECEIPT_ACCESS_STORAGE_PREFIX}${String(orderId)}`) || "null");
+    return value && value.order_id === String(orderId) && value.reference && value.access_token ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function showReceiptAction() {
+  const action = document.getElementById("view-receipt");
+  action.hidden = false;
+  action.disabled = false;
+}
+
 async function loadVerifiedReceipt(orderId, accessToken) {
   const message = document.getElementById("receipt-message");
-  document.getElementById("receipt-view").hidden = false;
+  const view = document.getElementById("receipt-view");
   if (!orderId || !accessToken) {
     message.textContent = "Payment is confirmed, but secure receipt access could not be created. Contact Kay's Haven with your order number.";
-    return;
+    return false;
   }
   try {
     const response = await fetch(`${API_URL}/receipts/${encodeURIComponent(orderId)}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     const result = await response.json();
-    if (!response.ok || !result.receipt || String(result.receipt.payment_status || "").toLowerCase() !== "paid") {
+    if (!response.ok || !result.receipt || result.receipt.verified !== true || String(result.receipt.payment_status || "").toLowerCase() !== "verified paid") {
       throw new Error(result.error || "The verified receipt is not available yet.");
     }
     renderVerifiedReceipt(result.receipt);
+    view.hidden = true;
+    showReceiptAction();
+    return true;
   } catch (error) {
     message.textContent = `${error.message || "The receipt could not be loaded."} Your payment confirmation is still valid.`;
+    view.hidden = true;
+    return false;
   }
 }
 
-document.getElementById("download-receipt").addEventListener("click", () => {
-  if (!verifiedReceipt) return;
+async function restoreStoredReceipt(requestedOrderId = "") {
+  const orderId = String(requestedOrderId || (!readCart().length ? localStorage.getItem(LAST_RECEIPT_ORDER_STORAGE_KEY) : "") || "");
+  if (!orderId) return;
+  const saved = readReceiptAccess(orderId);
+  if (!saved) return;
   try {
-    const blob = window.KaysHavenReceiptPdf.createReceiptPdf(verifiedReceipt);
+    const response = await fetch(`${API_URL}/payments/verify`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference: saved.reference }),
+      signal: AbortSignal.timeout(20000)
+    });
+    const result = await response.json();
+    if (!response.ok || result.success !== true || result.payment_status !== "paid" || String(result.order_id) !== orderId) {
+      throw new Error("Secure receipt access could not be renewed.");
+    }
+    const access = saveReceiptAccess(orderId, saved.reference, result.receipt_access_token);
+    if (!access) throw new Error("Secure receipt access could not be renewed.");
+    showReceiptAction();
+    if (!readCart().length) setCheckoutPaymentState("successful");
+    await loadVerifiedReceipt(orderId, access.access_token);
+  } catch (error) {
+    if (requestedOrderId) document.getElementById("checkout-message").textContent = error.message || "Secure receipt access could not be restored on this device.";
+  }
+}
+
+document.getElementById("view-receipt").addEventListener("click", async () => {
+  const view = document.getElementById("receipt-view");
+  if (!view.hidden) {
+    view.hidden = true;
+    document.getElementById("view-receipt").setAttribute("aria-expanded", "false");
+    return;
+  }
+  if (!verifiedReceipt && activeReceiptAccess) await loadVerifiedReceipt(activeReceiptAccess.order_id, activeReceiptAccess.access_token);
+  if (!verifiedReceipt) {
+    const requestedOrderId = new URLSearchParams(window.location.search).get("receipt_order") || "";
+    if (requestedOrderId) await restoreStoredReceipt(requestedOrderId);
+  }
+  if (verifiedReceipt) {
+    view.hidden = false;
+    document.getElementById("view-receipt").setAttribute("aria-expanded", "true");
+  }
+});
+
+document.getElementById("download-receipt").addEventListener("click", async event => {
+  if (!verifiedReceipt) return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const blob = await window.KaysHavenReceiptPdf.createReceiptPdf(verifiedReceipt);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `kays-haven-${String(verifiedReceipt.order_number || "receipt").replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
+    link.download = `KaysHaven-Receipt-${String(verifiedReceipt.order_number || "receipt").replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
     link.click();
+    if (!("download" in link)) window.open(url, "_blank", "noopener");
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) {
     document.getElementById("receipt-message").textContent = error.message || "Receipt PDF could not be generated.";
+  } finally {
+    button.disabled = false;
   }
 });
 
@@ -174,43 +281,41 @@ function renderOrderSummary() {
   const message = document.getElementById("checkout-price-message");
   const items = lines.map(({ item, product, quantity, unitPrice }) => {
     const image = product ? productImageUrl(product, "../product-images/") : "";
-    const imageMarkup = image && product?.imageAvailable
+    const imageMarkup = image
       ? `<img class="checkout-item-image" data-checkout-product-id="${escapeHtml(product.id)}" src="${escapeHtml(image)}" alt="" loading="lazy">`
-      : "";
+      : `<span class="checkout-item-image checkout-item-image-fallback" aria-label="Product photo unavailable">Photo unavailable</span>`;
     const name = product?.name || item.name || item.product_name || "Product";
-    const displayPrice = checkoutCatalogueReady && product && Number.isFinite(unitPrice) ? money(unitPrice * quantity) : "Checking price…";
+    const displayPrice = checkoutCatalogueError ? "Price unavailable" : checkoutCatalogueReady && product && Number.isFinite(unitPrice) && unitPrice > 0 ? money(unitPrice * quantity) : checkoutCatalogueReady ? "Price to be confirmed" : "Checking price…";
     return `<div class="order-item">${imageMarkup}<div class="order-item-details"><div class="name">${escapeHtml(name)}</div><div class="qty">Qty: ${quantity}${item.size ? ` · Size: ${escapeHtml(item.size)}` : ""}</div></div><div>${displayPrice}</div></div>`;
   });
   container.innerHTML = items.length ? items.join("") : "<p>Your cart is empty. <a href=\"../shop.html#shop\">Continue shopping</a>.</p>";
-  container.querySelectorAll("[data-checkout-product-id]").forEach(image => image.addEventListener("error", () => {
-    const product = checkoutProducts.get(String(image.dataset.checkoutProductId));
-    if (!product || !product.imageAvailable) return;
-    product.imageAvailable = false;
-    renderOrderSummary();
+  container.querySelectorAll("img[data-checkout-product-id]").forEach(image => image.addEventListener("error", () => {
+    const fallback = document.createElement("span");
+    fallback.className = "checkout-item-image checkout-item-image-fallback";
+    fallback.textContent = "Photo unavailable";
+    fallback.setAttribute("aria-label", "Product photo unavailable");
+    image.replaceWith(fallback);
   }, { once: true }));
 
   const total = checkoutCatalogueReady ? currentCartTotal(lines) : null;
-  document.getElementById("summary-total").textContent = total == null ? "Checking prices…" : money(total);
+  document.getElementById("summary-total").textContent = checkoutCatalogueError ? "Price unavailable" : total == null ? "Checking prices…" : lines.some(line => !Number.isFinite(line.unitPrice) || line.unitPrice <= 0) ? "Price to be confirmed" : money(total);
   const validation = lines.length ? cartValidationError(lines) : "";
   message.textContent = validation;
   message.classList.toggle("is-error", Boolean(checkoutCatalogueError || (checkoutCatalogueReady && validation)));
+  const retryCatalogue = document.getElementById("retry-checkout-catalogue");
+  if (retryCatalogue) retryCatalogue.hidden = !checkoutCatalogueError;
   syncPaymentButton(Boolean(lines.length && checkoutCatalogueReady && !validation));
 }
 
 async function loadCheckoutCatalogue() {
+  checkoutCatalogueReady = false;
+  checkoutCatalogueError = "";
+  renderOrderSummary();
   try {
-    const response = await fetch(`${API_URL}/products`);
+    const response = await fetch(`${API_URL}/products`, { cache: "no-store" });
     const result = await response.json();
     if (!response.ok || !Array.isArray(result.products)) throw new Error(result.error || "Current product prices are unavailable. Please try again shortly.");
     checkoutProducts = new Map(result.products.map(product => [String(product.id), product]));
-    const cartIds = new Set(readCart().map(item => String(item.id ?? item.product_id)));
-    await Promise.all([...cartIds].map(async id => {
-      const product = checkoutProducts.get(id);
-      if (!product) return;
-      const image = productImageUrl(product, "../product-images/");
-      const absoluteImage = image ? new URL(image, window.location.href).href : "";
-      product.imageAvailable = await productImageLoads(absoluteImage);
-    }));
     checkoutCatalogueReady = true;
     checkoutCatalogueError = "";
     const cachedCart = readCart();
@@ -221,7 +326,7 @@ async function loadCheckoutCatalogue() {
         item.price = Number(product.price);
         cartPricesChanged = true;
       }
-      if (product?.imageAvailable) item.image = product.image || productImageUrl(product, "../product-images/");
+      if (product) item.image = product.image || productImageUrl(product, "../product-images/");
     });
     if (cartPricesChanged) localStorage.setItem("kayshaven-cart", JSON.stringify(cachedCart));
     renderOrderSummary();
@@ -230,6 +335,8 @@ async function loadCheckoutCatalogue() {
     renderOrderSummary();
   }
 }
+
+document.getElementById("retry-checkout-catalogue")?.addEventListener("click", () => loadCheckoutCatalogue());
 
 async function verifyPaymentReference(reference) {
   if (!reference || paymentVerificationPending) return;
@@ -249,13 +356,19 @@ async function verifyPaymentReference(reference) {
       throw new Error(result.error || "Payment is not confirmed yet.");
     }
     setCheckoutPaymentState("successful");
-    document.getElementById("conf-name").textContent = result.customer_name || "";
-    document.getElementById("conf-order-id").textContent = `Order #${result.order_number || result.order_id}`;
-    document.getElementById("checkout-view").hidden = true;
-    document.getElementById("confirmation-view").hidden = false;
     localStorage.removeItem("kayshaven-cart");
-    history.replaceState({}, "", window.location.pathname);
-    await loadVerifiedReceipt(result.order_id, result.receipt_access_token);
+    const access = saveReceiptAccess(result.order_id, reference, result.receipt_access_token);
+    if (access) {
+      const receiptUrl = new URL(window.location.href);
+      receiptUrl.search = "";
+      receiptUrl.searchParams.set("receipt_order", access.order_id);
+      history.replaceState({}, "", `${receiptUrl.pathname}${receiptUrl.search}`);
+      showReceiptAction();
+      await loadVerifiedReceipt(access.order_id, access.access_token);
+    } else {
+      history.replaceState({}, "", window.location.pathname);
+      document.getElementById("checkout-message").textContent = "Payment successful. Secure receipt access is temporarily unavailable; contact Kay's Haven with your payment reference.";
+    }
   } catch (error) {
     setCheckoutPaymentState("verificationFailed");
     const failure = error.name === "TimeoutError" || error.name === "AbortError"
@@ -309,7 +422,17 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
       body: JSON.stringify({
         customer_name: values.fullName.trim(), email: values.email.trim(), phone: values.phone.trim(),
         expected_total: currentCartTotal(lines),
-        items: cart.map(item => ({ product_id: item.id ?? item.product_id, quantity: Number(item.qty ?? item.quantity), size: item.size || "" }))
+        items: cart.map(item => {
+          const productId = item.id ?? item.product_id;
+          const product = checkoutProducts.get(String(productId));
+          const image = product ? productImageUrl(product, "../product-images/") : "";
+          return {
+            product_id: productId,
+            quantity: Number(item.qty ?? item.quantity),
+            size: item.size || "",
+            image_url: image ? new URL(image, window.location.href).href : ""
+          };
+        })
       })
     });
     const result = await response.json();
@@ -324,7 +447,8 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
 
 renderOrderSummary();
 loadCheckoutCatalogue();
-verifyReturnedPayment();
+if (returnedPaymentReference()) verifyReturnedPayment();
+else restoreStoredReceipt(new URLSearchParams(window.location.search).get("receipt_order") || "");
 
 window.addEventListener("storage", event => {
   if (event.key === "kayshaven-cart" || event.key === null) renderOrderSummary();
