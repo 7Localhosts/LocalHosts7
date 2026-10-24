@@ -273,8 +273,7 @@ assert.doesNotMatch(checkoutScript, /confirmation-view|conf-name|conf-order-id/)
 assert.doesNotMatch(checkoutStyles, /confirmation-view|check-badge/);
 assert.match(checkoutStyles, /#receipt-view\[hidden\]/, "the verified receipt remains independently available after payment");
 assert.match(adminPage, /id="refresh-orders"/);
-assert.match(adminStyles, /\.login h1[\s\S]*?\.dashboard h6\s*\{\s*font-family:\s*"Montserrat",\s*sans-serif;/, "admin titles use Montserrat across login and dashboard screens");
-assert.match(adminStyles, /\.store-name \.kh-brand__haven\s*\{[^}]*font-family:\s*"Playfair Display"/, "store name keeps its existing branded typeface");
+assert.match(adminStyles, /#login-screen,\s*#login-screen \*,\s*#dashboard-screen,\s*#dashboard-screen \*\s*\{\s*font-family:\s*"Montserrat",\s*sans-serif !important;/, "every admin text element uses Montserrat");
 assert.match(orderNumberMigration, /create sequence if not exists public\.kayshaven_order_number_seq[\s\S]*?restart with 1/i, "fresh order numbering starts at one");
 assert.match(orderNumberMigration, /'KH-'\s*\|\|\s*lpad\(nextval\('public\.kayshaven_order_number_seq'\)::text,\s*6,\s*'0'\)/i, "new orders receive readable sequential order numbers");
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
@@ -529,7 +528,7 @@ assert.match(adminScript, /function filterOrders\(query\)/);
 assert.match(adminScript, /productImageUrl\(product, "\.\.\/frontend\/product-images\/"\)/);
 assert.match(adminStyles, /\.order-product-row\s*\{[^}]*grid-template-columns/s);
 assert.match(adminStyles, /\.order-card-summary\s*\{[^}]*padding-top:/s);
-assert.match(adminStyles, /Playfair Display[^}]+font-style:\s*italic/);
+assert.doesNotMatch(adminStyles, /Playfair Display/i, "admin pages do not load or apply the storefront display font");
 assert.match(adminStyles, /@media \(max-width: 640px\)\s*\{[\s\S]*?\.order-product-row\s*\{[^}]*grid-template-columns/s);
 assert.match(adminStyles, /\.login-intro-card\s*\{[^}]*background:/s);
 assert.match(adminStyles, /\.login-photo\s*\{[^}]*object-fit:\s*cover/s);
