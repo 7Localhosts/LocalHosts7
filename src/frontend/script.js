@@ -114,18 +114,10 @@ function ensureCategoryFilters(catalogue) {
 ========================= */
 
 async function loadProducts() {
-  const cached = readPublicCatalogCache();
-  if (cached) {
-    products = cached.products;
-    ensureCategoryFilters(products);
-    productsLoading = false;
-    renderProducts();
-  } else {
-    productsLoading = true;
-    renderProductSkeletons();
-  }
+  productsLoading = true;
+  renderProductSkeletons();
   try {
-    const response = await fetch(`${window.KAYS_HAVEN_API_URL}/api/products`, { cache: "no-store" });
+    const response = await fetch(`${window.KAYS_HAVEN_API_URL}/api/products`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
 
     if (!response.ok) {
       throw new Error(`Server error: ${response.status}`);

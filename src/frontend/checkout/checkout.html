@@ -41,6 +41,7 @@
       <div class="summary-line total"><span>Total</span><span id="summary-total">Checking prices…</span></div>
       <button type="submit" form="checkout-form" id="place-order-btn" class="place-order-btn">Pay securely with Paystack</button>
       <button type="button" id="view-receipt" class="receipt-toggle-btn" aria-controls="receipt-view" aria-expanded="false" hidden>View / Download Receipt</button>
+      <button class="button button-primary" id="download-receipt" type="button" disabled hidden>Download Receipt (PDF)</button>
       <small>Secure payment processing by Paystack.</small>
     </aside>
   </div>
@@ -67,7 +68,6 @@
       <div class="receipt-total"><span>Total paid</span><strong id="receipt-total-amount">—</strong></div>
     </div>
     <div class="receipt-actions">
-      <button class="button button-primary" id="download-receipt" type="button" disabled>Download Receipt</button>
       <button class="button button-secondary" id="print-receipt" type="button" disabled>Print Receipt</button>
     </div>
   </section>

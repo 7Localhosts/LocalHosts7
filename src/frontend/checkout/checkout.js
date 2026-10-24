@@ -152,6 +152,7 @@ function renderVerifiedReceipt(receipt) {
   document.getElementById("receipt-message").textContent = "Your verified receipt is ready.";
   document.getElementById("receipt-view").hidden = true;
   document.getElementById("download-receipt").disabled = false;
+  document.getElementById("download-receipt").hidden = false;
   document.getElementById("print-receipt").disabled = false;
 }
 
@@ -266,6 +267,7 @@ document.getElementById("download-receipt").addEventListener("click", async even
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) {
     document.getElementById("receipt-message").textContent = error.message || "Receipt PDF could not be generated.";
+    document.getElementById("checkout-message").textContent = "Payment successful. PDF download failed; please try Download Receipt (PDF) again.";
   } finally {
     button.disabled = false;
   }
