@@ -11,7 +11,7 @@ process.env.FRONTEND_ORIGIN = "https://unit-test.invalid";
 delete process.env.PAYSTACK_SECRET_KEY;
 delete process.env.PAYSTACK_CALLBACK_URL;
 
-const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
+const { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken } = require("../src/backend/server");
 
 async function main() {
   console.log("Check email validation");
@@ -87,6 +87,14 @@ async function main() {
   assert.equal(safePaymentErrorCode({ code: "PGRST204", message: "schema cache error" }), "PGRST204", "Supabase/PostgREST error codes remain useful to operators");
   assert.equal(safePaymentErrorCode({ code: "customer@example.com", message: "sensitive" }), "UNCLASSIFIED", "untrusted error codes are not logged");
   assert.equal(formatPaymentInitializationFailure("order_item_insert", { code: "23503", message: "details omitted" }).stage, "order_item_insert", "order-item failures are reported at their own stage");
+  const verificationFailureLog = formatPaymentVerificationFailure("finalize_order", sensitiveProviderError);
+  assert.deepEqual(verificationFailureLog, {
+    event: "payment_verification_failed",
+    stage: "finalize_order",
+    code: "PAYSTACK_HTTP_401",
+    message: "The verified payment could not be finalized."
+  }, "verification diagnostics identify the failure stage and safe provider/database code");
+  assert.doesNotMatch(JSON.stringify(verificationFailureLog), /buyer@example|\+233|sk_test|Bearer|checkout\.paystack\.com|private-token/i, "verification diagnostics omit customer details, credentials, and URLs");
 
   console.log("Check server prices, sizes, and product visibility");
   const projectOrigin = new URL(process.env.SUPABASE_URL).origin;
@@ -593,16 +601,16 @@ async function main() {
       return {
         select(columns) {
           publicProductColumns = columns;
-          return {
-            order(column) {
-              assert.equal(column, "id");
-              return { eq: async (field, value) => {
-                assert.equal(field, "is_active");
-                assert.equal(value, true);
-                return { data: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "images/toy.png", description: "A public product", sizes: [] }], error: null };
-              } };
+          const query = {
+            is(field, value) { assert.equal(field, "deleted_at"); assert.equal(value, null); return this; },
+            order(column) { assert.equal(column, "id"); return this; },
+            eq(field, value) { assert.equal(field, "is_active"); assert.equal(value, true); return this; },
+            async range(start, end) {
+              assert.equal(start, 0); assert.equal(end, 499);
+              return { data: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "product-images/4-seba-med-cleansing-bar.png", description: "A public product", sizes: [] }, { id: 2, image: null }], error: null };
             }
           };
+          return query;
         }
       };
     }
@@ -612,14 +620,39 @@ async function main() {
     await new Promise(resolve => publicCatalogueServer.listen(0, "127.0.0.1", resolve));
     const publicResponse = await fetch(`http://127.0.0.1:${publicCatalogueServer.address().port}/api/products`, { headers: { Origin: productionOrigin } });
     assert.equal(publicResponse.status, 200);
-    assert.equal(publicResponse.headers.get("cache-control"), "public, max-age=30, stale-while-revalidate=120");
+    assert.equal(publicResponse.headers.get("cache-control"), "public, max-age=15, stale-while-revalidate=30");
     assert.equal(publicResponse.headers.get("vary"), "Origin");
     assert.match(publicProductColumns, /id, name, category, price, image, description, sizes/);
     assert.doesNotMatch(publicProductColumns, /stock|email|phone|is_active/);
-    assert.deepEqual(await publicResponse.json(), { products: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "images/toy.png", description: "A public product", sizes: [] }] });
+    assert.deepEqual(await publicResponse.json(), { products: [{ id: 1, name: "Synthetic product", category: "Toys", price: 12.5, image: "product-images/4-seba-med-cleansing-bar.png", description: "A public product", sizes: [] }] });
   } finally {
     await new Promise((resolve, reject) => publicCatalogueServer.close(error => error ? reject(error) : resolve()));
   }
+
+  console.log("Check catalogue pagination past Supabase row limits and failure recovery");
+  let paginationFailure = false;
+  let pageRequests = [];
+  const pagedCatalogue = { from() { return { select() { return this; }, is() { return this; }, order() { return this; }, eq() { return this; },
+    async range(start, end) {
+      pageRequests.push([start, end]);
+      if (paginationFailure && start === 500) return { error: { message: "synthetic database failure" } };
+      return { data: Array.from({ length: start === 0 ? 500 : 2 }, (_, i) => ({ id: 1000 + start + i, name: `Toy ${start+i}`, price: 10, image: "images/4-seba-med-cleansing-bar.png" })) };
+    }
+  }; } };
+  const pagedServer = createServer({ catalogueClient: pagedCatalogue, frontendOrigins: productionOrigin });
+  try {
+    await new Promise(resolve => pagedServer.listen(0, "127.0.0.1", resolve));
+    const endpoint = `http://127.0.0.1:${pagedServer.address().port}/api/products`;
+    const complete = await fetch(endpoint);
+    const body = await complete.json();
+    assert.equal(body.products.length, 502);
+    assert.equal(new Set(body.products.map(p => p.id)).size, 502);
+    assert.deepEqual(pageRequests, [[0,499],[500,999]]);
+    paginationFailure = true;
+    const failed = await fetch(endpoint);
+    assert.equal(failed.status, 500, "an incomplete catalogue must not be returned as success");
+    assert.equal((await failed.json()).products, undefined);
+  } finally { await new Promise(resolve => pagedServer.close(resolve)); }
 
   const receiptImageMigration = fs.readFileSync(path.join(__dirname, "..", "supabase", "migrations", "202610230001_order_item_receipt_image_snapshot.sql"), "utf8");
   assert.match(receiptImageMigration, /add column if not exists product_image_url text/i);

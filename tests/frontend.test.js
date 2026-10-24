@@ -66,6 +66,15 @@ const adminStyles = fs.readFileSync(path.join(root, "src", "admin", "styles.css"
 const backendSource = fs.readFileSync(path.join(root, "src", "backend", "server.js"), "utf8");
 const staticBuild = fs.readFileSync(path.join(root, "deployment", "build-static.js"), "utf8");
 const localPreview = fs.readFileSync(path.join(root, "deployment", "serve-local.js"), "utf8");
+const cleanProductStart = storefrontScript.indexOf("function cleanPublicProduct(product) {");
+const cleanProductEnd = storefrontScript.indexOf("function readPublicCatalogCache()", cleanProductStart);
+const cleanProductContext = { cartImageUrl: () => "" };
+vm.runInNewContext(`${storefrontScript.slice(cleanProductStart, cleanProductEnd)}; globalThis.clean = cleanPublicProduct;`, cleanProductContext);
+const zeroPriceProduct = cleanProductContext.clean({ id: 192, name: "Price review item", category: "Baby care", price: 0, image: null });
+assert.equal(zeroPriceProduct.id, 192, "zero-price active products are retained in the public catalogue");
+assert.equal(zeroPriceProduct.category, "Baby care", "the original product category is preserved");
+assert.equal(zeroPriceProduct.purchasable, false, "invalid-price products are marked non-purchasable");
+assert.equal(zeroPriceProduct.price, null, "an invalid amount is not presented as a sale price");
 assert.match(landing, /<p class="landing-welcome">Welcome to<\/p>/);
 assert.match(landing, /class="landing-wordmark kh-brand"[^>]*><span class="kh-brand__kays">Kay's<\/span><span class="kh-brand__haven">Haven<\/span><\/p>/);
 assert.match(landing, /<p class="landing-slogan"[^>]*>Quality products from crib to campus\.<\/p>/);
@@ -100,8 +109,8 @@ const categoryGrid = { innerHTML: "", setAttribute() {}, querySelectorAll: () =>
 const categoryEmptyState = { textContent: "", style: {} };
 const categoryRenderContext = {
   products: [
-    { id: "baby-item", name: "Baby item", category: "Baby", price: 20, _catalogImageUrl: "/baby.webp" },
-    { id: "kids-item", name: "Kids item", category: "Kids", price: 30, _catalogImageUrl: "/kids.webp" }
+    { id: "baby-item", name: "Baby item", category: "Baby", price: 20, purchasable: true, _catalogImageUrl: "/baby.webp" },
+    { id: "kids-item", name: "Kids item", category: "Kids", price: 30, purchasable: true, _catalogImageUrl: "/kids.webp" }
   ],
   productsLoading: false,
   currentFilter: "Kids",
@@ -155,13 +164,13 @@ assert.doesNotMatch(shop, />Cart\s*<span id="cartCount"/);
 assert.match(shop, /<svg class="nav-icon" aria-hidden="true"><use href="#icon-info"\/><\/svg>About/);
 assert.match(shop, /<svg class="category-icon" aria-hidden="true"><use href="#icon-tag"\/><\/svg>/);
 assert.equal((shop.match(/<footer\b/g) || []).length, 1, "the storefront retains its single shared footer");
-assert.match(storefrontScript, /Number\.isFinite\(price\) \|\| price <= 0/);
+assert.match(storefrontScript, /const purchasable = Number\.isFinite\(parsedPrice\) && parsedPrice > 0/);
 assert.doesNotMatch(storefrontScript, /Out of stock|Maximum available stock reached|stock\s*<=\s*0/i);
 assert.match(storefrontScript, /const showBadge = badge && !\/\\bout\\s\+of\\s\+stock\\b\/i\.test\(badge\)/);
 assert.doesNotMatch(storefrontScript, /filter\(product => Number\(product\.stock/);
 assert.doesNotMatch(cartScript, /stock|Out of Stock/i);
 assert.doesNotMatch(checkoutScript, /stock|Out of Stock/i);
-assert.match(productScript, /textContent = priceIsValid \? money\(price\) : "Price unavailable"/);
+assert.match(productScript, /textContent = priceIsValid \? money\(price\) : "Price to be confirmed"/);
 assert.match(productScript, /addButton\.disabled = !priceIsValid/);
 assert.match(productPage, /<main class="product-page" aria-busy="true">/);
 assert.match(productPage, /id="product-loading"[^>]*role="status"/);
@@ -250,7 +259,9 @@ assert.match(checkoutScript, /\/payments\/verify/);
 assert.match(checkoutScript, /window\.addEventListener\("storage"/);
 assert.doesNotMatch(checkoutScript, /checkoutConfigReady|DELIVERY_FEE|shipping_address|delivery_fee/i);
 assert.match(checkoutScript, /expected_total: currentCartTotal\(lines\)/);
-assert.match(checkoutScript, /imageAvailable !== true/);
+assert.doesNotMatch(checkoutScript, /imageAvailable !== true/, "missing product photography does not block a valid-price cart item");
+assert.match(checkoutScript, /retry-checkout-catalogue/);
+assert.match(checkoutScript, /Price unavailable/);
 assert.match(cartScript, /refreshCartAvailability\(\)/);
 assert.match(cartScript, /cartAvailability\.get\(String\(item\.id\)\) !== true/);
 assert.doesNotMatch(checkout, /transport-note|#collection|transport information/i);
@@ -412,7 +423,7 @@ assert.match(adminScript, /function isActiveFulfillmentOrder\(order\)/);
 assert.match(adminScript, /function canCompleteOrder\(order\)/);
 assert.match(adminScript, /function orderStatusActions\(order, historical\)/);
 assert.match(adminScript, /const availableActions = orderStatusActions\(order, historical\)/);
-assert.match(adminScript, /const historicalOrders = visibleOrders\.filter\(isHistoryOrder\)/);
+assert.match(adminScript, /const historyMatches = orders\.filter\(isHistoryOrder\)/);
 assert.match(adminScript, /appendField\(customerFields, "Phone", order\.phone\)/);
 assert.match(adminScript, /appendField\(expandedCustomer, "Customer email", order\.email\)/);
 assert.match(adminScript, /appendField\(customerFields, "Order number"/);
@@ -468,7 +479,7 @@ assert.match(backendSource, /eq\("is_active", true\)/);
 assert.match(fs.readFileSync(path.join(root, "src", "backend", "order-utils.js"), "utf8"), /if \(product\.is_active === false\)/);
 assert.doesNotMatch(backendSource, /select\("id, name, price, stock, sizes, is_active"\)/);
 assert.match(backendSource, /update\.is_active = body\.is_active/);
-assert.match(backendSource, /delete_product_without_orders/);
+assert.match(backendSource, /archive_catalogue_product/);
 assert.match(backendSource, /createGuestPaystackEmail/);
 assert.match(backendSource, /email: email \|\| null/);
 assert.match(backendSource, /sizes: \[\.\.\.new Set\(sizes\.map/);
@@ -480,6 +491,12 @@ assert.match(checkoutHtml, /Email address \(optional\)/);
 assert.match(fs.readFileSync(path.join(root, "supabase", "migrations", "202610150001_optional_guest_checkout_and_product_visibility.sql"), "utf8"), /alter column email drop not null[\s\S]*?add column if not exists is_active[\s\S]*?delete_product_without_orders/);
 assert.doesNotMatch(storefrontScript, /productsWithLoadedImages|productImageLoads\(imageUrl\)/, "catalogue cards no longer wait on each image and append progressively");
 assert.match(storefrontScript, /PUBLIC_CATALOG_STORAGE_KEY/);
+assert.match(storefrontScript, /kayshaven-public-catalog-v2/);
+assert.match(storefrontScript, /PUBLIC_CATALOG_STALE_LIMIT_MS = 2 \* 60 \* 1000/);
+assert.match(storefrontScript, /cache: "no-store"/);
+assert.match(storefrontScript, /ensureCategoryFilters\(products\)/, "API categories omitted from the original filter list get their own filter");
+assert.match(storefrontScript, /Price to be confirmed/);
+assert.match(storefrontScript, /This item is unavailable until its price is confirmed/);
 assert.match(storefrontScript, /renderProductSkeletons/);
 assert.match(storefrontScript, /setAttribute\("aria-busy", String\(productsLoading\)\)/);
 assert.doesNotMatch(storefrontScript, /products = products\.filter/, "an image error preserves the card and its layout slot");
@@ -487,7 +504,11 @@ assert.match(storefrontStyles, /\.product-image\[data-image-state="loaded"\] \.p
 assert.match(storefrontStyles, /\.product-card-skeleton/);
 assert.doesNotMatch(fs.readFileSync(path.join(frontend, "script.js"), "utf8"), /placeholder.*Product image unavailable/);
 assert.match(fs.readFileSync(path.join(frontend, "product-images.js"), "utf8"), /productImageLoads/);
-assert.match(productScript, /await productImageLoads\(absoluteImageUrl\)/);
+assert.doesNotMatch(productScript, /await productImageLoads|disabled = true/, "a missing product image never disables a valid product's purchase button");
+assert.match(productScript, /Price to be confirmed/);
+assert.doesNotMatch(cartScript, /productImageLoads\(/, "cart availability is based on live product and price data, not photography");
+assert.match(adminScript, /This active product cannot be purchased until its price is corrected/);
+assert.match(adminScript, /Needs correction/);
 assert.match(adminScript, /function restoreStaffSession\(\)/);
 assert.match(adminScript, /sessionStorage\.getItem\("kayshaven-access-token"\)/);
 assert.match(adminScript, /#profile-name/);
@@ -936,3 +957,13 @@ testPaymentVerificationButtonStates().then(testReceiptAccessRefresh).then(testRe
   console.error(error);
   process.exitCode = 1;
 });
+
+// History is relocated once and initially collapsed; search remains available inside Overview.
+const overviewMarkup = adminPage.slice(adminPage.indexOf('id="view-overview"'), adminPage.indexOf('<!-- ORDERS -->'));
+assert.match(overviewMarkup, /id="overview-order-history" hidden/);
+assert.match(overviewMarkup, /View Order History/);
+assert.match(overviewMarkup, /id="history-search-input"/);
+assert.equal((adminPage.match(/id="orders-history-rows"/g) || []).length, 1);
+assert.match(adminPage, /class="orders-refresh-control">[\s\S]*?id="refresh-orders"[\s\S]*?<small id="orders-refreshed-at"/);
+assert.match(adminScript, /actions.appendChild\(deleteButton\)/);
+assert.match(adminScript, /<svg width="18"/);

@@ -602,8 +602,15 @@ function renderInventory() {
     const facts = document.createElement("div");
     facts.className = "inventory-product-facts";
     appendInventoryValue(facts, "Category", product.category || "—");
-    appendInventoryValue(facts, "Price", `GHS ${Number(product.price || 0).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`, "inventory-product-price");
+    const validPrice = Number.isFinite(Number(product.price)) && Number(product.price) > 0;
+    appendInventoryValue(facts, "Price", validPrice ? `GHS ${Number(product.price).toLocaleString("en-GH", { maximumFractionDigits: 2 })}` : "Needs correction", "inventory-product-price");
     summary.appendChild(facts);
+    if (!validPrice) {
+      const priceWarning = document.createElement("p");
+      priceWarning.className = "inventory-product-price-warning";
+      priceWarning.textContent = "This active product cannot be purchased until its price is corrected.";
+      summary.appendChild(priceWarning);
+    }
 
     const actions = document.createElement("div");
     actions.className = "inventory-product-actions";
@@ -670,19 +677,14 @@ function renderInventory() {
     cancelButton.textContent = "Cancel";
     cancelButton.dataset.cancelProductEdit = String(product.id);
     editorActions.append(saveButton, cancelButton);
-    const hasOrderHistory = orders.some(order => (order.order_items || []).some(item => String(item.product_id) === String(product.id)));
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "button inventory-delete-button";
-    deleteButton.textContent = "Delete permanently";
     deleteButton.dataset.deleteProduct = String(product.id);
-    deleteButton.title = "Separate permanent-delete action. Storefront removal only hides this product.";
-    if (hasOrderHistory) {
-      deleteButton.disabled = true;
-      deleteButton.textContent = "Used in order history";
-      deleteButton.title = "Hide this product instead to preserve its historical orders.";
-    }
-    editorActions.appendChild(deleteButton);
+    deleteButton.setAttribute("aria-label", `Delete ${product.name} permanently from catalogue`);
+    deleteButton.title = `Delete ${product.name} from catalogue`;
+    deleteButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
+    actions.appendChild(deleteButton);
     const cardFeedback = document.createElement("p");
     cardFeedback.className = "inventory-card-feedback";
     cardFeedback.setAttribute("role", "status");
@@ -862,9 +864,9 @@ inventoryRows?.addEventListener("click", async event => {
     if (!accessToken) return;
     const product = inventory.find(item => String(item.id) === button.dataset.deleteProduct);
     const name = product?.name || "this product";
-    if (!window.confirm(`Permanently delete ${name}? This cannot be undone. Products referenced by any order cannot be deleted.`)) return;
+    if (!window.confirm(`Permanently delete ${name}? This permanently removes the product from the active catalogue. Historical orders and receipts will be preserved.`)) return;
     button.disabled = true;
-    if (inventoryListFeedback) inventoryListFeedback.textContent = `Checking whether ${name} can be safely deleted…`;
+    if (inventoryListFeedback) inventoryListFeedback.textContent = `Removing ${name} from the catalogue…`;
     try {
       const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(button.dataset.deleteProduct)}`, {
         method: "DELETE", headers: authHeaders()
@@ -1458,9 +1460,10 @@ function renderOrders() {
   const search = String(document.querySelector("#orders-search-input")?.value || "").trim();
   const visibleOrders = filterOrders(search);
   const activeOrders = visibleOrders.filter(isActiveFulfillmentOrder);
-  const historicalOrders = visibleOrders.filter(isHistoryOrder);
   renderOrderSection(activeRows, activeOrders, false, visibleOrders.length > 0);
-  renderOrderSection(historyRows, historicalOrders, true, visibleOrders.length > 0);
+  const historySearch = String(document.querySelector("#history-search-input")?.value || "").trim().toLowerCase();
+  const historyMatches = orders.filter(isHistoryOrder).filter(order => !historySearch || JSON.stringify([order.customer_name, order.email, order.phone, order.order_number]).toLowerCase().includes(historySearch));
+  renderOrderSection(historyRows, historyMatches, true, orders.length > 0);
 }
 
 document.addEventListener("click", async event => {
@@ -1731,3 +1734,11 @@ function formatDate(value) {
 
 showScreen("login");
 restoreStaffSession();
+
+ document.querySelector("#history-search-input")?.addEventListener("input", updateOrderView);
+ document.querySelector("#toggle-order-history")?.addEventListener("click", event => {
+   const panel = document.querySelector("#overview-order-history");
+   panel.hidden = !panel.hidden;
+   event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+   event.currentTarget.textContent = panel.hidden ? "View Order History" : "Hide Order History";
+ });

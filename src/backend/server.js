@@ -1,4 +1,7 @@
 const http = require("http");
+const fs = require("node:fs");
+const path = require("node:path");
+const { productImageUrl } = require("../frontend/product-images");
 const { createClient } = require("@supabase/supabase-js");
 const crypto = require("crypto");
 const { buildPricedItems, canTransitionOrderStatus } = require("./order-utils");
@@ -412,6 +415,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
     }
 
     if (req.method === "POST" && req.url === "/api/payments/verify") {
+      let failureStage = "request_body";
       try {
         const body = await readBody(req);
         const reference = String(body.reference || "").trim();
@@ -419,27 +423,34 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           sendJson(res, 400, { error: "A valid payment reference is required." });
           return;
         }
+        failureStage = "order_lookup";
         const { data: order, error: orderError } = await paymentClient.from("orders")
           .select("id, order_number, customer_name, total_amount, payment_reference, payment_status")
           .eq("payment_reference", reference).single();
-        if (orderError || !order) {
+        if (orderError && orderError.code !== "PGRST116") throw orderError;
+        if (!order) {
           sendJson(res, 404, { error: "Payment reference was not found." });
           return;
         }
         if (order.payment_status !== "paid") {
+          failureStage = "paystack_verify";
           const payment = await paymentRequest(`/transaction/verify/${encodeURIComponent(reference)}`);
+          failureStage = "payment_validation";
           const expectedAmount = Math.round(Number(order.total_amount) * 100);
           if (payment.reference !== reference || payment.status !== "success" || payment.currency !== "GHS" || Number(payment.amount) !== expectedAmount) {
+            console.warn(JSON.stringify({ event: "payment_verification_rejected", stage: failureStage, code: "PAYMENT_DETAILS_MISMATCH" }));
             sendJson(res, 409, { error: "Payment is not confirmed. No order has been marked paid." });
             return;
           }
+          failureStage = "finalize_order";
           const { error: finalizeError } = await paymentClient.rpc("finalize_paid_order", { p_reference: reference });
           if (finalizeError) throw finalizeError;
         }
+        failureStage = "receipt_token";
         const receiptAccessToken = createReceiptAccessToken(order.id, reference, receiptSigningKey);
         sendJson(res, 200, { success: true, payment_status: "paid", order_id: order.id, order_number: order.order_number, customer_name: order.customer_name, receipt_access_token: receiptAccessToken });
-      } catch {
-        console.error("Payment verification failed");
+      } catch (error) {
+        console.error(JSON.stringify(formatPaymentVerificationFailure(failureStage, error)));
         sendJson(res, 502, { error: "Payment could not be verified right now. Please try again." });
       }
       return;
@@ -523,23 +534,33 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           sendJson(res, 401, { error: "Unauthorized" });
           return;
         }
-        let productsQuery = (includeInactive ? supabaseAdmin : catalogueClient)
-          .from("products")
-          .select(includeInactive ? "*" : "id, name, category, price, image, description, sizes")
-          .order("id");
-        if (!includeInactive) productsQuery = productsQuery.eq("is_active", true);
-        const { data, error } = await productsQuery;
-
-        if (error) {
-          throw error;
+        const data = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          let productsQuery = (includeInactive ? supabaseAdmin : catalogueClient)
+            .from("products")
+            .select(includeInactive ? "*" : "id, name, category, price, image, description, sizes")
+            .is("deleted_at", null)
+            .order("id");
+          if (!includeInactive) productsQuery = productsQuery.eq("is_active", true);
+          const { data: page, error } = await productsQuery.range(offset, offset + pageSize - 1);
+          if (error) throw error;
+          data.push(...(page || []));
+          if (!page || page.length < pageSize) break;
         }
+        const catalogue = includeInactive ? data : data.filter(product => {
+          const image = productImageUrl(product);
+          if (/^https:\/\//i.test(image)) return isStoredProductImageUrl(image);
+          if (!/^product-images\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i.test(image)) return false;
+          return fs.existsSync(path.join(__dirname, "../frontend", image));
+        });
 
         if (includeInactive) {
           res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "private, no-store" });
         } else {
-          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=30, stale-while-revalidate=120", "Vary": "Origin" });
+          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=15, stale-while-revalidate=30", "Vary": "Origin" });
         }
-        res.end(JSON.stringify({ products: data || [] }));
+        res.end(JSON.stringify({ products: catalogue }));
 
       } catch (error) {
         console.error(
@@ -772,7 +793,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
         }
         if (!Object.keys(update).length) throw new Error("No product changes were supplied");
         const { data: product, error } = await supabaseAdmin.from("products")
-          .update(update).eq("id", id).select("*").single();
+          .update(update).eq("id", id).is("deleted_at", null).select("*").single();
         if (error) throw error;
         sendJson(res, 200, { success: true, product });
       } catch (error) {
@@ -796,7 +817,7 @@ const requestHandler = async (req, res, healthClient = supabase, receiptClient =
           sendJson(res, 404, { error: "Product not found." });
           return;
         }
-        const { error: deleteError } = await supabaseAdmin.rpc("delete_product_without_orders", { p_product_id: id });
+        const { error: deleteError } = await supabaseAdmin.rpc("archive_catalogue_product", { p_product_id: id });
         if (deleteError) {
           if (/referenced by existing orders/i.test(String(deleteError.message || ""))) {
             sendJson(res, 409, { error: "This product appears in order history and cannot be permanently deleted. Hide it from the storefront instead." });
@@ -1343,6 +1364,15 @@ const PAYMENT_FAILURE_MESSAGES = Object.freeze({
   failure_cleanup: "Failed checkout could not be marked for review."
 });
 
+const PAYMENT_VERIFICATION_FAILURE_MESSAGES = Object.freeze({
+  request_body: "Payment verification request could not be read.",
+  order_lookup: "The payment order could not be loaded.",
+  paystack_verify: "Paystack transaction verification failed.",
+  payment_validation: "Paystack payment details did not match the order.",
+  finalize_order: "The verified payment could not be finalized.",
+  receipt_token: "Secure receipt access could not be created."
+});
+
 function safePaymentErrorCode(error) {
   const candidate = String(error?.code || "");
   if (/^(?:[0-9A-Z]{5}|PGRST\d{3}|PAYSTACK_HTTP_[45]\d{2}|PAYSTACK_REJECTED|PAYSTACK_INVALID_RESPONSE|ECONNRESET|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ABORT_ERR|UND_ERR_CONNECT_TIMEOUT)$/.test(candidate)) {
@@ -1362,6 +1392,16 @@ function formatPaymentInitializationFailure(stage, error) {
     stage: safeStage,
     code: safePaymentErrorCode(error),
     message: PAYMENT_FAILURE_MESSAGES[safeStage]
+  };
+}
+
+function formatPaymentVerificationFailure(stage, error) {
+  const safeStage = Object.prototype.hasOwnProperty.call(PAYMENT_VERIFICATION_FAILURE_MESSAGES, stage) ? stage : "request_body";
+  return {
+    event: "payment_verification_failed",
+    stage: safeStage,
+    code: safePaymentErrorCode(error),
+    message: PAYMENT_VERIFICATION_FAILURE_MESSAGES[safeStage]
   };
 }
 
@@ -1393,4 +1433,4 @@ function getPaystackConfiguration(
   }
 }
 
-module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken };
+module.exports = { createServer, checkSupabaseReadiness, validEmail, isValidOptionalEmail, isValidCheckoutContact, createGuestPaystackEmail, getPaystackConfiguration, buildPaystackInitializationPayload, formatPaymentInitializationFailure, formatPaymentVerificationFailure, safePaymentErrorCode, buildPricedItems, canTransitionOrderStatus, isStoredProductImageUrl, describeProductImageStorageError, createReceiptAccessToken, verifyReceiptAccessToken };

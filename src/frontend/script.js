@@ -1,9 +1,9 @@
 let products = [];
 let productsLoading = true;
 let cart = readStoredCart();
-const PUBLIC_CATALOG_STORAGE_KEY = "kayshaven-public-catalog-v1";
-const PUBLIC_CATALOG_MAX_AGE_MS = 10 * 60 * 1000;
-const PUBLIC_CATALOG_STALE_LIMIT_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_CATALOG_STORAGE_KEY = "kayshaven-public-catalog-v2";
+const PUBLIC_CATALOG_MAX_AGE_MS = 15 * 1000;
+const PUBLIC_CATALOG_STALE_LIMIT_MS = 2 * 60 * 1000;
 
 function readStoredCart() {
   try {
@@ -34,13 +34,14 @@ function cartImageUrl(product) {
 
 function cleanPublicProduct(product) {
   if (!product || product.id == null || !String(product.name || "").trim()) return null;
-  const price = Number(product.price);
-  if (!Number.isFinite(price) || price <= 0) return null;
+  const parsedPrice = Number(product.price);
+  const purchasable = Number.isFinite(parsedPrice) && parsedPrice > 0;
   return {
     id: product.id,
     name: String(product.name),
     category: String(product.category || ""),
-    price,
+    price: purchasable ? parsedPrice : null,
+    purchasable,
     image: typeof product.image === "string" ? product.image : "",
     description: String(product.description || ""),
     sizes: Array.isArray(product.sizes) ? product.sizes.map(size => String(size)) : [],
@@ -53,7 +54,7 @@ function readPublicCatalogCache() {
   try {
     const cached = JSON.parse(localStorage.getItem(PUBLIC_CATALOG_STORAGE_KEY) || "null");
     const savedAt = Number(cached?.saved_at);
-    if (!Number.isFinite(savedAt) || Date.now() - savedAt > PUBLIC_CATALOG_STALE_LIMIT_MS || !Array.isArray(cached.products)) return null;
+    if (!Number.isFinite(savedAt) || savedAt > Date.now() || Date.now() - savedAt > PUBLIC_CATALOG_STALE_LIMIT_MS || !Array.isArray(cached.products)) return null;
     const safeProducts = cached.products.map(cleanPublicProduct).filter(Boolean);
     return safeProducts.length ? { products: safeProducts, fresh: Date.now() - savedAt <= PUBLIC_CATALOG_MAX_AGE_MS } : null;
   } catch {
@@ -85,23 +86,38 @@ function renderProductSkeletons(count = 8) {
   `).join("");
 }
 
+function ensureCategoryFilters(catalogue) {
+  const wrap = document.querySelector(".filter-wrap");
+  if (!wrap) return;
+  const existing = new Set([...wrap.querySelectorAll(".filter")].map(button => button.dataset.filter));
+  const categories = [...new Set(catalogue.map(product => String(product.category || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  categories.forEach(category => {
+    if (existing.has(category)) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "filter";
+    button.dataset.filter = category;
+    button.setAttribute("aria-pressed", "false");
+    button.textContent = category;
+    button.addEventListener("click", () => {
+      updateCategorySelection(category);
+      renderProducts();
+      $("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    wrap.appendChild(button);
+  });
+}
+
 
 /* =========================
    LOAD PRODUCTS
 ========================= */
 
 async function loadProducts() {
-  const cached = readPublicCatalogCache();
-  if (cached) {
-    products = cached.products;
-    productsLoading = false;
-    renderProducts();
-  } else {
-    productsLoading = true;
-    renderProductSkeletons();
-  }
+  productsLoading = true;
+  renderProductSkeletons();
   try {
-    const response = await fetch(`${window.KAYS_HAVEN_API_URL}/api/products`);
+    const response = await fetch(`${window.KAYS_HAVEN_API_URL}/api/products`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
 
     if (!response.ok) {
       throw new Error(`Server error: ${response.status}`);
@@ -109,8 +125,10 @@ async function loadProducts() {
 
     const data = await response.json();
 
-    const candidates = Array.isArray(data.products) ? data.products.map(cleanPublicProduct).filter(Boolean) : [];
+    if (!Array.isArray(data.products)) throw new Error("Invalid catalogue response");
+    const candidates = [...new Map(data.products.map(cleanPublicProduct).filter(product => product && product._catalogImageUrl).map(product => [String(product.id), product])).values()];
     products = candidates;
+    ensureCategoryFilters(products);
     writePublicCatalogCache(candidates);
     productsLoading = false;
     renderProducts();
@@ -122,9 +140,10 @@ async function loadProducts() {
       $("productGrid").innerHTML = `
         <div class="empty-cart">
           <p>Could not load products.</p>
-          <p>Please try again later.</p>
+          <button type="button" class="add-btn" id="retry-products">Try again</button>
         </div>
       `;
+      $("retry-products")?.addEventListener("click", loadProducts);
     } else if (products.length) {
       toast("Showing the saved catalogue. Current prices are confirmed securely at checkout.");
     }
@@ -155,6 +174,7 @@ function renderProducts() {
   grid.innerHTML = matches.map((product, index) => {
 
     const imageUrl = product._catalogImageUrl || cartImageUrl(product);
+    const purchasable = product.purchasable === true && Number.isFinite(Number(product.price)) && Number(product.price) > 0;
     const image = imageUrl
       ? `<img data-catalog-image src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name)}" width="800" height="880" loading="${index < 4 ? "eager" : "lazy"}" decoding="async"${index < 4 ? ' fetchpriority="high"' : ""}>`
       : "";
@@ -181,7 +201,7 @@ function renderProducts() {
 
             <h3>${escapeHtml(product.name || "Unnamed Product")}</h3>
 
-            <strong>${money(product.price)}</strong>
+            <strong class="${purchasable ? "" : "product-price-unavailable"}">${purchasable ? money(product.price) : "Price to be confirmed"}</strong>
 
           </div>
 
@@ -192,8 +212,9 @@ function renderProducts() {
           type="button"
           data-add-product="${escapeHtml(product.id)}"
           aria-label="Quick add ${escapeHtml(product.name || "product")}"
+          ${purchasable ? "" : "disabled aria-disabled=\"true\""}
         >
-          Quick add
+          ${purchasable ? "Quick add" : "Unavailable"}
         </button>
 
       </article>
@@ -260,6 +281,11 @@ function addToCart(id) {
 
   if (!product) {
     toast("Product not found");
+    return;
+  }
+
+  if (product.purchasable !== true || !Number.isFinite(Number(product.price)) || Number(product.price) <= 0) {
+    toast("This item is unavailable until its price is confirmed.");
     return;
   }
 

@@ -15,29 +15,24 @@ async function loadProduct() {
     if (!product) throw new Error("This product could not be found.");
 
     const imageUrl = productImageUrl(product, "../product-images/");
-    const absoluteImageUrl = imageUrl ? new URL(imageUrl, window.location.href).href : "";
-    if (!await productImageLoads(absoluteImageUrl)) {
-      throw new Error("This product is not currently available in the shop.");
-    }
-
     document.title = `${product.name} | Kay's Haven`;
     document.getElementById("product-name").textContent = product.name;
     const price = Number(product.price);
     const priceIsValid = Number.isFinite(price) && price > 0;
-    document.getElementById("product-price").textContent = priceIsValid ? money(price) : "Price unavailable";
+    document.getElementById("product-price").textContent = priceIsValid ? money(price) : "Price to be confirmed";
     document.getElementById("product-description").textContent = product.description || "";
     document.querySelector(".product-category").textContent = product.category || "KAY'S HAVEN";
     const image = document.getElementById("product-image");
     const imageFrame = image.parentElement;
     imageFrame.classList.remove("is-missing");
-    image.hidden = false;
+    image.hidden = !imageUrl;
     image.onerror = () => {
       image.hidden = true;
       imageFrame.classList.add("is-missing");
-      document.getElementById("add-to-cart").disabled = true;
     };
-    image.src = imageUrl;
+    if (imageUrl) image.src = imageUrl;
     image.alt = product.name;
+    if (!imageUrl) imageFrame.classList.add("is-missing");
 
     const quantity = document.getElementById("quantity");
     quantity.min = "1";
@@ -76,7 +71,7 @@ async function loadProduct() {
 
     const addButton = document.getElementById("add-to-cart");
     addButton.disabled = !priceIsValid;
-    addButton.textContent = !priceIsValid ? "Unavailable" : "Add to Cart";
+    addButton.textContent = !priceIsValid ? "Price to be confirmed" : "Add to Cart";
     addButton.onclick = () => {
       const qty = Number(quantity.value);
       if (!Number.isInteger(qty) || qty < 1) return;

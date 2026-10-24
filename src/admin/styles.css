@@ -885,6 +885,7 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
 .inventory-product-fact > span { color: #857790; font-size: 8px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
 .inventory-product-fact > strong { color: #554762; font-size: 10px; font-weight: 500; }
 .inventory-product-fact.inventory-product-price > strong { color: #7622a0; font-weight: 700; }
+.inventory-product-price-warning { margin: 0; color: #8a3d20; font-size: 9px; font-weight: 600; line-height: 1.45; }
 .inventory-product-actions { display: grid; gap: 7px; min-width: 0; }
 .inventory-product-actions .button { width: 100%; min-height: 34px; padding: 0 9px; border-radius: 7px; font: 600 9px "Montserrat", sans-serif; }
 .inventory-product-editor { grid-column: 1 / -1; display: grid; gap: 12px; padding: 12px; border-top: 1px solid #eee7f2; background: #fdfbff; }
@@ -919,3 +920,9 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
   .inventory-single-form .inventory-form-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .inventory-single-form .inventory-form-actions .button { width: 100%; padding: 0 8px; }
 }
+
+.orders-refresh-control { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.orders-refresh-control small { font-size:10px; color:#75677f; }
+#overview-order-history[hidden] { display:none; }
+#overview-order-history { margin-top:18px; }
+.inventory-delete-button svg { flex-shrink:0; }
