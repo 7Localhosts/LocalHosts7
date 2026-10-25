@@ -170,6 +170,7 @@ function productImageUrl(product, prefix = "product-images/") {
   }
 
   if (image.startsWith("/")) return image;
+  if (/^product-images\//i.test(image)) return prefix + image.slice("product-images/".length);
   const relativePath = image.replace(/^(\.\.\/)+/, "");
   if (/^images\/catalog-cleaned\//i.test(relativePath)) return "";
   if (/^images\//i.test(relativePath)) return prefix + relativePath.slice("images/".length);

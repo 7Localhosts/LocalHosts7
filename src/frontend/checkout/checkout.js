@@ -36,7 +36,6 @@ function cartValidationError(lines) {
   if (!checkoutCatalogueReady) return "Checking current product prices…";
   for (const line of lines) {
     if (!line.product) return "A product in your cart is no longer available. Return to the shop to update your cart.";
-    if (line.product.imageAvailable !== true) return `${line.product.name} does not have a working product image and cannot be checked out. Remove it from your cart.`;
     if (!Number.isInteger(line.quantity) || line.quantity < 1) return "Check the quantity for each item in your cart.";
     if (!Number.isFinite(line.unitPrice) || line.unitPrice <= 0) return `${line.product.name} is currently unavailable for checkout.`;
     const sizes = productSizeOptions(line.product);
@@ -153,6 +152,7 @@ function renderVerifiedReceipt(receipt) {
   document.getElementById("receipt-message").textContent = "Your verified receipt is ready.";
   document.getElementById("receipt-view").hidden = true;
   document.getElementById("download-receipt").disabled = false;
+  document.getElementById("download-receipt").hidden = false;
   document.getElementById("print-receipt").disabled = false;
 }
 
@@ -261,12 +261,13 @@ document.getElementById("download-receipt").addEventListener("click", async even
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `kays-haven-${String(verifiedReceipt.order_number || "receipt").replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
+    link.download = `KaysHaven-Receipt-${String(verifiedReceipt.order_number || "receipt").replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
     link.click();
     if (!("download" in link)) window.open(url, "_blank", "noopener");
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) {
     document.getElementById("receipt-message").textContent = error.message || "Receipt PDF could not be generated.";
+    document.getElementById("checkout-message").textContent = "Payment successful. PDF download failed; please try Download Receipt (PDF) again.";
   } finally {
     button.disabled = false;
   }
@@ -282,43 +283,41 @@ function renderOrderSummary() {
   const message = document.getElementById("checkout-price-message");
   const items = lines.map(({ item, product, quantity, unitPrice }) => {
     const image = product ? productImageUrl(product, "../product-images/") : "";
-    const imageMarkup = image && product?.imageAvailable
+    const imageMarkup = image
       ? `<img class="checkout-item-image" data-checkout-product-id="${escapeHtml(product.id)}" src="${escapeHtml(image)}" alt="" loading="lazy">`
-      : "";
+      : `<span class="checkout-item-image checkout-item-image-fallback" aria-label="Product photo unavailable">Photo unavailable</span>`;
     const name = product?.name || item.name || item.product_name || "Product";
-    const displayPrice = checkoutCatalogueReady && product && Number.isFinite(unitPrice) ? money(unitPrice * quantity) : "Checking price…";
+    const displayPrice = checkoutCatalogueError ? "Price unavailable" : checkoutCatalogueReady && product && Number.isFinite(unitPrice) && unitPrice > 0 ? money(unitPrice * quantity) : checkoutCatalogueReady ? "Price to be confirmed" : "Checking price…";
     return `<div class="order-item">${imageMarkup}<div class="order-item-details"><div class="name">${escapeHtml(name)}</div><div class="qty">Qty: ${quantity}${item.size ? ` · Size: ${escapeHtml(item.size)}` : ""}</div></div><div>${displayPrice}</div></div>`;
   });
   container.innerHTML = items.length ? items.join("") : "<p>Your cart is empty. <a href=\"../shop.html#shop\">Continue shopping</a>.</p>";
-  container.querySelectorAll("[data-checkout-product-id]").forEach(image => image.addEventListener("error", () => {
-    const product = checkoutProducts.get(String(image.dataset.checkoutProductId));
-    if (!product || !product.imageAvailable) return;
-    product.imageAvailable = false;
-    renderOrderSummary();
+  container.querySelectorAll("img[data-checkout-product-id]").forEach(image => image.addEventListener("error", () => {
+    const fallback = document.createElement("span");
+    fallback.className = "checkout-item-image checkout-item-image-fallback";
+    fallback.textContent = "Photo unavailable";
+    fallback.setAttribute("aria-label", "Product photo unavailable");
+    image.replaceWith(fallback);
   }, { once: true }));
 
   const total = checkoutCatalogueReady ? currentCartTotal(lines) : null;
-  document.getElementById("summary-total").textContent = total == null ? "Checking prices…" : money(total);
+  document.getElementById("summary-total").textContent = checkoutCatalogueError ? "Price unavailable" : total == null ? "Checking prices…" : lines.some(line => !Number.isFinite(line.unitPrice) || line.unitPrice <= 0) ? "Price to be confirmed" : money(total);
   const validation = lines.length ? cartValidationError(lines) : "";
   message.textContent = validation;
   message.classList.toggle("is-error", Boolean(checkoutCatalogueError || (checkoutCatalogueReady && validation)));
+  const retryCatalogue = document.getElementById("retry-checkout-catalogue");
+  if (retryCatalogue) retryCatalogue.hidden = !checkoutCatalogueError;
   syncPaymentButton(Boolean(lines.length && checkoutCatalogueReady && !validation));
 }
 
 async function loadCheckoutCatalogue() {
+  checkoutCatalogueReady = false;
+  checkoutCatalogueError = "";
+  renderOrderSummary();
   try {
-    const response = await fetch(`${API_URL}/products`);
+    const response = await fetch(`${API_URL}/products`, { cache: "no-store" });
     const result = await response.json();
     if (!response.ok || !Array.isArray(result.products)) throw new Error(result.error || "Current product prices are unavailable. Please try again shortly.");
     checkoutProducts = new Map(result.products.map(product => [String(product.id), product]));
-    const cartIds = new Set(readCart().map(item => String(item.id ?? item.product_id)));
-    await Promise.all([...cartIds].map(async id => {
-      const product = checkoutProducts.get(id);
-      if (!product) return;
-      const image = productImageUrl(product, "../product-images/");
-      const absoluteImage = image ? new URL(image, window.location.href).href : "";
-      product.imageAvailable = await productImageLoads(absoluteImage);
-    }));
     checkoutCatalogueReady = true;
     checkoutCatalogueError = "";
     const cachedCart = readCart();
@@ -329,7 +328,7 @@ async function loadCheckoutCatalogue() {
         item.price = Number(product.price);
         cartPricesChanged = true;
       }
-      if (product?.imageAvailable) item.image = product.image || productImageUrl(product, "../product-images/");
+      if (product) item.image = product.image || productImageUrl(product, "../product-images/");
     });
     if (cartPricesChanged) localStorage.setItem("kayshaven-cart", JSON.stringify(cachedCart));
     renderOrderSummary();
@@ -338,6 +337,26 @@ async function loadCheckoutCatalogue() {
     renderOrderSummary();
   }
 }
+
+async function showPaymentModeNotice() {
+  const notice = document.getElementById("payment-mode-notice");
+  if (!notice) return;
+  try {
+    const response = await fetch(`${API_URL}/payments/status`, { headers: { Accept: "application/json" } });
+    const result = await response.json();
+    if (result.mode === "test") {
+      notice.textContent = "This checkout is currently in Paystack Test Mode. No real money will be charged.";
+      notice.hidden = false;
+    } else if (!result.configured) {
+      notice.textContent = "Live payments are temporarily unavailable. Please contact the store before placing an order.";
+      notice.hidden = false;
+    }
+  } catch {
+    // The checkout's normal API connection message remains the source of truth if status cannot load.
+  }
+}
+
+document.getElementById("retry-checkout-catalogue")?.addEventListener("click", () => loadCheckoutCatalogue());
 
 async function verifyPaymentReference(reference) {
   if (!reference || paymentVerificationPending) return;
@@ -448,6 +467,7 @@ document.getElementById("checkout-form").addEventListener("submit", async event 
 
 renderOrderSummary();
 loadCheckoutCatalogue();
+showPaymentModeNotice();
 if (returnedPaymentReference()) verifyReturnedPayment();
 else restoreStoredReceipt(new URLSearchParams(window.location.search).get("receipt_order") || "");
 

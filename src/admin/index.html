@@ -7,12 +7,11 @@
   <meta name="api-base" content="">
   <title>Kay's Haven | Staff Dashboard</title>
 
-  <link rel="stylesheet" href="../frontend/brand-system.css">
-  <link rel="stylesheet" href="styles.css?v=20261015">
+  <link rel="stylesheet" href="styles.css?v=20261025-montserrat3">
   <script src="../frontend/product-images.js?v=5"></script>
   <script src="../frontend/api-config.js"></script>
   <script src="order-groups.js"></script>
-  <script src="app.js?v=20261015" defer></script>
+  <script src="app.js?v=20261024-polish1" defer></script>
 </head>
 
 <body>
@@ -290,6 +289,16 @@
         </div>
 
 
+        <button class="button button-secondary" id="toggle-order-history" type="button" aria-controls="overview-order-history" aria-expanded="false">View Order History</button>
+          <section class="orders-bucket" id="overview-order-history" hidden aria-labelledby="order-history-title">
+            <div class="orders-bucket-heading">
+              <h2 id="order-history-title">Order History</h2>
+              <button class="button button-secondary orders-toggle-all" type="button" data-orders-toggle-all="history" aria-controls="orders-history-rows" aria-expanded="false" aria-label="No order history to expand" disabled>View All</button>
+            </div>
+            <label class="orders-search" for="history-search-input">Find historical orders<input id="history-search-input" type="search" placeholder="Search name, email, phone or order number"></label>
+            <div class="orders-list" id="orders-history-rows" role="list" aria-label="Completed, canceled, and failed-payment orders grouped by customer"></div>
+          </section>
+
         <footer class="dashboard-footer">
 
           <span>
@@ -328,8 +337,8 @@
 
           <div class="orders-heading-actions">
             <span class="order-count" id="orders-page-count">0 orders</span>
-            <button class="button button-primary" id="refresh-orders" type="button">Refresh orders</button>
-            <small id="orders-refreshed-at" aria-live="polite"></small>
+            <div class="orders-refresh-control"><button class="button button-primary" id="refresh-orders" type="button">Refresh orders</button>
+            <small id="orders-refreshed-at" aria-live="polite"></small></div>
             <small id="orders-feedback" class="orders-feedback" role="status" aria-live="polite"></small>
           </div>
 
@@ -348,13 +357,7 @@
             </div>
             <div class="orders-list" id="orders-active-rows" role="list" aria-label="Active orders grouped by customer"></div>
           </section>
-          <section class="orders-bucket" aria-labelledby="order-history-title">
-            <div class="orders-bucket-heading">
-              <h2 id="order-history-title">Order History</h2>
-              <button class="button button-secondary orders-toggle-all" type="button" data-orders-toggle-all="history" aria-controls="orders-history-rows" aria-expanded="false" aria-label="No order history to expand" disabled>View All</button>
-            </div>
-            <div class="orders-list" id="orders-history-rows" role="list" aria-label="Completed, canceled, and failed-payment orders grouped by customer"></div>
-          </section>
+
         </section>
 
       </section>
@@ -481,8 +484,12 @@
                 </select>
               </label>
             </div>
-            <p class="inventory-list-feedback" id="inventory-list-feedback" role="status" aria-live="polite"></p>
+            <div class="inventory-list-feedback" id="inventory-list-feedback" role="status" aria-live="polite"></div>
             <div id="inventory-rows" class="inventory-product-list" role="list" aria-label="Supabase products"></div>
+            <details class="archived-products-panel" id="archived-products-panel">
+              <summary>Recently removed products</summary>
+              <div id="archived-product-rows" class="archived-product-rows" role="list" aria-label="Recently removed products"></div>
+            </details>
           </section>
         </section>
       </section>

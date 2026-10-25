@@ -360,6 +360,9 @@ textarea:focus {
     background: #fff;
 }
 
+.checkout-item-image-fallback { display: grid; place-items: center; padding: 5px; color: #674477; background: linear-gradient(145deg, #fbf8fd, #f1e9f7); font: 600 8px/1.35 "Montserrat", sans-serif; text-align: center; }
+.checkout-retry-button { margin: -10px 0 18px; }
+
 .order-item-details {
     flex: 1;
     min-width: 0;

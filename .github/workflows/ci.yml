@@ -29,11 +29,13 @@ jobs:
           test -f supabase/migrations/202610070001_checkout_sizes_payments.sql
           test -d tests
       - name: Install backend dependencies
-        run: make setup
+        working-directory: src/backend
+        run: npm ci
       - name: Backend tests
-        run: make test
+        working-directory: src/backend
+        run: npm test
       - name: Full JavaScript syntax lint
-        run: make lint
+        run: node deployment/quality-gate.js lint
       - name: Run target health smoke with synthetic configuration
         env:
           SUPABASE_URL: https://unit-test.invalid.supabase.co
@@ -43,12 +45,12 @@ jobs:
           RECEIPT_ACCESS_TOKEN_SECRET: unit-test-receipt-signing-key
           PORT: 18080
         run: |
-          timeout 20s make run > /tmp/kays-run.log 2>&1 &
+          timeout 20s npm --prefix src/backend start > /tmp/kays-run.log 2>&1 &
           smoke_pid=$!
           trap 'kill "$smoke_pid" 2>/dev/null || true' EXIT
           curl --fail --retry 8 --retry-connrefused --retry-delay 1 http://127.0.0.1:18080/api/health
       - name: Production static build
-        run: make build
+        run: npm --prefix src/backend run build:static
         env:
           KAYS_HAVEN_API_URL: https://kays-haven-backend.onrender.com
           KAYS_HAVEN_FRONTEND_ORIGIN: https://kayshaven.live
