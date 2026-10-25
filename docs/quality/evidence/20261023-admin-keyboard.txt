@@ -1,0 +1,24 @@
+2026-10-23T10:07:29.081Z
+Browser tab: 1, Title: "Kay's Haven | Staff Dashboard", URL: "https://kayshaven.live/admin/".
+1 AXWebArea Kay's Haven | Staff Dashboard, URL: kayshaven.live/admin/
+	2 container login-screen
+		3 container
+			4 link Description: Kay's Haven shop, Value: kayshaven.live/shop.html
+			5 text STAFF ACCESS
+			6 heading Good work starts with care, Value: 1
+				7 text Good work starts  with care
+			8 container
+				9 text Manage orders, inventory and the daily work behind  Kay's Haven .
+		10 container
+			11 text STAFF LOGIN
+			12 container login-form
+				13 text Name
+				14 text field (settable) Name
+				15 text Password
+				16 container
+					17 text field (settable) Password
+					18 button SHOW, ID: password-toggle
+				19 button Sign in
+			20 text Staff access is restricted to authorised  Kay's Haven  employees.
+
+The focused UI element is 4 link Description: Kay's Haven shop, URL: kayshaven.live/shop.html

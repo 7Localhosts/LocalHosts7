@@ -1,0 +1,113 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 120025767582,
+      "run_id": 39836400603,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/7Localhosts/LocalHosts7/actions/runs/39836400603",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUNmsl88AAAAb8hfeng",
+      "head_sha": "ccde4bfbc3c3cf12e4d0ae4fa9fa92a6604a3fff",
+      "url": "https://api.github.com/repos/7Localhosts/LocalHosts7/actions/jobs/120025767582",
+      "html_url": "https://github.com/7Localhosts/LocalHosts7/actions/runs/39836400603/job/120025767582",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-22T19:01:06Z",
+      "started_at": "2026-10-22T19:01:08Z",
+      "completed_at": "2026-10-22T19:01:23Z",
+      "name": "ci",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-22T19:01:09Z",
+          "completed_at": "2026-10-22T19:01:09Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-22T19:01:09Z",
+          "completed_at": "2026-10-22T19:01:12Z"
+        },
+        {
+          "name": "Set up Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-22T19:01:12Z",
+          "completed_at": "2026-10-22T19:01:18Z"
+        },
+        {
+          "name": "Repository structure check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-22T19:01:18Z",
+          "completed_at": "2026-10-22T19:01:18Z"
+        },
+        {
+          "name": "Install backend dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-22T19:01:18Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        },
+        {
+          "name": "Backend tests",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 6,
+          "started_at": "2026-10-22T19:01:22Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        },
+        {
+          "name": "JavaScript syntax checks",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-10-22T19:01:22Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        },
+        {
+          "name": "Post Set up Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13,
+          "started_at": "2026-10-22T19:01:22Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-22T19:01:22Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-22T19:01:22Z",
+          "completed_at": "2026-10-22T19:01:22Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/7Localhosts/LocalHosts7/check-runs/120025767582",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000083,
+      "runner_name": "GitHub Actions 1000000083",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

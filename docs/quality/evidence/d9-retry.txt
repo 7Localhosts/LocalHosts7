@@ -1,0 +1,6 @@
+2026-10-23T10:31:59.859Z
+Browser tab: 2, Title: "Secure checkout | Kay's Haven", URL: "https://kayshaven.live/checkout/checkout?trxref=KH-1792751136806-d0c4a1df12f6&reference=KH-1792751136806-d0c4a1df12f6".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
++			39 text Payment could not be verified right now. Please try again. Select “Pay securely with Paystack” to retry verification for this payment. No new order will be created. If you were charged, contact us with reference KH-1792751136806-d0c4a1df12f6.
+~			37 button Pay securely with Paystack, ID: place-order-btn
+The focused UI element is 1 AXWebArea Secure checkout | Kay's Haven, URL: kayshaven.live/checkout/checkout?trxref=KH-1792751136806-d0c4a1df12f6&reference=KH-1792751136806-d0c4a1df12f6

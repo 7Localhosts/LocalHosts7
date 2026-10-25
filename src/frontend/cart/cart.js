@@ -70,7 +70,7 @@ async function refreshCartAvailability() {
       const image = product ? productImageUrl(product, "../product-images/") : "";
       const available = Boolean(product && product.is_active !== false && Number.isFinite(Number(product.price)) && Number(product.price) > 0);
       cartAvailability.set(id, available);
-      if (!product) continue;
+      if (!product) return;
       cartAvailability.set(`product:${id}`, product);
       item.name = product.name;
       item.price = Number.isFinite(Number(product.price)) && Number(product.price) > 0 ? Number(product.price) : null;

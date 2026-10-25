@@ -1,0 +1,4 @@
+2026-10-23T10:27:34.076Z
+Browser tab: 2, Title: "Secure checkout | Kay's Haven", URL: "https://kayshaven.live/checkout/checkout?trxref=KH-1792751136806-d0c4a1df12f6&reference=KH-1792751136806-d0c4a1df12f6".
+There has been no change in the accessibility tree.
+The focused UI element is 1 AXWebArea Secure checkout | Kay's Haven, URL: kayshaven.live/checkout/checkout?trxref=KH-1792751136806-d0c4a1df12f6&reference=KH-1792751136806-d0c4a1df12f6

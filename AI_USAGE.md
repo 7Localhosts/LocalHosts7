@@ -1,3 +1,7 @@
 # AI assistance
 
-2026-10-24: Codex assisted with production catalogue pagination and eligibility, verified receipt and cart review, admin history relocation and catalogue archival, regression tests, database privacy migrations, and deployment verification. Changes are submitted in PR #26. No real-money transaction was performed.
+2026-10-23: Codex assisted with source inspection, synthetic validation tests, a focused cart-input validation fix, quality gates, and evidence documentation. Commands and results are recorded under `docs/quality/evidence`. Existing assertions were preserved; added tests reproduced four failures before the validation fix and passed afterward. Public probes are read-only. Payment and database doubles do not establish live provider behavior, RLS policy enforcement, or stock concurrency. Human reviewers must verify requirements, issue ownership, privacy consent, and deployment approval before merge. No historical authorship, client approval, or tester acceptance is claimed.
+
+2026-10-24: Codex assisted with production catalogue pagination and eligibility, verified receipts and cart review, admin history relocation and catalogue archival, regression tests, database privacy migrations, and deployment verification. Changes were submitted in PR #26. No real-money transaction was performed.
+
+2026-10-25: Codex assisted with merging the latest `main` updates into the Kay's Haven production-polish branch, resolving four Git conflicts, preserving both CI/test workflows, and correcting an invalid `continue` in the cart availability callback found by syntax checks. Tests and static build were run; the coverage command was blocked locally by sandbox process-spawn restrictions and should be verified by GitHub Actions.

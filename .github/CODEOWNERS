@@ -1,3 +1,12 @@
 # Initial ownership map. Update if responsibilities change.
 * @APAU-BENTIL-KOFI
 /docs/ @akitiiiii
+/src/backend/ @Patrick-Newton @APAU-BENTIL-KOFI
+/supabase/ @Patrick-Newton @APAU-BENTIL-KOFI
+/src/frontend/checkout/ @APAU-BENTIL-KOFI @boamahbenedictelikem
+/src/frontend/cart/ @Akitiiiii
+/src/frontend/products/ @Akitiiiii
+/src/admin/ @Akuba002
+/src/frontend/product-images* @Victorianketia
+/.github/ @APAU-BENTIL-KOFI
+/tests/ @APAU-BENTIL-KOFI

@@ -1,0 +1,218 @@
+[
+  {
+    "type": "dns",
+    "host": "kayshaven.live",
+    "addresses": [
+      "104.21.12.5",
+      "172.67.131.215"
+    ],
+    "date": "2026-10-23T10:01:09.512Z"
+  },
+  {
+    "type": "dns",
+    "host": "www.kayshaven.live",
+    "addresses": [
+      "188.114.96.4",
+      "188.114.97.4"
+    ],
+    "date": "2026-10-23T10:01:09.824Z"
+  },
+  {
+    "type": "dns",
+    "host": "kays-haven-staging.pages.dev",
+    "addresses": [
+      "172.66.44.206",
+      "172.66.47.50"
+    ],
+    "date": "2026-10-23T10:01:10.049Z"
+  },
+  {
+    "type": "dns",
+    "host": "kays-haven-backend.onrender.com",
+    "addresses": [
+      "216.24.57.18",
+      "216.24.57.16"
+    ],
+    "date": "2026-10-23T10:01:10.331Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:10.917Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/shop.html",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/shop",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:11.149Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/cart/cart.html",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/cart/cart",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:11.300Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/checkout/checkout.html",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/checkout/checkout",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:11.530Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/admin/",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/admin/",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:11.594Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kayshaven.live/api-config.js",
+    "status": 200,
+    "finalUrl": "https://kayshaven.live/api-config.js",
+    "contentType": "text/javascript; charset=utf-8",
+    "apiCorrect": true,
+    "date": "2026-10-23T10:01:11.815Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:12.035Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/shop.html",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/shop",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:12.266Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/cart/cart.html",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/cart/cart",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:12.436Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/checkout/checkout.html",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/checkout/checkout",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:12.567Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/admin/",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/admin/",
+    "contentType": "text/html; charset=utf-8",
+    "date": "2026-10-23T10:01:12.629Z"
+  },
+  {
+    "type": "static",
+    "url": "https://kays-haven-staging.pages.dev/api-config.js",
+    "status": 200,
+    "finalUrl": "https://kays-haven-staging.pages.dev/api-config.js",
+    "contentType": "text/javascript; charset=utf-8",
+    "apiCorrect": true,
+    "date": "2026-10-23T10:01:12.686Z"
+  },
+  {
+    "type": "redirect",
+    "url": "http://kayshaven.live",
+    "status": 301,
+    "location": "https://kayshaven.live/",
+    "date": "2026-10-23T10:01:12.785Z"
+  },
+  {
+    "type": "redirect",
+    "url": "https://www.kayshaven.live",
+    "status": 301,
+    "location": "https://kayshaven.live/",
+    "date": "2026-10-23T10:01:12.960Z"
+  },
+  {
+    "type": "api",
+    "route": "/api/health",
+    "status": 200,
+    "date": "2026-10-23T10:01:19.053Z"
+  },
+  {
+    "type": "api",
+    "route": "/api/health/ready",
+    "status": 404,
+    "date": "2026-10-23T10:01:19.416Z"
+  },
+  {
+    "type": "api",
+    "route": "/api/products",
+    "status": 200,
+    "productCount": 191,
+    "invalidPrices": 3,
+    "date": "2026-10-23T10:01:20.291Z"
+  },
+  {
+    "type": "api",
+    "route": "/api/orders",
+    "status": 401,
+    "date": "2026-10-23T10:01:31.200Z"
+  },
+  {
+    "type": "cors",
+    "origin": "https://kayshaven.live",
+    "status": 204,
+    "allowOrigin": "https://kayshaven.live",
+    "date": "2026-10-23T10:01:31.521Z"
+  },
+  {
+    "type": "cors",
+    "origin": "https://kays-haven-staging.pages.dev",
+    "status": 204,
+    "allowOrigin": "https://kays-haven-staging.pages.dev",
+    "date": "2026-10-23T10:01:32.106Z"
+  },
+  {
+    "type": "cors",
+    "origin": "https://evil.example",
+    "status": 403,
+    "allowOrigin": null,
+    "date": "2026-10-23T10:01:32.559Z"
+  },
+  {
+    "type": "cors",
+    "origin": "https://kayshaven.live.evil.example",
+    "status": 403,
+    "allowOrigin": null,
+    "date": "2026-10-23T10:01:32.874Z"
+  },
+  {
+    "type": "cors",
+    "origin": "https://*.pages.dev",
+    "status": 403,
+    "allowOrigin": null,
+    "date": "2026-10-23T10:01:33.187Z"
+  },
+  {
+    "type": "cors",
+    "origin": "null",
+    "status": 403,
+    "allowOrigin": null,
+    "date": "2026-10-23T10:01:33.492Z"
+  }
+]
