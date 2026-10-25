@@ -14,9 +14,15 @@
   --muted: #000000;
   --line: #7a13aa;
   --paper: #ffffff;
+  --kh-brand-kays-color: #000000;
+  --kh-brand-haven-color: #9760c3;
 }
 
 * { box-sizing: border-box; }
+.kh-brand { display: inline-flex; align-items: baseline; gap: .22em; color: inherit; font-family: "Montserrat", sans-serif; font-weight: 700; letter-spacing: -.035em; text-decoration: none; }
+.kh-brand__kays { color: var(--kh-brand-kays-color); font-family: "Montserrat", sans-serif; font-style: normal; font-weight: 700; }
+.kh-brand__haven { color: var(--kh-brand-haven-color); font-family: "Montserrat", sans-serif; font-style: normal; font-weight: 700; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button { transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease; }
 button:not(:disabled):hover { filter: brightness(.94); }
 body { min-width: 0; min-height: 100vh; margin: 0; }
@@ -65,7 +71,7 @@ h1, h2, p { margin-top: 0; }
 .login-aside > .login-wordmark { position: absolute; top: 30px; left: 10vw; z-index: 2; color: #ffffff; font-family: "Montserrat", sans-serif; font-size: 23px; font-weight: 700; letter-spacing: -.04em; text-decoration: none; }
 .login-wordmark .kh-brand__kays { font-family: "Montserrat", sans-serif; font-style: italic; font-weight: 700; }
 .login-wordmark .kh-brand__haven { font-family: "Montserrat", sans-serif; font-style: normal; font-weight: 700; }
-.login-aside h1 { color: #ffffff; font-family: var(--kh-heading-font); font-size: clamp(42px, 4.4vw, 59px); }
+.login-aside h1 { color: #ffffff; font-family: "Montserrat", sans-serif; font-size: clamp(42px, 4.4vw, 59px); }
 .login-aside > p:not(.eyebrow) { max-width: 330px; color: #000000; font-size: 14px; line-height: 1.8; }
 .text-button { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; color: var(--accent); background: transparent; font-size: 12px; font-weight: 700; }
 .login-aside .text-button { margin-top: 28px; }
@@ -189,7 +195,7 @@ th:last-child, td:last-child { padding-right: 0; text-align: right; }
 .page-heading h1,
 .login-panel h2,
 .section-heading h2 {
-  font-family: var(--kh-heading-font);
+  font-family: "Montserrat", sans-serif;
 }
 
 .login-panel label,
