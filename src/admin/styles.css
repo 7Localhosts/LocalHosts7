@@ -462,7 +462,7 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
   font-weight: 700 !important;
 }
 
-#dashboard-title, #orders-title, #inventory-title, #change-password-title {
+#dashboard-title, #orders-title, #inventory-title, #admins-title {
   font-weight: 700 !important;
 }
 

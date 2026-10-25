@@ -278,11 +278,11 @@ assert.match(adminStyles, /#login-screen \.kh-brand__kays, #dashboard-screen \.k
 assert.match(adminStyles, /#login-screen \.kh-brand__haven, #dashboard-screen \.kh-brand__haven\s*\{[^}]*color: #9760c3 !important;[^}]*font-family: "Playfair Display", serif !important;[^}]*font-style: italic !important;/s, "Haven brand text follows the storefront style");
 assert.match(adminPage, /class="hero-playfair">with care/);
 assert.match(adminStyles, /#login-screen \.login-aside h1 \.hero-playfair\s*\{[^}]*font-family: "Playfair Display", serif !important;[^}]*font-style: italic !important;/s);
-assert.match(adminStyles, /#dashboard-title, #orders-title, #inventory-title, #change-password-title\s*\{\s*font-weight: 700 !important;/);
-assert.doesNotMatch(adminStyles, /#admins-title\s*\{/ , "the Admin accounts title keeps its regular weight");
+assert.match(adminStyles, /#dashboard-title, #orders-title, #inventory-title, #admins-title\s*\{\s*font-weight: 700 !important;/);
+assert.doesNotMatch(adminStyles, /#change-password-title/ , "the Change your password title keeps its regular weight");
 assert.match(adminStyles, /#login-screen \.login-aside \.kh-brand__kays\s*\{\s*color: #ffffff !important;/, "Kay's is white over the dark login background");
 assert.match(adminPage, /id="change-password-title"/);
-assert.match(adminPage, /<strong>Manage orders<\/strong>/);
+assert.doesNotMatch(adminPage, /<strong>Manage orders<\/strong>/);
 assert.match(orderNumberMigration, /create sequence if not exists public\.kayshaven_order_number_seq[\s\S]*?restart with 1/i, "fresh order numbering starts at one");
 assert.match(orderNumberMigration, /'KH-'\s*\|\|\s*lpad\(nextval\('public\.kayshaven_order_number_seq'\)::text,\s*6,\s*'0'\)/i, "new orders receive readable sequential order numbers");
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
