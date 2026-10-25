@@ -451,6 +451,10 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
   font-weight: 700 !important;
 }
 
+#login-screen .login-aside .kh-brand__kays {
+  color: #ffffff !important;
+}
+
 #login-screen .kh-brand__haven, #dashboard-screen .kh-brand__haven {
   color: #9760c3 !important;
   font-family: "Playfair Display", serif !important;
@@ -458,7 +462,7 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
   font-weight: 700 !important;
 }
 
-#dashboard-title, #orders-title, #admins-title, #view-admins .section-heading h2 {
+#dashboard-title, #orders-title, #inventory-title, #change-password-title {
   font-weight: 700 !important;
 }
 
