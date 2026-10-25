@@ -273,7 +273,13 @@ assert.doesNotMatch(checkoutScript, /confirmation-view|conf-name|conf-order-id/)
 assert.doesNotMatch(checkoutStyles, /confirmation-view|check-badge/);
 assert.match(checkoutStyles, /#receipt-view\[hidden\]/, "the verified receipt remains independently available after payment");
 assert.match(adminPage, /id="refresh-orders"/);
-assert.match(adminStyles, /#login-screen,\s*#login-screen \*,\s*#dashboard-screen,\s*#dashboard-screen \*\s*\{\s*font-family:\s*"Montserrat",\s*sans-serif !important;/, "every admin text element uses Montserrat");
+assert.match(adminStyles, /#login-screen,\s*#login-screen \*,\s*#dashboard-screen,\s*#dashboard-screen \*\s*\{\s*font-family:\s*"Montserrat",\s*sans-serif !important;/, "admin text defaults to Montserrat");
+assert.match(adminStyles, /#login-screen \.kh-brand__kays, #dashboard-screen \.kh-brand__kays\s*\{[^}]*color: #000000 !important;[^}]*font-family: "Montserrat", sans-serif !important;[^}]*font-style: normal !important;/s, "Kay's brand text follows the storefront style");
+assert.match(adminStyles, /#login-screen \.kh-brand__haven, #dashboard-screen \.kh-brand__haven\s*\{[^}]*color: #9760c3 !important;[^}]*font-family: "Playfair Display", serif !important;[^}]*font-style: italic !important;/s, "Haven brand text follows the storefront style");
+assert.match(adminPage, /class="hero-playfair">with care/);
+assert.match(adminStyles, /#login-screen \.login-aside h1 \.hero-playfair\s*\{[^}]*font-family: "Playfair Display", serif !important;[^}]*font-style: italic !important;/s);
+assert.match(adminStyles, /#dashboard-title, #orders-title, #admins-title, #view-admins \.section-heading h2\s*\{\s*font-weight: 700 !important;/);
+assert.match(adminPage, /<strong>Manage orders<\/strong>/);
 assert.match(orderNumberMigration, /create sequence if not exists public\.kayshaven_order_number_seq[\s\S]*?restart with 1/i, "fresh order numbering starts at one");
 assert.match(orderNumberMigration, /'KH-'\s*\|\|\s*lpad\(nextval\('public\.kayshaven_order_number_seq'\)::text,\s*6,\s*'0'\)/i, "new orders receive readable sequential order numbers");
 assert.match(adminPage, /id="inventory-image-file"[^>]*type="file"[^>]*required/);
@@ -528,7 +534,6 @@ assert.match(adminScript, /function filterOrders\(query\)/);
 assert.match(adminScript, /productImageUrl\(product, "\.\.\/frontend\/product-images\/"\)/);
 assert.match(adminStyles, /\.order-product-row\s*\{[^}]*grid-template-columns/s);
 assert.match(adminStyles, /\.order-card-summary\s*\{[^}]*padding-top:/s);
-assert.doesNotMatch(adminStyles, /Playfair Display/i, "admin pages do not load or apply the storefront display font");
 assert.match(adminStyles, /@media \(max-width: 640px\)\s*\{[\s\S]*?\.order-product-row\s*\{[^}]*grid-template-columns/s);
 assert.match(adminStyles, /\.login-intro-card\s*\{[^}]*background:/s);
 assert.match(adminStyles, /\.login-photo\s*\{[^}]*object-fit:\s*cover/s);
@@ -578,7 +583,7 @@ assert.doesNotMatch(allCss, /#f4dce9|#6a1745|#c00000|#c0392b|--pink\s*:|--rose\s
 assert.doesNotMatch(allCss, /\b(?:pink|rose|coral)\b/i);
 assert.match(fs.readFileSync(path.join(frontend, "styles.css"), "utf8"), /footer\s*\{[^}]*background:\s*#000000/s);
 assert.doesNotMatch(allCss, /font-family:\s*["']?(?!Montserrat|Playfair Display|inherit|var\()[A-Za-z][\w -]*/i);
-assert.doesNotMatch(allCss, /Playfair\+Display:ital,wght@0,/);
+assert.match(adminStyles, /Playfair\+Display:ital,wght@0,500;1,600;1,700/, "the admin loads the storefront's italic Playfair weights for brand accents");
 
 function resolveApiBase(hostname, origin, configured = "") {
   const context = {

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;1,600;1,700&display=swap");
 
 :root {
   font-family: "Montserrat", sans-serif;
@@ -441,6 +441,25 @@ footer .kh-brand, .dashboard-footer .kh-brand { --kh-brand-kays-color: #000000; 
 
 #login-screen .login-aside h1 .hero-playfair {
   font-family: "Playfair Display", serif !important;
+  font-style: italic !important;
+}
+
+#login-screen .kh-brand__kays, #dashboard-screen .kh-brand__kays {
+  color: #000000 !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+}
+
+#login-screen .kh-brand__haven, #dashboard-screen .kh-brand__haven {
+  color: #9760c3 !important;
+  font-family: "Playfair Display", serif !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+}
+
+#dashboard-title, #orders-title, #admins-title, #view-admins .section-heading h2 {
+  font-weight: 700 !important;
 }
 
 /* The orders list has one summary row per stable customer identity. */
